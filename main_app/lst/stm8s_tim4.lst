@@ -1,0 +1,954 @@
+RCSTM8 COMPILER V2.42.12.083,  STM8S_TIM4         05/19/25  15:34:42
+
+QCW(0x00963FA0)
+
+RCSTM8 COMPILER V2.42.12.083, COMPILATION OF MODULE STM8S_TIM4
+OBJECT MODULE PLACED IN C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\bin\stm8s_tim4.obj
+COMPILER INVOKED BY: QUIET GENERATEDEPFILE CODE DB OJ(C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\bin\stm8s_tim4.obj) PR(C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\lst\stm8s_tim4.lst) PIN(C:\Raisonance\Ride\Inc;C:\Raisonance\Ride\Inc\ST7;C:\Raisonance\Ride\Inc\STM8;C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\inc) STM8(SMALL) O(3,SIZE) NOINITSTATICVAR SMALLOBJECT ET(INT) 
+
+stmt level    source
+   1          /* Includes ------------------------------------------------------------------*/
+   2          #include "stm8s_tim4.h"
+   3          
+   4          /** @addtogroup STM8S_StdPeriph_Driver
+   5            * @{
+   6            */
+   7          /* Private typedef -----------------------------------------------------------*/
+   8          /* Private define ------------------------------------------------------------*/
+   9          /* Private macro -------------------------------------------------------------*/
+  10          /* Private variables ---------------------------------------------------------*/
+  11          /* Private function prototypes -----------------------------------------------*/
+  12          /**
+  13            * @addtogroup TIM4_Public_Functions
+  14            * @{
+  15            */
+  16          
+  17          /**
+  18            * @brief  Deinitializes the TIM4 peripheral registers to their default reset values.
+  19            * @param  None
+  20            * @retval None
+  21            */
+  22          void TIM4_DeInit(void)
+  23          {
+  24   1          TIM4->CR1 = TIM4_CR1_RESET_VALUE;
+  25   1          TIM4->IER = TIM4_IER_RESET_VALUE;
+  26   1          TIM4->CNTR = TIM4_CNTR_RESET_VALUE;
+  27   1          TIM4->PSCR = TIM4_PSCR_RESET_VALUE;
+  28   1          TIM4->ARR = TIM4_ARR_RESET_VALUE;
+  29   1          TIM4->SR1 = TIM4_SR1_RESET_VALUE;
+  30   1      }
+  31          
+  32          /**
+  33            * @brief  Initializes the TIM4 Time Base Unit according to the specified parameters.
+  34            * @param    TIM4_Prescaler specifies the Prescaler from TIM4_Prescaler_TypeDef.
+  35            * @param    TIM4_Period specifies the Period value.
+  36            * @retval None
+  37            */
+  38          void TIM4_TimeBaseInit(TIM4_Prescaler_TypeDef TIM4_Prescaler, uint8_t TIM4_Period)
+  39          {
+  40   1          /* Check TIM4 prescaler value */
+  41   1          assert_param(IS_TIM4_PRESCALER_OK(TIM4_Prescaler));
+  42   1          /* Set the Prescaler value */
+  43   1          TIM4->PSCR = (uint8_t)(TIM4_Prescaler);
+  44   1          /* Set the Autoreload value */
+  45   1          TIM4->ARR = (uint8_t)(TIM4_Period);
+  46   1      }
+  47          
+  48          
+  49          
+  50          /**
+  51            * @brief  Enables or disables the TIM4 peripheral.
+  52            * @param   NewState new state of the TIM4 peripheral. This parameter can
+  53            * be ENABLE or DISABLE.
+  54            * @retval None
+  55            */
+  56          void TIM4_Cmd(FunctionalState NewState)
+  57          {
+  58   1          /* Check the parameters */
+  59   1          assert_param(IS_FUNCTIONALSTATE_OK(NewState));
+  60   1      
+  61   1          /* set or Reset the CEN Bit */
+  62   1          if (NewState != DISABLE)
+  63   1          {
+  64   2              TIM4->CR1 |= TIM4_CR1_CEN;
+  65   2          }
+  66   1          else
+  67   1          {
+  68   2              TIM4->CR1 &= (uint8_t)(~TIM4_CR1_CEN);
+  69   2          }
+  70   1      }
+  71          
+  72          /**
+  73            * @brief  Enables or disables the specified TIM4 interrupts.
+  74            * @param   NewState new state of the TIM4 peripheral.
+  75            * This parameter can be: ENABLE or DISABLE.
+  76            * @param   TIM4_IT specifies the TIM4 interrupts sources to be enabled or disabled.
+  77            * This parameter can be any combination of the following values:
+  78            * - TIM4_IT_UPDATE: TIM4 update Interrupt source
+  79            * @param   NewState new state of the TIM4 peripheral.
+  80            * @retval None
+  81            */
+  82          void TIM4_ITConfig(TIM4_IT_TypeDef TIM4_IT, FunctionalState NewState)
+  83          {
+  84   1          /* Check the parameters */
+  85   1          assert_param(IS_TIM4_IT_OK(TIM4_IT));
+  86   1          assert_param(IS_FUNCTIONALSTATE_OK(NewState));
+  87   1      
+  88   1          if (NewState != DISABLE)
+  89   1          {
+  90   2              /* Enable the Interrupt sources */
+  91   2              TIM4->IER |= (uint8_t)TIM4_IT;
+  92   2          }
+  93   1          else
+  94   1          {
+  95   2              /* Disable the Interrupt sources */
+  96   2              TIM4->IER &= (uint8_t)(~TIM4_IT);
+  97   2          }
+  98   1      }
+  99          
+ 100          /**
+ 101            * @brief  Enables or Disables the TIM4 Update event.
+ 102            * @param   NewState new state of the TIM4 peripheral Preload register. This parameter can
+ 103            * be ENABLE or DISABLE.
+ 104            * @retval None
+ 105            */
+ 106          void TIM4_UpdateDisableConfig(FunctionalState NewState)
+ 107          {
+ 108   1          /* Check the parameters */
+ 109   1          assert_param(IS_FUNCTIONALSTATE_OK(NewState));
+ 110   1      
+ 111   1          /* Set or Reset the UDIS Bit */
+ 112   1          if (NewState != DISABLE)
+ 113   1          {
+ 114   2              TIM4->CR1 |= TIM4_CR1_UDIS;
+ 115   2          }
+ 116   1          else
+ 117   1          {
+ 118   2              TIM4->CR1 &= (uint8_t)(~TIM4_CR1_UDIS);
+ 119   2          }
+ 120   1      }
+ 121          
+ 122          /**
+ 123            * @brief  Selects the TIM4 Update Request Interrupt source.
+ 124            * @param   TIM4_UpdateSource specifies the Update source.
+ 125            * This parameter can be one of the following values
+ 126            *                       - TIM4_UPDATESOURCE_REGULAR
+ 127            *                       - TIM4_UPDATESOURCE_GLOBAL
+ 128            * @retval None
+ 129            */
+ 130          void TIM4_UpdateRequestConfig(TIM4_UpdateSource_TypeDef TIM4_UpdateSource)
+ 131          {
+ 132   1          /* Check the parameters */
+ 133   1          assert_param(IS_TIM4_UPDATE_SOURCE_OK(TIM4_UpdateSource));
+ 134   1      
+ 135   1          /* Set or Reset the URS Bit */
+ 136   1          if (TIM4_UpdateSource != TIM4_UPDATESOURCE_GLOBAL)
+ 137   1          {
+ 138   2              TIM4->CR1 |= TIM4_CR1_URS;
+ 139   2          }
+ 140   1          else
+ 141   1          {
+ 142   2              TIM4->CR1 &= (uint8_t)(~TIM4_CR1_URS);
+ 143   2          }
+ 144   1      }
+ 145          
+ 146          /**
+ 147            * @brief  Selects the TIM4’s One Pulse Mode.
+ 148            * @param   TIM4_OPMode specifies the OPM Mode to be used.
+ 149            * This parameter can be one of the following values
+ 150            *                    - TIM4_OPMODE_SINGLE
+ 151            *                    - TIM4_OPMODE_REPETITIVE
+ 152            * @retval None
+ 153            */
+ 154          void TIM4_SelectOnePulseMode(TIM4_OPMode_TypeDef TIM4_OPMode)
+ 155          {
+ 156   1          /* Check the parameters */
+ 157   1          assert_param(IS_TIM4_OPM_MODE_OK(TIM4_OPMode));
+ 158   1      
+ 159   1          /* Set or Reset the OPM Bit */
+ 160   1          if (TIM4_OPMode != TIM4_OPMODE_REPETITIVE)
+ 161   1          {
+ 162   2              TIM4->CR1 |= TIM4_CR1_OPM;
+ 163   2          }
+ 164   1          else
+ 165   1          {
+ 166   2              TIM4->CR1 &= (uint8_t)(~TIM4_CR1_OPM);
+ 167   2          }
+ 168   1      
+ 169   1      }
+ 170          
+ 171          /**
+ 172            * @brief  Configures the TIM4 Prescaler.
+ 173            * @param   Prescaler specifies the Prescaler Register value
+ 174            * This parameter can be one of the following values
+ 175            *                       -  TIM4_PRESCALER_1
+ 176            *                       -  TIM4_PRESCALER_2
+ 177            *                       -  TIM4_PRESCALER_4
+ 178            *                       -  TIM4_PRESCALER_8
+ 179            *                       -  TIM4_PRESCALER_16
+ 180            *                       -  TIM4_PRESCALER_32
+ 181            *                       -  TIM4_PRESCALER_64
+ 182            *                       -  TIM4_PRESCALER_128
+ 183            * @param   TIM4_PSCReloadMode specifies the TIM4 Prescaler Reload mode.
+ 184            * This parameter can be one of the following values
+ 185            *                       - TIM4_PSCRELOADMODE_IMMEDIATE: The Prescaler is loaded
+ 186            *                         immediatly.
+ 187            *                       - TIM4_PSCRELOADMODE_UPDATE: The Prescaler is loaded at
+ 188            *                         the update event.
+ 189            * @retval None
+ 190            */
+ 191          void TIM4_PrescalerConfig(TIM4_Prescaler_TypeDef Prescaler, TIM4_PSCReloadMode_TypeDef TIM4_PSCReloadMode)
+ 192          {
+ 193   1          /* Check the parameters */
+ 194   1          assert_param(IS_TIM4_PRESCALER_RELOAD_OK(TIM4_PSCReloadMode));
+ 195   1          assert_param(IS_TIM4_PRESCALER_OK(Prescaler));
+ 196   1      
+ 197   1          /* Set the Prescaler value */
+ 198   1          TIM4->PSCR = (uint8_t)Prescaler;
+ 199   1      
+ 200   1          /* Set or reset the UG Bit */
+ 201   1          TIM4->EGR = (uint8_t)TIM4_PSCReloadMode;
+ 202   1      }
+ 203          
+ 204          /**
+ 205            * @brief  Enables or disables TIM4 peripheral Preload register on ARR.
+ 206            * @param   NewState new state of the TIM4 peripheral Preload register.
+ 207            * This parameter can be ENABLE or DISABLE.
+ 208            * @retval None
+ 209            */
+ 210          void TIM4_ARRPreloadConfig(FunctionalState NewState)
+ 211          {
+ 212   1          /* Check the parameters */
+ 213   1          assert_param(IS_FUNCTIONALSTATE_OK(NewState));
+ 214   1      
+ 215   1          /* Set or Reset the ARPE Bit */
+ 216   1          if (NewState != DISABLE)
+ 217   1          {
+ 218   2              TIM4->CR1 |= TIM4_CR1_ARPE;
+ 219   2          }
+ 220   1          else
+ 221   1          {
+ 222   2              TIM4->CR1 &= (uint8_t)(~TIM4_CR1_ARPE);
+ 223   2          }
+ 224   1      }
+ 225          
+ 226          /**
+ 227            * @brief  Configures the TIM4 event to be generated by software.
+ 228            * @param   TIM4_EventSource specifies the event source.
+ 229            * This parameter can be one of the following values:
+ 230            *                       - TIM4_EVENTSOURCE_UPDATE: TIM4 update Event source
+ 231            * @retval None
+ 232            */
+ 233          void TIM4_GenerateEvent(TIM4_EventSource_TypeDef TIM4_EventSource)
+ 234          {
+ 235   1          /* Check the parameters */
+ 236   1          assert_param(IS_TIM4_EVENT_SOURCE_OK(TIM4_EventSource));
+ 237   1      
+ 238   1          /* Set the event sources */
+ 239   1          TIM4->EGR = (uint8_t)(TIM4_EventSource);
+ 240   1      }
+ 241          
+ 242          
+ 243          /**
+ 244            * @brief  Sets the TIM4 Counter Register value.
+ 245            * @param   Counter specifies the Counter register new value.
+ 246            * This parameter is between 0x00 and 0xFF.
+ 247            * @retval None
+ 248            */
+ 249          void TIM4_SetCounter(uint8_t Counter)
+ 250          {
+ 251   1          /* Set the Counter Register value */
+ 252   1          TIM4->CNTR = (uint8_t)(Counter);
+ 253   1      }
+ 254          
+ 255          
+ 256          /**
+ 257            * @brief  Sets the TIM4 Autoreload Register value.
+ 258            * @param   Autoreload specifies the Autoreload register new value.
+ 259            * This parameter is between 0x00 and 0xFF.
+ 260            * @retval None
+ 261            */
+ 262          void TIM4_SetAutoreload(uint8_t Autoreload)
+ 263          {
+ 264   1          /* Set the Autoreload Register value */
+ 265   1          TIM4->ARR = (uint8_t)(Autoreload);
+ 266   1      }
+ 267          
+ 268          /**
+ 269            * @brief  Gets the TIM4 Counter value.
+ 270            * @param  None
+ 271            * @retval Counter Register value.
+ 272            */
+ 273          uint8_t TIM4_GetCounter(void)
+ 274          {
+ 275   1          /* Get the Counter Register value */
+ 276   1          return (uint8_t)(TIM4->CNTR);
+ 277   1      }
+ 278          
+ 279          /**
+ 280            * @brief  Gets the TIM4 Prescaler value.
+ 281            * @param  None
+ 282            * @retval Prescaler Register configuration value.
+ 283            */
+ 284          TIM4_Prescaler_TypeDef TIM4_GetPrescaler(void)
+ 285          {
+ 286   1          /* Get the Prescaler Register value */
+ 287   1          return (TIM4_Prescaler_TypeDef)(TIM4->PSCR);
+ 288   1      }
+ 289          
+ 290          /**
+ 291            * @brief  Checks whether the specified TIM4 flag is set or not.
+ 292            * @param   TIM4_FLAG specifies the flag to check.
+ 293            * This parameter can be one of the following values:
+ 294            *                       - TIM4_FLAG_UPDATE: TIM4 update Flag
+ 295            * @retval FlagStatus The new state of TIM4_FLAG (SET or RESET).
+ 296            */
+ 297          FlagStatus TIM4_GetFlagStatus(TIM4_FLAG_TypeDef TIM4_FLAG)
+ 298          {
+ 299   1          FlagStatus bitstatus = RESET;
+ 300   1        
+ 301   1          /* Check the parameters */
+ 302   1          assert_param(IS_TIM4_GET_FLAG_OK(TIM4_FLAG));
+ 303   1      
+ 304   1        if ((TIM4->SR1 & (uint8_t)TIM4_FLAG)  != 0)
+ 305   1        {
+ 306   2          bitstatus = SET;
+ 307   2        }
+ 308   1        else
+ 309   1        {
+ 310   2          bitstatus = RESET;
+ 311   2        }
+ 312   1        return ((FlagStatus)bitstatus);
+ 313   1      }
+ 314          
+ 315          /**
+ 316            * @brief  Clears the TIM4’s pending flags.
+ 317            * @param   TIM4_FLAG specifies the flag to clear.
+ 318            * This parameter can be one of the following values:
+ 319            *                       - TIM4_FLAG_UPDATE: TIM4 update Flag
+ 320            * @retval None.
+ 321            */
+ 322          void TIM4_ClearFlag(TIM4_FLAG_TypeDef TIM4_FLAG)
+ 323          {
+ 324   1          /* Check the parameters */
+ 325   1          assert_param(IS_TIM4_GET_FLAG_OK(TIM4_FLAG));
+ 326   1      
+ 327   1          /* Clear the flags (rc_w0) clear this bit by writing 0. Writing ‘1’ has no effect*/
+ 328   1          TIM4->SR1 = (uint8_t)(~TIM4_FLAG);
+ 329   1      
+ 330   1      }
+ 331          /**
+ 332            * @brief  Checks whether the TIM4 interrupt has occurred or not.
+ 333            * @param   TIM4_IT specifies the TIM4 interrupt source to check.
+ 334            * This parameter can be one of the following values:
+ 335            *                       - TIM4_IT_UPDATE: TIM4 update Interrupt source
+ 336            * @retval ITStatus The new state of the TIM4_IT (SET or RESET).
+ 337            */
+ 338          
+ 339          ITStatus TIM4_GetITStatus(TIM4_IT_TypeDef TIM4_IT)
+ 340          {
+ 341   1          ITStatus bitstatus = RESET;
+ 342   1      
+ 343   1        uint8_t itstatus = 0x0, itenable = 0x0;
+ 344   1      
+ 345   1        /* Check the parameters */
+ 346   1        assert_param(IS_TIM4_IT_OK(TIM4_IT));
+ 347   1      
+ 348   1        itstatus = (uint8_t)(TIM4->SR1 & (uint8_t)TIM4_IT);
+ 349   1      
+ 350   1        itenable = (uint8_t)(TIM4->IER & (uint8_t)TIM4_IT);
+ 351   1      
+ 352   1        if ((itstatus != (uint8_t)RESET ) && (itenable != (uint8_t)RESET ))
+ 353   1        {
+ 354   2          bitstatus = (ITStatus)SET;
+ 355   2        }
+ 356   1        else
+ 357   1        {
+ 358   2          bitstatus = (ITStatus)RESET;
+ 359   2        }
+ 360   1        return ((ITStatus)bitstatus);
+ 361   1      }
+ 362          
+ 363          /**
+ 364            * @brief  Clears the TIM4's interrupt pending bits.
+ 365            * @param   TIM4_IT specifies the pending bit to clear.
+ 366            * This parameter can be one of the following values:
+ 367            *                       - TIM4_IT_UPDATE: TIM4 update Interrupt source
+ 368            * @retval None.
+ 369            */
+ 370          void TIM4_ClearITPendingBit(TIM4_IT_TypeDef TIM4_IT)
+ 371          {
+ 372   1          /* Check the parameters */
+ 373   1          assert_param(IS_TIM4_IT_OK(TIM4_IT));
+ 374   1      
+ 375   1          /* Clear the IT pending Bit */
+ 376   1          TIM4->SR1 = (uint8_t)(~TIM4_IT);
+ 377   1      }
+RCSTM8 COMPILER V2.42.12.083
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+              ; FUNCTION ?TIM4_DeInit (BEGIN)
+              ; SOURCE LINE # 24 
+0000 725F5340                          CLR    05340H
+              ; SOURCE LINE # 25 
+0004 725F5341                          CLR    05341H
+              ; SOURCE LINE # 26 
+0008 725F5344                          CLR    05344H
+              ; SOURCE LINE # 27 
+000C 725F5345                          CLR    05345H
+              ; SOURCE LINE # 28 
+0010 35FF5346                          MOV    05346H,#0FFH
+              ; SOURCE LINE # 29 
+0014 725F5342                          CLR    05342H
+              ; SOURCE LINE # 30 
+0018 81                                RET    
+
+              ; FUNCTION ?TIM4_DeInit (END)
+
+              ; FUNCTION ?TIM4_TimeBaseInit (BEGIN)
+              ; Register-parameter TIM4_Prescaler (XW) is relocated (auto)
+              ; Register-parameter TIM4_Period (A) is relocated (auto)
+              ; SOURCE LINE # 38 
+0000 89                                PUSHW  X
+0001 88                                PUSH   A
+              ; SOURCE LINE # 41 
+0002 5D                                TNZW   X
+0003 2730                              JREQ   ?NXT_0001
+0005 5F                                CLRW   X
+0006 5C                                INCW   X
+0007 1302       F                      CPW    X,(002H,SP)   ; [ TIM4_Prescaler ]
+0009 272A                              JREQ   ?NXT_0001
+000B 5C                                INCW   X
+000C 1302       F                      CPW    X,(002H,SP)   ; [ TIM4_Prescaler ]
+000E 2725                              JREQ   ?NXT_0001
+0010 5C                                INCW   X
+0011 1302       F                      CPW    X,(002H,SP)   ; [ TIM4_Prescaler ]
+0013 2720                              JREQ   ?NXT_0001
+0015 5C                                INCW   X
+0016 1302       F                      CPW    X,(002H,SP)   ; [ TIM4_Prescaler ]
+0018 271B                              JREQ   ?NXT_0001
+001A 5C                                INCW   X
+001B 1302       F                      CPW    X,(002H,SP)   ; [ TIM4_Prescaler ]
+001D 2716                              JREQ   ?NXT_0001
+001F 5C                                INCW   X
+0020 1302       F                      CPW    X,(002H,SP)   ; [ TIM4_Prescaler ]
+0022 2711                              JREQ   ?NXT_0001
+0024 5C                                INCW   X
+0025 1302       F                      CPW    X,(002H,SP)   ; [ TIM4_Prescaler ]
+0027 270C                              JREQ   ?NXT_0001
+0029 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+002C         ?DATASTART_0001:
+002C 29                             M  DB     029H
+002D         ?DATAEND_0001:
+002D AE0000     F                      LDW    X,#HIGH(?STR?STM8S_TIM4?BASE)
+0030 CD0000     F                      CALL   ?assert_failed
+0033 5B04                              ADD    SP,#004H
+0035         ?NXT_0001:
+              ; SOURCE LINE # 43 
+0035 7B03       F                      LD     A,(003H,SP)   ; [ TIM4_Prescaler + 01H ]
+0037 C75345                            LD     05345H,A
+              ; SOURCE LINE # 45 
+003A 7B01       F                      LD     A,(001H,SP)   ; [ TIM4_Period ]
+003C C75346                            LD     05346H,A
+              ; SOURCE LINE # 46 
+003F 5B03                              ADD    SP,#003H
+0041 81                                RET    
+              ; TIM4_Prescaler (size=2).  parameter in AUTO
+              ; TIM4_Period  unsigned char  (size=1).  parameter in AUTO
+
+              ; FUNCTION ?TIM4_TimeBaseInit (END)
+
+              ; FUNCTION ?TIM4_Cmd (BEGIN)
+              ; Register-parameter NewState (XW) is relocated (auto)
+              ; SOURCE LINE # 56 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 59 
+0001 5D                                TNZW   X
+0002 270F                              JREQ   ?NXT_0004
+0004 5A                                DECW   X
+0005 270C                              JREQ   ?NXT_0004
+0007 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+000A         ?DATASTART_0003:
+000A 3B                             M  DB     03BH
+000B         ?DATAEND_0003:
+000B AE0000     F                      LDW    X,#HIGH(?STR?STM8S_TIM4?BASE)
+000E CD0000     F                      CALL   ?assert_failed
+0011 5B04                              ADD    SP,#004H
+0013         ?NXT_0004:
+              ; SOURCE LINE # 62 
+0013 1E01       F                      LDW    X,(001H,SP)   ; [ NewState ]
+0015 2706                              JREQ   ?ELSE_0005
+              ; SOURCE LINE # 64 
+0017 72105340                          BSET   05340H,#000H
+001B 2004                              JRA    ?EPILOG_0002
+001D         ?ELSE_0005:
+              ; SOURCE LINE # 68 
+001D 72115340                          BRES   05340H,#000H
+0021         ?EPILOG_0002:
+              ; SOURCE LINE # 70 
+0021 85                                POPW   X
+0022 81                                RET    
+              ; NewState     (size=2).  parameter in AUTO
+
+              ; FUNCTION ?TIM4_Cmd (END)
+
+              ; FUNCTION ?TIM4_ITConfig (BEGIN)
+              ; Register-parameter TIM4_IT (XW) is relocated (auto)
+              ; SOURCE LINE # 82 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 85 
+0001 5A                                DECW   X
+0002 270C                              JREQ   ?NXT_0009
+0004 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+0007         ?DATASTART_0006:
+0007 55                             M  DB     055H
+0008         ?DATAEND_0006:
+0008 AE0000     F                      LDW    X,#HIGH(?STR?STM8S_TIM4?BASE)
+000B CD0000     F                      CALL   ?assert_failed
+000E 5B04                              ADD    SP,#004H
+0010         ?NXT_0009:
+              ; SOURCE LINE # 86 
+0010 1E05       F                      LDW    X,(005H,SP)   ; [ NewState ]
+0012 270F                              JREQ   ?NXT_0010
+0014 5A                                DECW   X
+0015 270C                              JREQ   ?NXT_0010
+0017 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+001A         ?DATASTART_0007:
+001A 56                             M  DB     056H
+001B         ?DATAEND_0007:
+001B AE0000     F                      LDW    X,#HIGH(?STR?STM8S_TIM4?BASE)
+001E CD0000     F                      CALL   ?assert_failed
+0021 5B04                              ADD    SP,#004H
+0023         ?NXT_0010:
+              ; SOURCE LINE # 88 
+0023 1E05       F                      LDW    X,(005H,SP)   ; [ NewState ]
+0025 2707                              JREQ   ?ELSE_0011
+              ; SOURCE LINE # 91 
+0027 C65341                            LD     A,05341H
+002A 1A02       F                      OR     A,(002H,SP)   ; [ TIM4_IT + 01H ]
+002C 2006                              JRA    ?EPILOG_0003
+002E         ?ELSE_0011:
+              ; SOURCE LINE # 96 
+002E 7B02       F                      LD     A,(002H,SP)   ; [ TIM4_IT + 01H ]
+0030 43                                CPL    A
+0031 C45341                            AND    A,05341H
+0034         ?EPILOG_0003:
+0034 C75341                            LD     05341H,A
+              ; SOURCE LINE # 98 
+0037 85                                POPW   X
+0038 81                                RET    
+              ; TIM4_IT      (size=2).  parameter in AUTO
+              ; NewState     (size=2).  parameter in AUTO
+
+              ; FUNCTION ?TIM4_ITConfig (END)
+
+              ; FUNCTION ?TIM4_UpdateDisableConfig (BEGIN)
+              ; Register-parameter NewState (XW) is relocated (auto)
+              ; SOURCE LINE # 106 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 109 
+0001 5D                                TNZW   X
+0002 270F                              JREQ   ?NXT_0014
+0004 5A                                DECW   X
+0005 270C                              JREQ   ?NXT_0014
+0007 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+000A         ?DATASTART_0009:
+000A 6D                             M  DB     06DH
+000B         ?DATAEND_0009:
+000B AE0000     F                      LDW    X,#HIGH(?STR?STM8S_TIM4?BASE)
+000E CD0000     F                      CALL   ?assert_failed
+0011 5B04                              ADD    SP,#004H
+0013         ?NXT_0014:
+              ; SOURCE LINE # 112 
+0013 1E01       F                      LDW    X,(001H,SP)   ; [ NewState ]
+0015 2706                              JREQ   ?ELSE_0015
+              ; SOURCE LINE # 114 
+0017 72125340                          BSET   05340H,#001H
+001B 2004                              JRA    ?EPILOG_0004
+001D         ?ELSE_0015:
+              ; SOURCE LINE # 118 
+001D 72135340                          BRES   05340H,#001H
+0021         ?EPILOG_0004:
+              ; SOURCE LINE # 120 
+0021 85                                POPW   X
+0022 81                                RET    
+              ; NewState     (size=2).  parameter in AUTO
+
+              ; FUNCTION ?TIM4_UpdateDisableConfig (END)
+
+              ; FUNCTION ?TIM4_UpdateRequestConfig (BEGIN)
+              ; Register-parameter TIM4_UpdateSource (XW) is relocated (auto)
+              ; SOURCE LINE # 130 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 133 
+0001 5D                                TNZW   X
+0002 270F                              JREQ   ?NXT_0018
+0004 5A                                DECW   X
+0005 270C                              JREQ   ?NXT_0018
+0007 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+000A         ?DATASTART_0011:
+000A 85                             M  DB     085H
+000B         ?DATAEND_0011:
+000B AE0000     F                      LDW    X,#HIGH(?STR?STM8S_TIM4?BASE)
+000E CD0000     F                      CALL   ?assert_failed
+0011 5B04                              ADD    SP,#004H
+0013         ?NXT_0018:
+              ; SOURCE LINE # 136 
+0013 1E01       F                      LDW    X,(001H,SP)   ; [ TIM4_UpdateSource ]
+0015 2706                              JREQ   ?ELSE_0019
+              ; SOURCE LINE # 138 
+0017 72145340                          BSET   05340H,#002H
+001B 2004                              JRA    ?EPILOG_0005
+001D         ?ELSE_0019:
+              ; SOURCE LINE # 142 
+001D 72155340                          BRES   05340H,#002H
+0021         ?EPILOG_0005:
+              ; SOURCE LINE # 144 
+0021 85                                POPW   X
+0022 81                                RET    
+              ; TIM4_UpdateSource (size=2).  parameter in AUTO
+
+              ; FUNCTION ?TIM4_UpdateRequestConfig (END)
+
+              ; FUNCTION ?TIM4_SelectOnePulseMode (BEGIN)
+              ; Register-parameter TIM4_OPMode (XW) is relocated (auto)
+              ; SOURCE LINE # 154 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 157 
+0001 5A                                DECW   X
+0002 2710                              JREQ   ?NXT_0022
+0004 1E01       F                      LDW    X,(001H,SP)   ; [ TIM4_OPMode ]
+0006 270C                              JREQ   ?NXT_0022
+0008 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+000B         ?DATASTART_0013:
+000B 9D                             M  DB     09DH
+000C         ?DATAEND_0013:
+000C AE0000     F                      LDW    X,#HIGH(?STR?STM8S_TIM4?BASE)
+000F CD0000     F                      CALL   ?assert_failed
+0012 5B04                              ADD    SP,#004H
+0014         ?NXT_0022:
+              ; SOURCE LINE # 160 
+0014 1E01       F                      LDW    X,(001H,SP)   ; [ TIM4_OPMode ]
+0016 2706                              JREQ   ?ELSE_0023
+              ; SOURCE LINE # 162 
+0018 72165340                          BSET   05340H,#003H
+001C 2004                              JRA    ?EPILOG_0006
+001E         ?ELSE_0023:
+              ; SOURCE LINE # 166 
+001E 72175340                          BRES   05340H,#003H
+0022         ?EPILOG_0006:
+              ; SOURCE LINE # 169 
+0022 85                                POPW   X
+0023 81                                RET    
+              ; TIM4_OPMode  (size=2).  parameter in AUTO
+
+              ; FUNCTION ?TIM4_SelectOnePulseMode (END)
+
+              ; FUNCTION ?TIM4_PrescalerConfig (BEGIN)
+              ; Register-parameter Prescaler (XW) is relocated (auto)
+              ; SOURCE LINE # 191 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 194 
+0001 1E05       F                      LDW    X,(005H,SP)   ; [ TIM4_PSCReloadMode ]
+0003 270F                              JREQ   ?NXT_0026
+0005 5A                                DECW   X
+0006 270C                              JREQ   ?NXT_0026
+0008 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+000B         ?DATASTART_0016:
+000B C2                             M  DB     0C2H
+000C         ?DATAEND_0016:
+000C AE0000     F                      LDW    X,#HIGH(?STR?STM8S_TIM4?BASE)
+000F CD0000     F                      CALL   ?assert_failed
+0012 5B04                              ADD    SP,#004H
+0014         ?NXT_0026:
+              ; SOURCE LINE # 195 
+0014 1E01       F                      LDW    X,(001H,SP)   ; [ Prescaler ]
+0016 272F                              JREQ   ?NXT_0027
+0018 5A                                DECW   X
+0019 272C                              JREQ   ?NXT_0027
+001B AE0002                            LDW    X,#00002H
+001E 1301       F                      CPW    X,(001H,SP)   ; [ Prescaler ]
+0020 2725                              JREQ   ?NXT_0027
+0022 5C                                INCW   X
+0023 1301       F                      CPW    X,(001H,SP)   ; [ Prescaler ]
+0025 2720                              JREQ   ?NXT_0027
+0027 5C                                INCW   X
+0028 1301       F                      CPW    X,(001H,SP)   ; [ Prescaler ]
+002A 271B                              JREQ   ?NXT_0027
+002C 5C                                INCW   X
+002D 1301       F                      CPW    X,(001H,SP)   ; [ Prescaler ]
+002F 2716                              JREQ   ?NXT_0027
+0031 5C                                INCW   X
+0032 1301       F                      CPW    X,(001H,SP)   ; [ Prescaler ]
+0034 2711                              JREQ   ?NXT_0027
+0036 5C                                INCW   X
+0037 1301       F                      CPW    X,(001H,SP)   ; [ Prescaler ]
+0039 270C                              JREQ   ?NXT_0027
+003B CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+003E         ?DATASTART_0017:
+003E C3                             M  DB     0C3H
+003F         ?DATAEND_0017:
+003F AE0000     F                      LDW    X,#HIGH(?STR?STM8S_TIM4?BASE)
+0042 CD0000     F                      CALL   ?assert_failed
+0045 5B04                              ADD    SP,#004H
+0047         ?NXT_0027:
+              ; SOURCE LINE # 198 
+0047 7B02       F                      LD     A,(002H,SP)   ; [ Prescaler + 01H ]
+0049 C75345                            LD     05345H,A
+              ; SOURCE LINE # 201 
+004C 7B06       F                      LD     A,(006H,SP)   ; [ TIM4_PSCReloadMode + 01H ]
+004E C75343                            LD     05343H,A
+              ; SOURCE LINE # 202 
+0051 85                                POPW   X
+0052 81                                RET    
+              ; Prescaler    (size=2).  parameter in AUTO
+              ; TIM4_PSCReloadMode (size=2).  parameter in AUTO
+
+              ; FUNCTION ?TIM4_PrescalerConfig (END)
+
+              ; FUNCTION ?TIM4_ARRPreloadConfig (BEGIN)
+              ; Register-parameter NewState (XW) is relocated (auto)
+              ; SOURCE LINE # 210 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 213 
+0001 5D                                TNZW   X
+0002 270F                              JREQ   ?NXT_0030
+0004 5A                                DECW   X
+0005 270C                              JREQ   ?NXT_0030
+0007 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+000A         ?DATASTART_0019:
+000A D5                             M  DB     0D5H
+000B         ?DATAEND_0019:
+000B AE0000     F                      LDW    X,#HIGH(?STR?STM8S_TIM4?BASE)
+000E CD0000     F                      CALL   ?assert_failed
+0011 5B04                              ADD    SP,#004H
+0013         ?NXT_0030:
+              ; SOURCE LINE # 216 
+0013 1E01       F                      LDW    X,(001H,SP)   ; [ NewState ]
+0015 2706                              JREQ   ?ELSE_0031
+              ; SOURCE LINE # 218 
+0017 721E5340                          BSET   05340H,#007H
+001B 2004                              JRA    ?EPILOG_0008
+001D         ?ELSE_0031:
+              ; SOURCE LINE # 222 
+001D 721F5340                          BRES   05340H,#007H
+0021         ?EPILOG_0008:
+              ; SOURCE LINE # 224 
+0021 85                                POPW   X
+0022 81                                RET    
+              ; NewState     (size=2).  parameter in AUTO
+
+              ; FUNCTION ?TIM4_ARRPreloadConfig (END)
+
+              ; FUNCTION ?TIM4_GenerateEvent (BEGIN)
+              ; Register-parameter TIM4_EventSource (XW) is relocated (auto)
+              ; SOURCE LINE # 233 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 236 
+0001 5A                                DECW   X
+0002 270C                              JREQ   ?NXT_0033
+0004 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+0007         ?DATASTART_0021:
+0007 EC                             M  DB     0ECH
+0008         ?DATAEND_0021:
+0008 AE0000     F                      LDW    X,#HIGH(?STR?STM8S_TIM4?BASE)
+000B CD0000     F                      CALL   ?assert_failed
+000E 5B04                              ADD    SP,#004H
+0010         ?NXT_0033:
+              ; SOURCE LINE # 239 
+0010 7B02       F                      LD     A,(002H,SP)   ; [ TIM4_EventSource + 01H ]
+0012 C75343                            LD     05343H,A
+              ; SOURCE LINE # 240 
+0015 85                                POPW   X
+0016 81                                RET    
+              ; TIM4_EventSource (size=2).  parameter in AUTO
+
+              ; FUNCTION ?TIM4_GenerateEvent (END)
+
+              ; FUNCTION ?TIM4_SetCounter (BEGIN)
+              ; Register-parameter Counter (A) is relocated (auto)
+              ; SOURCE LINE # 252 
+0000 C75344                            LD     05344H,A
+              ; SOURCE LINE # 253 
+0003 81                                RET    
+              ; Counter      unsigned char  (size=1).  parameter in AUTO
+
+              ; FUNCTION ?TIM4_SetCounter (END)
+
+              ; FUNCTION ?TIM4_SetAutoreload (BEGIN)
+              ; Register-parameter Autoreload (A) is relocated (auto)
+              ; SOURCE LINE # 265 
+0000 C75346                            LD     05346H,A
+              ; SOURCE LINE # 266 
+0003 81                                RET    
+              ; Autoreload   unsigned char  (size=1).  parameter in AUTO
+
+              ; FUNCTION ?TIM4_SetAutoreload (END)
+
+              ; FUNCTION ?TIM4_GetCounter (BEGIN)
+              ; SOURCE LINE # 276 
+0000 C65344                            LD     A,05344H
+              ; SOURCE LINE # 277 
+0003 81                                RET    
+
+              ; FUNCTION ?TIM4_GetCounter (END)
+
+              ; FUNCTION ?TIM4_GetPrescaler (BEGIN)
+              ; SOURCE LINE # 287 
+0000 C65345                            LD     A,05345H
+0003 5F                                CLRW   X
+0004 97                                LD     XL,A
+              ; SOURCE LINE # 288 
+0005 81                                RET    
+
+              ; FUNCTION ?TIM4_GetPrescaler (END)
+
+              ; FUNCTION ?TIM4_GetFlagStatus (BEGIN)
+              ; Register-parameter TIM4_FLAG (XW) is relocated (auto)
+              ; SOURCE LINE # 297 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 299 
+0001 5F                                CLRW   X
+0002 89                                PUSHW  X
+              ; SOURCE LINE # 302 
+0003 5C                                INCW   X
+0004 1303       F                      CPW    X,(003H,SP)   ; [ TIM4_FLAG ]
+0006 270E                              JREQ   ?NXT_0037
+0008 AE012E                            LDW    X,#0012EH
+000B 89                                PUSHW  X
+000C 5F                                CLRW   X
+000D 89                                PUSHW  X
+000E AE0000     F                      LDW    X,#HIGH(?STR?STM8S_TIM4?BASE)
+0011 CD0000     F                      CALL   ?assert_failed
+0014 5B04                              ADD    SP,#004H
+0016         ?NXT_0037:
+              ; SOURCE LINE # 304 
+0016 7B04       F                      LD     A,(004H,SP)   ; [ TIM4_FLAG + 01H ]
+0018 5F                                CLRW   X
+0019 C55342                            BCP    A,05342H
+001C 2701                              JREQ   ?ELSE_0037
+              ; SOURCE LINE # 306 
+001E 5C                                INCW   X
+001F         ?ELSE_0037:
+              ; SOURCE LINE # 313 
+001F 5B04                              ADD    SP,#004H
+0021 81                                RET    
+              ; TIM4_FLAG    (size=2).  parameter in AUTO
+              ; bitstatus    (size=2). Automatic variable  in AUTO
+
+              ; FUNCTION ?TIM4_GetFlagStatus (END)
+
+              ; FUNCTION ?TIM4_ClearFlag (BEGIN)
+              ; Register-parameter TIM4_FLAG (XW) is relocated (auto)
+              ; SOURCE LINE # 322 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 325 
+0001 5A                                DECW   X
+0002 270E                              JREQ   ?NXT_0041
+0004 AE0145                            LDW    X,#00145H
+0007 89                                PUSHW  X
+0008 5F                                CLRW   X
+0009 89                                PUSHW  X
+000A AE0000     F                      LDW    X,#HIGH(?STR?STM8S_TIM4?BASE)
+000D CD0000     F                      CALL   ?assert_failed
+0010 5B04                              ADD    SP,#004H
+0012         ?NXT_0041:
+              ; SOURCE LINE # 328 
+0012 7B02       F                      LD     A,(002H,SP)   ; [ TIM4_FLAG + 01H ]
+0014 43                                CPL    A
+0015 C75342                            LD     05342H,A
+              ; SOURCE LINE # 330 
+0018 85                                POPW   X
+0019 81                                RET    
+              ; TIM4_FLAG    (size=2).  parameter in AUTO
+
+              ; FUNCTION ?TIM4_ClearFlag (END)
+
+              ; FUNCTION ?TIM4_GetITStatus (BEGIN)
+              ; Register-parameter TIM4_IT (XW) is relocated (auto)
+              ; SOURCE LINE # 339 
+0000 89                                PUSHW  X
+0001 5204                              SUB    SP,#004H
+              ; SOURCE LINE # 346 
+0003 5F                                CLRW   X
+0004 5C                                INCW   X
+0005 1305       F                      CPW    X,(005H,SP)   ; [ TIM4_IT ]
+0007 270E                              JREQ   ?NXT_0044
+0009 AE015A                            LDW    X,#0015AH
+000C 89                                PUSHW  X
+000D 5F                                CLRW   X
+000E 89                                PUSHW  X
+000F AE0000     F                      LDW    X,#HIGH(?STR?STM8S_TIM4?BASE)
+0012 CD0000     F                      CALL   ?assert_failed
+0015 5B04                              ADD    SP,#004H
+0017         ?NXT_0044:
+              ; SOURCE LINE # 348 
+0017 7B06       F                      LD     A,(006H,SP)   ; [ TIM4_IT + 01H ]
+0019 C45342                            AND    A,05342H
+001C 6B03       F                      LD     (003H,SP),A   ; [ itstatus ]
+              ; SOURCE LINE # 350 
+001E 7B06       F                      LD     A,(006H,SP)   ; [ TIM4_IT + 01H ]
+0020 C45341                            AND    A,05341H
+0023 6B04       F                      LD     (004H,SP),A   ; [ itenable ]
+              ; SOURCE LINE # 352 
+0025 4F                                CLR    A
+0026 1103       F                      CP     A,(003H,SP)   ; [ itstatus ]
+0028 2708                              JREQ   ?ELSE_0043
+002A 1104       F                      CP     A,(004H,SP)   ; [ itenable ]
+002C 2704                              JREQ   ?ELSE_0043
+              ; SOURCE LINE # 354 
+002E 5F                                CLRW   X
+002F 5C                                INCW   X
+0030 2001                              JRA    ?NXT_0045
+0032         ?ELSE_0043:
+              ; SOURCE LINE # 358 
+0032 5F                                CLRW   X
+0033         ?NXT_0045:
+              ; SOURCE LINE # 361 
+0033 5B06                              ADD    SP,#006H
+0035 81                                RET    
+              ; TIM4_IT      (size=2).  parameter in AUTO
+              ; bitstatus    (size=2). Automatic variable  in AUTO
+              ; itstatus     unsigned char  (size=1). Automatic variable  in AUTO
+              ; itenable     unsigned char  (size=1). Automatic variable  in AUTO
+
+              ; FUNCTION ?TIM4_GetITStatus (END)
+
+              ; FUNCTION ?TIM4_ClearITPendingBit (BEGIN)
+              ; Register-parameter TIM4_IT (XW) is relocated (auto)
+              ; SOURCE LINE # 370 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 373 
+0001 5A                                DECW   X
+0002 270E                              JREQ   ?NXT_0047
+0004 AE0175                            LDW    X,#00175H
+0007 89                                PUSHW  X
+0008 5F                                CLRW   X
+0009 89                                PUSHW  X
+000A AE0000     F                      LDW    X,#HIGH(?STR?STM8S_TIM4?BASE)
+000D CD0000     F                      CALL   ?assert_failed
+0010 5B04                              ADD    SP,#004H
+0012         ?NXT_0047:
+              ; SOURCE LINE # 376 
+0012 7B02       F                      LD     A,(002H,SP)   ; [ TIM4_IT + 01H ]
+0014 43                                CPL    A
+0015 C75342                            LD     05342H,A
+              ; SOURCE LINE # 377 
+0018 85                                POPW   X
+0019 81                                RET    
+              ; TIM4_IT      (size=2).  parameter in AUTO
+
+              ; FUNCTION ?TIM4_ClearITPendingBit (END)
+
+RCSTM8 COMPILER V2.42.12.083
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    588    ----
+   CONSTANT SIZE    =     71    ----
+   DATA SIZE        =   ----    ----
+   PAGE0 SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+RCSTM8 COMPILATION COMPLETE.  0 WARNING,  0 ERROR

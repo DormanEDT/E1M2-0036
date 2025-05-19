@@ -1,0 +1,1516 @@
+RCSTM8 COMPILER V2.42.12.083,  STM8S_UART1        05/19/25  15:34:37
+
+QCW(0x00963FA0)
+
+RCSTM8 COMPILER V2.42.12.083, COMPILATION OF MODULE STM8S_UART1
+OBJECT MODULE PLACED IN C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\bin\stm8s_uart1.obj
+COMPILER INVOKED BY: QUIET GENERATEDEPFILE CODE DB OJ(C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\bin\stm8s_uart1.obj) PR(C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\lst\stm8s_uart1.lst) PIN(C:\Raisonance\Ride\Inc;C:\Raisonance\Ride\Inc\ST7;C:\Raisonance\Ride\Inc\STM8;C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\inc) STM8(SMALL) O(3,SIZE) NOINITSTATICVAR SMALLOBJECT ET(INT) 
+
+stmt level    source
+   1          /**
+   2           ********************************************************************************
+   3           * @file    stm8s_uart1.c
+   4           * @author  MCD Application Team
+   5           * @version V2.0.0
+   6           * @date    25-February-2011
+   7           * @brief   This file contains all the functions for the UART1 peripheral.
+   8           ******************************************************************************
+   9           * @attention
+  10           *
+  11           * THE PRESENT FIRMWARE WHICH IS FOR GUIDANCE ONLY AIMS AT PROVIDING CUSTOMERS
+  12           * WITH CODING INFORMATION REGARDING THEIR PRODUCTS IN ORDER FOR THEM TO SAVE
+  13           * TIME. AS A RESULT, STMICROELECTRONICS SHALL NOT BE HELD LIABLE FOR ANY
+  14           * DIRECT, INDIRECT OR CONSEQUENTIAL DAMAGES WITH RESPECT TO ANY CLAIMS ARISING
+  15           * FROM THE CONTENT OF SUCH FIRMWARE AND/OR THE USE MADE BY CUSTOMERS OF THE
+  16           * CODING INFORMATION CONTAINED HEREIN IN CONNECTION WITH THEIR PRODUCTS.
+  17           *
+  18           * <h2><center>&copy; COPYRIGHT 2011 STMicroelectronics</center></h2>
+  19           ******************************************************************************
+  20           */
+  21          
+  22          /* Includes ------------------------------------------------------------------*/
+  23          #include "stm8s_uart1.h"
+  24          
+  25          /** @addtogroup STM8S_StdPeriph_Driver
+  26           * @{
+  27           */
+  28          /* Private typedef -----------------------------------------------------------*/
+  29          /* Private define ------------------------------------------------------------*/
+  30          /* Private macro -------------------------------------------------------------*/
+  31          /* Private variables ---------------------------------------------------------*/
+  32          /* Private function prototypes -----------------------------------------------*/
+  33          /* Private functions ---------------------------------------------------------*/
+  34          /* Public functions ----------------------------------------------------------*/
+  35          
+  36          /** @}
+  37           * @addtogroup UART1_Public_Functions
+  38           * @{
+  39           */
+  40          
+  41          /**
+  42           * @brief  Deinitializes the UART peripheral.
+  43           * @param  None
+  44           * @retval None
+  45           */
+  46          void UART1_DeInit(void)
+  47          {
+  48   1          /* Clear the Idle Line Detected bit in the status rerister by a read
+  49   1             to the UART1_SR register followed by a Read to the UART1_DR register */
+  50   1          (void)UART1->SR;
+  51   1          (void)UART1->DR;
+  52   1      
+  53   1          UART1->BRR2 = UART1_BRR2_RESET_VALUE; /* Set UART1_BRR2 to reset value 0x00 */
+  54   1          UART1->BRR1 = UART1_BRR1_RESET_VALUE; /* Set UART1_BRR1 to reset value 0x00 */
+  55   1      
+  56   1          UART1->CR1 = UART1_CR1_RESET_VALUE; /* Set UART1_CR1 to reset value 0x00 */
+  57   1          UART1->CR2 = UART1_CR2_RESET_VALUE; /* Set UART1_CR2 to reset value 0x00 */
+  58   1          UART1->CR3 = UART1_CR3_RESET_VALUE; /* Set UART1_CR3 to reset value 0x00 */
+  59   1          UART1->CR4 = UART1_CR4_RESET_VALUE; /* Set UART1_CR4 to reset value 0x00 */
+  60   1          UART1->CR5 = UART1_CR5_RESET_VALUE; /* Set UART1_CR5 to reset value 0x00 */
+  61   1      
+  62   1          UART1->GTR = UART1_GTR_RESET_VALUE;
+  63   1          UART1->PSCR = UART1_PSCR_RESET_VALUE;
+  64   1      }
+  65          
+  66          /**
+  67           * @brief  Initializes the UART1 according to the specified parameters.
+  68           * @note   Configure in Push Pull or Open Drain mode the Tx pin by setting the
+  69           *         correct I/O Port register according the product package and line
+  70           *         configuration
+  71           * @param  BaudRate: The baudrate.
+  72           * @param  WordLength : This parameter can be any of the
+  73           *         @ref UART1_WordLength_TypeDef enumeration.
+  74           * @param  StopBits: This parameter can be any of the
+  75           *         @ref UART1_StopBits_TypeDef enumeration.
+  76           * @param  Parity: This parameter can be any of the
+  77           *         @ref UART1_Parity_TypeDef enumeration.
+  78           * @param  SyncMode: This parameter can be any of the
+  79           *         @ref UART1_SyncMode_TypeDef values.
+  80           * @param  Mode: This parameter can be any of the @ref UART1_Mode_TypeDef values
+  81           * @retval None
+  82           */
+  83          void UART1_Init(uint32_t BaudRate, UART1_WordLength_TypeDef WordLength,
+  84                          UART1_StopBits_TypeDef StopBits, UART1_Parity_TypeDef Parity,
+  85                          UART1_SyncMode_TypeDef SyncMode, UART1_Mode_TypeDef Mode)
+  86          {
+  87   1          uint32_t BaudRate_Mantissa = 0, BaudRate_Mantissa100 = 0;
+  88   1      
+  89   1          /* Clear the word length bit */
+  90   1          UART1->CR1 &= (uint8_t)(~UART1_CR1_M);
+  91   1      
+  92   1          /* Set the word length bit according to UART1_WordLength value */
+  93   1          UART1->CR1 |= (uint8_t)WordLength;
+  94   1      
+  95   1          /* Clear the STOP bits */
+  96   1          UART1->CR3 &= (uint8_t)(~UART1_CR3_STOP);
+  97   1          /* Set the STOP bits number according to UART1_StopBits value  */
+  98   1          UART1->CR3 |= (uint8_t)StopBits;
+  99   1      
+ 100   1          /* Clear the Parity Control bit */
+ 101   1          UART1->CR1 &= (uint8_t)(~(UART1_CR1_PCEN | UART1_CR1_PS));
+ 102   1          /* Set the Parity Control bit to UART1_Parity value */
+ 103   1          UART1->CR1 |= (uint8_t)Parity;
+ 104   1      
+ 105   1          /* Clear the LSB mantissa of UART1DIV  */
+ 106   1          UART1->BRR1 &= (uint8_t)(~UART1_BRR1_DIVM);
+ 107   1          /* Clear the MSB mantissa of UART1DIV  */
+ 108   1          UART1->BRR2 &= (uint8_t)(~UART1_BRR2_DIVM);
+ 109   1          /* Clear the Fraction bits of UART1DIV */
+ 110   1          UART1->BRR2 &= (uint8_t)(~UART1_BRR2_DIVF);
+ 111   1      
+ 112   1          /* Set the UART1 BaudRates in BRR1 and BRR2 registers according to UART1_BaudRate value */
+ 113   1          BaudRate_Mantissa = ((uint32_t)CLK_GetClockFreq() / (BaudRate << 4));
+ 114   1          BaudRate_Mantissa100 = (((uint32_t)CLK_GetClockFreq() * 100) / (BaudRate << 4));
+ 115   1          /* Set the fraction of UART1DIV  */
+ 116   1          UART1->BRR2 |= (uint8_t)((uint8_t)(((BaudRate_Mantissa100 - (BaudRate_Mantissa * 100)) << 4) / 100) & (uint8_t)0x0F);
+ 117   1          /* Set the MSB mantissa of UART1DIV  */
+ 118   1          UART1->BRR2 |= (uint8_t)((BaudRate_Mantissa >> 4) & (uint8_t)0xF0);
+ 119   1          /* Set the LSB mantissa of UART1DIV  */
+ 120   1          UART1->BRR1 |= (uint8_t)BaudRate_Mantissa;
+ 121   1      
+ 122   1          /* Disable the Transmitter and Receiver before seting the LBCL, CPOL and CPHA bits */
+ 123   1          UART1->CR2 &= (uint8_t) ~(UART1_CR2_TEN | UART1_CR2_REN);
+ 124   1          /* Clear the Clock Polarity, lock Phase, Last Bit Clock pulse */
+ 125   1          UART1->CR3 &= (uint8_t) ~(UART1_CR3_CPOL | UART1_CR3_CPHA | UART1_CR3_LBCL);
+ 126   1          /* Set the Clock Polarity, lock Phase, Last Bit Clock pulse */
+ 127   1          UART1->CR3 |= (uint8_t)((uint8_t)SyncMode & (uint8_t)(UART1_CR3_CPOL |
+ 128   1                                                                UART1_CR3_CPHA | UART1_CR3_LBCL));
+ 129   1      
+ 130   1          if ((uint8_t)(Mode & UART1_MODE_TX_ENABLE))
+ 131   1          {
+ 132   2              /* Set the Transmitter Enable bit */
+ 133   2              UART1->CR2 |= (uint8_t)UART1_CR2_TEN;
+ 134   2          }
+ 135   1          else
+ 136   1          {
+ 137   2              /* Clear the Transmitter Disable bit */
+ 138   2              UART1->CR2 &= (uint8_t)(~UART1_CR2_TEN);
+ 139   2          }
+ 140   1          if ((uint8_t)(Mode & UART1_MODE_RX_ENABLE))
+ 141   1          {
+ 142   2              /* Set the Receiver Enable bit */
+ 143   2              UART1->CR2 |= (uint8_t)UART1_CR2_REN;
+ 144   2          }
+ 145   1          else
+ 146   1          {
+ 147   2              /* Clear the Receiver Disable bit */
+ 148   2              UART1->CR2 &= (uint8_t)(~UART1_CR2_REN);
+ 149   2          }
+ 150   1          /* Set the Clock Enable bit, lock Polarity, lock Phase and Last Bit Clock
+ 151   1                 pulse bits according to UART1_Mode value */
+ 152   1          if ((uint8_t)(SyncMode & UART1_SYNCMODE_CLOCK_DISABLE))
+ 153   1          {
+ 154   2              /* Clear the Clock Enable bit */
+ 155   2              UART1->CR3 &= (uint8_t)(~UART1_CR3_CKEN);
+ 156   2          }
+ 157   1          else
+ 158   1          {
+ 159   2              UART1->CR3 |= (uint8_t)((uint8_t)SyncMode & UART1_CR3_CKEN);
+ 160   2          }
+ 161   1      }
+ 162          
+ 163          /**
+ 164           * @brief  Enable the UART1 peripheral.
+ 165           * @param  NewState : The new state of the UART Communication.
+ 166           *         This parameter can be any of the @ref FunctionalState enumeration.
+ 167           * @retval None
+ 168           */
+ 169          void UART1_Cmd(FunctionalState NewState)
+ 170          {
+ 171   1          if (NewState != DISABLE)
+ 172   1          {
+ 173   2              /* UART1 Enable */
+ 174   2              UART1->CR1 &= (uint8_t)(~UART1_CR1_UARTD);
+ 175   2          }
+ 176   1          else
+ 177   1          {
+ 178   2              /* UART Disable */
+ 179   2              UART1->CR1 |= UART1_CR1_UARTD;
+ 180   2          }
+ 181   1      }
+ 182          
+ 183          /**
+ 184           * @brief  Enables or disables the specified USART interrupts.
+ 185           * @param  UART1_IT specifies the USART interrupt sources to be enabled or disabled.
+ 186           *         This parameter can be one of the following values:
+ 187           *         - UART1_IT_TXE:  Tansmit Data Register empty interrupt
+ 188           *         - UART1_IT_TC:   Transmission complete interrupt
+ 189           *         - UART1_IT_RXNE: Receive Data register not empty interrupt
+ 190           *         - UART1_IT_OR: Overrun error interrupt
+ 191           *         - UART1_IT_IDLE: Idle line detection interrupt
+ 192           *         - USRT1_IT_ERR:  Error interrupt
+ 193           * @param  NewState new state of the specified USART interrupts.
+ 194           *         This parameter can be: ENABLE or DISABLE.
+ 195           * @retval None
+ 196           */
+ 197          void UART1_ITConfig(UART1_IT_TypeDef UART1_IT, FunctionalState NewState)
+ 198          {
+ 199   1          uint8_t uartreg = 0, itpos = 0x00;
+ 200   1      
+ 201   1          /* Get the UART1 register index */
+ 202   1          uartreg = (uint8_t)((uint16_t)UART1_IT >> 0x08);
+ 203   1          /* Get the UART1 IT index */
+ 204   1          itpos = (uint8_t)((uint8_t)1 << (uint8_t)((uint8_t)UART1_IT & (uint8_t)0x0F));
+ 205   1      
+ 206   1          if (NewState != DISABLE)
+ 207   1          {
+ 208   2              /**< Enable the Interrupt bits according to UART1_IT mask */
+ 209   2              if (uartreg == 0x01)
+ 210   2              {
+ 211   3                  UART1->CR1 |= itpos;
+ 212   3              }
+ 213   2              else if (uartreg == 0x02)
+ 214   2              {
+ 215   3                  UART1->CR2 |= itpos;
+ 216   3              }
+ 217   2              else
+ 218   2              {
+ 219   3                  UART1->CR4 |= itpos;
+ 220   3              }
+ 221   2          }
+ 222   1          else
+ 223   1          {
+ 224   2              /**< Disable the interrupt bits according to UART1_IT mask */
+ 225   2              if (uartreg == 0x01)
+ 226   2              {
+ 227   3                  UART1->CR1 &= (uint8_t)(~itpos);
+ 228   3              }
+ 229   2              else if (uartreg == 0x02)
+ 230   2              {
+ 231   3                  UART1->CR2 &= (uint8_t)(~itpos);
+ 232   3              }
+ 233   2              else
+ 234   2              {
+ 235   3                  UART1->CR4 &= (uint8_t)(~itpos);
+ 236   3              }
+ 237   2          }
+ 238   1      }
+ 239          /**
+ 240           * @brief  Enables or disables the UART�s Half Duplex communication.
+ 241           * @param  NewState new state of the UART Communication.
+ 242           *         This parameter can be: ENABLE or DISABLE.
+ 243           * @retval None
+ 244           */
+ 245          void UART1_HalfDuplexCmd(FunctionalState NewState)
+ 246          {
+ 247   1          if (NewState != DISABLE)
+ 248   1          {
+ 249   2              UART1->CR5 |= UART1_CR5_HDSEL; /**< UART1 Half Duplex Enable  */
+ 250   2          }
+ 251   1          else
+ 252   1          {
+ 253   2              UART1->CR5 &= (uint8_t)~UART1_CR5_HDSEL; /**< UART1 Half Duplex Disable */
+ 254   2          }
+ 255   1      }
+ 256          
+ 257          /**
+ 258           * @brief  Configures the UART�s IrDA interface.
+ 259           * @param  UART1_IrDAMode specifies the IrDA mode.
+ 260           *         This parameter can be any of the @ref UART1_IrDAMode_TypeDef values.
+ 261           * @retval None
+ 262           */
+ 263          void UART1_IrDAConfig(UART1_IrDAMode_TypeDef UART1_IrDAMode)
+ 264          {
+ 265   1          if (UART1_IrDAMode != UART1_IRDAMODE_NORMAL)
+ 266   1          {
+ 267   2              UART1->CR5 |= UART1_CR5_IRLP;
+ 268   2          }
+ 269   1          else
+ 270   1          {
+ 271   2              UART1->CR5 &= ((uint8_t)~UART1_CR5_IRLP);
+ 272   2          }
+ 273   1      }
+ 274          
+ 275          /**
+ 276           * @brief  Enables or disables the UART�s IrDA interface.
+ 277           * @param  NewState new state of the IrDA mode.
+ 278           *         This parameter can be: ENABLE or DISABLE.
+ 279           * @retval None
+ 280           */
+ 281          void UART1_IrDACmd(FunctionalState NewState)
+ 282          {
+ 283   1          if (NewState != DISABLE)
+ 284   1          {
+ 285   2              /* Enable the IrDA mode by setting the IREN bit in the CR3 register */
+ 286   2              UART1->CR5 |= UART1_CR5_IREN;
+ 287   2          }
+ 288   1          else
+ 289   1          {
+ 290   2              /* Disable the IrDA mode by clearing the IREN bit in the CR3 register */
+ 291   2              UART1->CR5 &= ((uint8_t)~UART1_CR5_IREN);
+ 292   2          }
+ 293   1      }
+ 294          
+ 295          /**
+ 296           * @brief  Sets the UART1 LIN Break detection length.
+ 297           * @param  UART1_LINBreakDetectionLength specifies the LIN break detection length.
+ 298           *         This parameter can be any of the
+ 299           *         @ref UART1_LINBreakDetectionLength_TypeDef values.
+ 300           * @retval None
+ 301           */
+ 302          void UART1_LINBreakDetectionConfig(UART1_LINBreakDetectionLength_TypeDef UART1_LINBreakDetectionLength)
+ 303          {
+ 304   1          if (UART1_LINBreakDetectionLength != UART1_LINBREAKDETECTIONLENGTH_10BITS)
+ 305   1          {
+ 306   2              UART1->CR4 |= UART1_CR4_LBDL;
+ 307   2          }
+ 308   1          else
+ 309   1          {
+ 310   2              UART1->CR4 &= ((uint8_t)~UART1_CR4_LBDL);
+ 311   2          }
+ 312   1      }
+ 313          
+ 314          /**
+ 315           * @brief  Enables or disables the UART1�s LIN mode.
+ 316           * @param  NewState is new state of the UART1 LIN mode.
+ 317           *         This parameter can be: ENABLE or DISABLE.
+ 318           * @retval None
+ 319           */
+ 320          void UART1_LINCmd(FunctionalState NewState)
+ 321          {
+ 322   1          if (NewState != DISABLE)
+ 323   1          {
+ 324   2              /* Enable the LIN mode by setting the LINE bit in the CR2 register */
+ 325   2              UART1->CR3 |= UART1_CR3_LINEN;
+ 326   2          }
+ 327   1          else
+ 328   1          {
+ 329   2              /* Disable the LIN mode by clearing the LINE bit in the CR2 register */
+ 330   2              UART1->CR3 &= ((uint8_t)~UART1_CR3_LINEN);
+ 331   2          }
+ 332   1      }
+ 333          /**
+ 334           * @brief  Enables or disables the UART1 Smart Card mode.
+ 335           * @param  NewState: new state of the Smart Card mode.
+ 336           * This parameter can be: ENABLE or DISABLE.
+ 337           * @retval None
+ 338           */
+ 339          void UART1_SmartCardCmd(FunctionalState NewState)
+ 340          {
+ 341   1          if (NewState != DISABLE)
+ 342   1          {
+ 343   2              /* Enable the SC mode by setting the SCEN bit in the CR5 register */
+ 344   2              UART1->CR5 |= UART1_CR5_SCEN;
+ 345   2          }
+ 346   1          else
+ 347   1          {
+ 348   2              /* Disable the SC mode by clearing the SCEN bit in the CR5 register */
+ 349   2              UART1->CR5 &= ((uint8_t)(~UART1_CR5_SCEN));
+ 350   2          }
+ 351   1      }
+ 352          
+ 353          /**
+ 354           * @brief  Enables or disables NACK transmission.
+ 355           * @note   This function is valid only for UART1 because is related to SmartCard mode.
+ 356           * @param  NewState: new state of the Smart Card mode.
+ 357           *         This parameter can be: ENABLE or DISABLE.
+ 358           * @retval None
+ 359           */
+ 360          void UART1_SmartCardNACKCmd(FunctionalState NewState)
+ 361          {
+ 362   1          if (NewState != DISABLE)
+ 363   1          {
+ 364   2              /* Enable the NACK transmission by setting the NACK bit in the CR5 register */
+ 365   2              UART1->CR5 |= UART1_CR5_NACK;
+ 366   2          }
+ 367   1          else
+ 368   1          {
+ 369   2              /* Disable the NACK transmission by clearing the NACK bit in the CR5 register */
+ 370   2              UART1->CR5 &= ((uint8_t) ~(UART1_CR5_NACK));
+ 371   2          }
+ 372   1      }
+ 373          
+ 374          /**
+ 375           * @brief  Selects the UART1 WakeUp method.
+ 376           * @param  UART1_WakeUp: specifies the UART1 wakeup method.
+ 377           *         This parameter can be any of the @ref UART1_WakeUp_TypeDef values.
+ 378           * @retval None
+ 379           */
+ 380          void UART1_WakeUpConfig(UART1_WakeUp_TypeDef UART1_WakeUp)
+ 381          {
+ 382   1          UART1->CR1 &= ((uint8_t)~UART1_CR1_WAKE);
+ 383   1          UART1->CR1 |= (uint8_t)UART1_WakeUp;
+ 384   1      }
+ 385          /**
+ 386           * @brief  Determines if the UART1 is in mute mode or not.
+ 387           * @param  NewState: new state of the UART1 mode.
+ 388           *         This parameter can be: ENABLE or DISABLE.
+ 389           * @retval None
+ 390           */
+ 391          void UART1_ReceiverWakeUpCmd(FunctionalState NewState)
+ 392          {
+ 393   1          if (NewState != DISABLE)
+ 394   1          {
+ 395   2              /* Enable the mute mode UART1 by setting the RWU bit in the CR2 register */
+ 396   2              UART1->CR2 |= UART1_CR2_RWU;
+ 397   2          }
+ 398   1          else
+ 399   1          {
+ 400   2              /* Disable the mute mode UART1 by clearing the RWU bit in the CR1 register */
+ 401   2              UART1->CR2 &= ((uint8_t)~UART1_CR2_RWU);
+ 402   2          }
+ 403   1      }
+ 404          
+ 405          /**
+ 406           * @brief  Returns the most recent received data by the UART1 peripheral.
+ 407           * @param  None
+ 408           * @retval The received data.
+ 409           */
+ 410          uint8_t UART1_ReceiveData8(void)
+ 411          {
+ 412   1          return ((uint8_t)UART1->DR);
+ 413   1      }
+ 414          
+ 415          /**
+ 416           * @brief  Returns the most recent received data by the UART1 peripheral.
+ 417           * @param  None
+ 418           * @retval The received data.
+ 419           */
+ 420          uint16_t UART1_ReceiveData9(void)
+ 421          {
+ 422   1          uint16_t temp = 0;
+ 423   1      
+ 424   1          temp = (uint16_t)(((uint16_t)((uint16_t)UART1->CR1 & (uint16_t)UART1_CR1_R8)) << 1);
+ 425   1          return (uint16_t)((((uint16_t)UART1->DR) | temp) & ((uint16_t)0x01FF));
+ 426   1      }
+ 427          
+ 428          /**
+ 429           * @brief  Transmits 8 bit data through the UART1 peripheral.
+ 430           * @param  Data: The data to transmit.
+ 431           * @retval None
+ 432           */
+ 433          void UART1_SendData8(uint8_t Data)
+ 434          {
+ 435   1          /* Transmit Data */
+ 436   1          UART1->DR = Data;
+ 437   1      }
+ 438          
+ 439          /**
+ 440           * @brief  Transmits 9 bit data through the UART peripheral.
+ 441           * @param  Data : The data to transmit.
+ 442           *         This parameter should be lower than 0x1FF.
+ 443           * @retval None
+ 444           */
+ 445          void UART1_SendData9(uint16_t Data)
+ 446          {
+ 447   1          /**< Clear the transmit data bit 8 [8]  */
+ 448   1          UART1->CR1 &= ((uint8_t)~UART1_CR1_T8);
+ 449   1          /**< Write the transmit data bit [8]  */
+ 450   1          UART1->CR1 |= (uint8_t)(((uint8_t)(Data >> 2)) & UART1_CR1_T8);
+ 451   1          /**< Write the transmit data bit [0:7] */
+ 452   1          UART1->DR = (uint8_t)(Data);
+ 453   1      }
+ 454          
+ 455          /**
+ 456           * @brief  Transmits break characters.
+ 457           * @param  None
+ 458           * @retval None
+ 459           */
+ 460          void UART1_SendBreak(void)
+ 461          {
+ 462   1          UART1->CR2 |= UART1_CR2_SBK;
+ 463   1      }
+ 464          
+ 465          /**
+ 466           * @brief  Sets the address of the UART1 node.
+ 467           * @param  UART1_Address: Indicates the address of the UART1 node.
+ 468           * @retval None
+ 469           */
+ 470          void UART1_SetAddress(uint8_t UART1_Address)
+ 471          {
+ 472   1          /* Clear the UART1 address */
+ 473   1          UART1->CR4 &= ((uint8_t)~UART1_CR4_ADD);
+ 474   1          /* Set the UART1 address node */
+ 475   1          UART1->CR4 |= UART1_Address;
+ 476   1      }
+ 477          
+ 478          /**
+ 479           * @brief  Sets the specified UART guard time.
+ 480           * @note   SmartCard Mode should be Enabled
+ 481           * @param  UART1_GuardTime: specifies the guard time.
+ 482           * @retval None
+ 483           */
+ 484          void UART1_SetGuardTime(uint8_t UART1_GuardTime)
+ 485          {
+ 486   1          /* Set the UART1 guard time */
+ 487   1          UART1->GTR = UART1_GuardTime;
+ 488   1      }
+ 489          
+ 490          /**
+ 491           * @brief  Sets the system clock prescaler.
+ 492           * @note   IrDA Low Power mode or smartcard mode should be enabled
+ 493           * @note   This function is related to SmartCard and IrDa mode.
+ 494           * @param  UART1_Prescaler: specifies the prescaler clock.
+ 495           *         This parameter can be one of the following values:
+ 496           *         @par IrDA Low Power Mode
+ 497           *         The clock source is divided by the value given in the register (8 bits)
+ 498           *         - 0000 0000 Reserved
+ 499           *         - 0000 0001 divides the clock source by 1
+ 500           *         - 0000 0010 divides the clock source by 2
+ 501           *         - ...........................................................
+ 502           *        @par Smart Card Mode
+ 503           *        The clock source is divided by the value given in the register
+ 504           *        (5 significant bits) multiplied by 2
+ 505           *         - 0 0000 Reserved
+ 506           *         - 0 0001 divides the clock source by 2
+ 507           *         - 0 0010 divides the clock source by 4
+ 508           *         - 0 0011 divides the clock source by 6
+ 509           *         - ...........................................................
+ 510           * @retval None
+ 511           */
+ 512          void UART1_SetPrescaler(uint8_t UART1_Prescaler)
+ 513          {
+ 514   1          /* Load the UART1 prescaler value*/
+ 515   1          UART1->PSCR = UART1_Prescaler;
+ 516   1      }
+ 517          
+ 518          /**
+ 519           * @brief  Checks whether the specified UART1 flag is set or not.
+ 520           * @param  UART1_FLAG specifies the flag to check.
+ 521           *         This parameter can be any of the @ref UART1_Flag_TypeDef enumeration.
+ 522           * @retval FlagStatus (SET or RESET)
+ 523           */
+ 524          FlagStatus UART1_GetFlagStatus(UART1_Flag_TypeDef UART1_FLAG)
+ 525          {
+ 526   1          FlagStatus status = RESET;
+ 527   1      
+ 528   1          /* Check the status of the specified UART1 flag*/
+ 529   1          if (UART1_FLAG == UART1_FLAG_LBDF)
+ 530   1          {
+ 531   2              if ((UART1->CR4 & (uint8_t)UART1_FLAG) != (uint8_t)0x00)
+ 532   2              {
+ 533   3                  /* UART1_FLAG is set*/
+ 534   3                  status = SET;
+ 535   3              }
+ 536   2              else
+ 537   2              {
+ 538   3                  /* UART1_FLAG is reset*/
+ 539   3                  status = RESET;
+ 540   3              }
+ 541   2          }
+ 542   1          else if (UART1_FLAG == UART1_FLAG_SBK)
+ 543   1          {
+ 544   2              if ((UART1->CR2 & (uint8_t)UART1_FLAG) != (uint8_t)0x00)
+ 545   2              {
+ 546   3                  /* UART1_FLAG is set*/
+ 547   3                  status = SET;
+ 548   3              }
+ 549   2              else
+ 550   2              {
+ 551   3                  /* UART1_FLAG is reset*/
+ 552   3                  status = RESET;
+ 553   3              }
+ 554   2          }
+ 555   1          else
+ 556   1          {
+ 557   2              if ((UART1->SR & (uint8_t)UART1_FLAG) != (uint8_t)0x00)
+ 558   2              {
+ 559   3                  /* UART1_FLAG is set*/
+ 560   3                  status = SET;
+ 561   3              }
+ 562   2              else
+ 563   2              {
+ 564   3                  /* UART1_FLAG is reset*/
+ 565   3                  status = RESET;
+ 566   3              }
+ 567   2          }
+ 568   1          /* Return the UART1_FLAG status*/
+ 569   1          return status;
+ 570   1      }
+ 571          
+ 572          /**
+ 573           * @brief  Clears the UART1 flags.
+ 574           * @param  UART1_FLAG specifies the flag to clear
+ 575           *         This parameter can be any combination of the following values:
+ 576           *         - UART1_FLAG_LBDF: LIN Break detection flag.
+ 577           *         - UART1_FLAG_RXNE: Receive data register not empty flag.
+ 578           * @note
+ 579           *         - PE (Parity error), FE (Framing error), NE (Noise error),
+ 580           *         OR (OverRun error) and IDLE (Idle line detected) flags are
+ 581           *         cleared by software sequence: a read operation to UART1_SR register
+ 582           *         (UART1_GetFlagStatus())followed by a read operation to UART1_DR
+ 583           *         register(UART1_ReceiveData8() or UART1_ReceiveData9()).
+ 584           *
+ 585           *         - RXNE flag can be also cleared by a read to the UART1_DR register
+ 586           *         (UART1_ReceiveData8()or UART1_ReceiveData9()).
+ 587           *
+ 588           *         - TC flag can be also cleared by software sequence: a read operation
+ 589           *         to UART1_SR register (UART1_GetFlagStatus()) followed by a write
+ 590           *         operation to UART1_DR register (UART1_SendData8() or UART1_SendData9()).
+ 591           *
+ 592           *         - TXE flag is cleared only by a write to the UART1_DR register
+ 593           *         (UART1_SendData8() or UART1_SendData9()).
+ 594           *
+ 595           *         - SBK flag is cleared during the stop bit of break.
+ 596           * @retval None
+ 597           */
+ 598          
+ 599          void UART1_ClearFlag(UART1_Flag_TypeDef UART1_FLAG)
+ 600          {
+ 601   1          /* Clear the Receive Register Not Empty flag */
+ 602   1          if (UART1_FLAG == UART1_FLAG_RXNE)
+ 603   1          {
+ 604   2              UART1->SR = (uint8_t) ~(UART1_SR_RXNE);
+ 605   2          }
+ 606   1          /* Clear the LIN Break Detection flag */
+ 607   1          else
+ 608   1          {
+ 609   2              UART1->CR4 &= (uint8_t) ~(UART1_CR4_LBDF);
+ 610   2          }
+ 611   1      }
+ 612          
+ 613          /**
+ 614           * @brief  Checks whether the specified UART1 interrupt has occurred or not.
+ 615           * @param  UART1_IT: Specifies the UART1 interrupt pending bit to check.
+ 616           *         This parameter can be one of the following values:
+ 617           *         - UART1_IT_LBDF:  LIN Break detection interrupt
+ 618           *         - UART1_IT_TXE:  Tansmit Data Register empty interrupt
+ 619           *         - UART1_IT_TC:   Transmission complete interrupt
+ 620           *         - UART1_IT_RXNE: Receive Data register not empty interrupt
+ 621           *         - UART1_IT_IDLE: Idle line detection interrupt
+ 622           *         - UART1_IT_OR:  OverRun Error interrupt
+ 623           *         - UART1_IT_PE:   Parity Error interrupt
+ 624           * @retval The new state of UART1_IT (SET or RESET).
+ 625           */
+ 626          ITStatus UART1_GetITStatus(UART1_IT_TypeDef UART1_IT)
+ 627          {
+ 628   1          ITStatus pendingbitstatus = RESET;
+ 629   1          uint8_t itpos = 0;
+ 630   1          uint8_t itmask1 = 0;
+ 631   1          uint8_t itmask2 = 0;
+ 632   1          uint8_t enablestatus = 0;
+ 633   1      
+ 634   1          /* Get the UART1 IT index */
+ 635   1          itpos = (uint8_t)((uint8_t)1 << (uint8_t)((uint8_t)UART1_IT & (uint8_t)0x0F));
+ 636   1          /* Get the UART1 IT index */
+ 637   1          itmask1 = (uint8_t)((uint8_t)UART1_IT >> (uint8_t)4);
+ 638   1          /* Set the IT mask*/
+ 639   1          itmask2 = (uint8_t)((uint8_t)1 << itmask1);
+ 640   1      
+ 641   1          /* Check the status of the specified UART1 pending bit*/
+ 642   1          if (UART1_IT == UART1_IT_PE)
+ 643   1          {
+ 644   2              /* Get the UART1_IT enable bit status*/
+ 645   2              enablestatus = (uint8_t)((uint8_t)UART1->CR1 & itmask2);
+ 646   2              /* Check the status of the specified UART1 interrupt*/
+ 647   2      
+ 648   2              if (((UART1->SR & itpos) != (uint8_t)0x00) && enablestatus)
+ 649   2              {
+ 650   3                  /* Interrupt occurred*/
+ 651   3                  pendingbitstatus = SET;
+ 652   3              }
+ 653   2              else
+ 654   2              {
+ 655   3                  /* Interrupt not occurred*/
+ 656   3                  pendingbitstatus = RESET;
+ 657   3              }
+ 658   2          }
+ 659   1      
+ 660   1          else if (UART1_IT == UART1_IT_LBDF)
+ 661   1          {
+ 662   2              /* Get the UART1_IT enable bit status*/
+ 663   2              enablestatus = (uint8_t)((uint8_t)UART1->CR4 & itmask2);
+ 664   2              /* Check the status of the specified UART1 interrupt*/
+ 665   2              if (((UART1->CR4 & itpos) != (uint8_t)0x00) && enablestatus)
+ 666   2              {
+ 667   3                  /* Interrupt occurred*/
+ 668   3                  pendingbitstatus = SET;
+ 669   3              }
+ 670   2              else
+ 671   2              {
+ 672   3                  /* Interrupt not occurred*/
+ 673   3                  pendingbitstatus = RESET;
+ 674   3              }
+ 675   2          }
+ 676   1          else
+ 677   1          {
+ 678   2              /* Get the UART1_IT enable bit status*/
+ 679   2              enablestatus = (uint8_t)((uint8_t)UART1->CR2 & itmask2);
+ 680   2              /* Check the status of the specified UART1 interrupt*/
+ 681   2              if (((UART1->SR & itpos) != (uint8_t)0x00) && enablestatus)
+ 682   2              {
+ 683   3                  /* Interrupt occurred*/
+ 684   3                  pendingbitstatus = SET;
+ 685   3              }
+ 686   2              else
+ 687   2              {
+ 688   3                  /* Interrupt not occurred*/
+ 689   3                  pendingbitstatus = RESET;
+ 690   3              }
+ 691   2          }
+ 692   1      
+ 693   1          /* Return the UART1_IT status*/
+ 694   1          return pendingbitstatus;
+ 695   1      }
+ 696          
+ 697          /**
+ 698           * @brief  Clears the UART1 pending flags.
+ 699           * @param  UART1_IT specifies the pending bit to clear
+ 700           *         This parameter can be one of the following values:
+ 701           *         - UART1_IT_LBDF:  LIN Break detection interrupt
+ 702           *         - UART1_IT_RXNE: Receive Data register not empty interrupt.
+ 703           * @note
+ 704           *         - PE (Parity error), FE (Framing error), NE (Noise error),
+ 705           *           OR (OverRun error) and IDLE (Idle line detected) pending bits are
+ 706           *           cleared by software sequence: a read operation to UART1_SR register
+ 707           *           (UART1_GetITStatus()) followed by a read operation to UART1_DR register
+ 708           *           (UART1_ReceiveData8() or UART1_ReceiveData9()).
+ 709           *
+ 710           *         - RXNE pending bit can be also cleared by a read to the UART1_DR register
+ 711           *           (UART1_ReceiveData8() or UART1_ReceiveData9()).
+ 712           *
+ 713           *         - TC (Transmit complete) pending bit can be cleared by software
+ 714           *           sequence: a read operation to UART1_SR register (UART1_GetITStatus())
+ 715           *           followed by a write operation to UART1_DR register (UART1_SendData8()
+ 716           *           or UART1_SendData9()).
+ 717           *
+ 718           *         - TXE pending bit is cleared only by a write to the UART1_DR register
+ 719           *           (UART1_SendData8() or UART1_SendData9()).
+ 720           * @retval None
+ 721           */
+ 722          void UART1_ClearITPendingBit(UART1_IT_TypeDef UART1_IT)
+ 723          {
+ 724   1          /* Clear the Receive Register Not Empty pending bit */
+ 725   1          if (UART1_IT == UART1_IT_RXNE)
+ 726   1          {
+ 727   2              UART1->SR = (uint8_t) ~(UART1_SR_RXNE);
+ 728   2          }
+ 729   1          /* Clear the LIN Break Detection pending bit */
+ 730   1          else
+ 731   1          {
+ 732   2              UART1->CR4 &= (uint8_t) ~(UART1_CR4_LBDF);
+ 733   2          }
+ 734   1      }
+ 735          
+ 736          /**
+ 737           * @}
+ 738           */
+ 739          
+ 740          /**
+ 741           * @}
+ 742           */
+ 743          
+ 744          /******************* (C) COPYRIGHT 2011 STMicroelectronics *****END OF FILE****/
+ 745          
+RCSTM8 COMPILER V2.42.12.083
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+              ; FUNCTION ?UART1_DeInit (BEGIN)
+              ; SOURCE LINE # 50 
+0000 C65230                            LD     A,05230H
+              ; SOURCE LINE # 51 
+0003 C65231                            LD     A,05231H
+              ; SOURCE LINE # 53 
+0006 725F5233                          CLR    05233H
+              ; SOURCE LINE # 54 
+000A 725F5232                          CLR    05232H
+              ; SOURCE LINE # 56 
+000E 725F5234                          CLR    05234H
+              ; SOURCE LINE # 57 
+0012 725F5235                          CLR    05235H
+              ; SOURCE LINE # 58 
+0016 725F5236                          CLR    05236H
+              ; SOURCE LINE # 59 
+001A 725F5237                          CLR    05237H
+              ; SOURCE LINE # 60 
+001E 725F5238                          CLR    05238H
+              ; SOURCE LINE # 62 
+0022 725F5239                          CLR    05239H
+              ; SOURCE LINE # 63 
+0026 725F523A                          CLR    0523AH
+              ; SOURCE LINE # 64 
+002A 81                                RET    
+
+              ; FUNCTION ?UART1_DeInit (END)
+
+              ; FUNCTION ?UART1_Init (BEGIN)
+              ; SOURCE LINE # 83 
+0000 5208                              SUB    SP,#008H
+              ; BX_CX is assigned to BaudRate_Mantissa
+              ; SOURCE LINE # 87 
+0002 CD0000     F                      CALL   ?C?mv4_null2bc
+              ; BX_CX is assigned to BaudRate_Mantissa100
+0005 CD0000     F                      CALL   ?C?mv4_null2bc
+              ; SOURCE LINE # 90 
+0008 72195234                          BRES   05234H,#004H
+              ; SOURCE LINE # 93 
+000C C65234                            LD     A,05234H
+000F 1A10       F                      OR     A,(010H,SP)   ; [ WordLength + 01H ]
+0011 C75234                            LD     05234H,A
+              ; SOURCE LINE # 96 
+0014 A6CF                              LD     A,#0CFH
+0016 C45236                            AND    A,05236H
+0019 C75236                            LD     05236H,A
+              ; SOURCE LINE # 98 
+001C C65236                            LD     A,05236H
+001F 1A12       F                      OR     A,(012H,SP)   ; [ StopBits + 01H ]
+0021 C75236                            LD     05236H,A
+              ; SOURCE LINE # 101 
+0024 A6F9                              LD     A,#0F9H
+0026 C45234                            AND    A,05234H
+0029 C75234                            LD     05234H,A
+              ; SOURCE LINE # 103 
+002C C65234                            LD     A,05234H
+002F 1A14       F                      OR     A,(014H,SP)   ; [ Parity + 01H ]
+0031 C75234                            LD     05234H,A
+              ; SOURCE LINE # 106 
+0034 3F03       F                      CLR    ?BH
+0036 5500035232 F                      MOV    05232H,?BH
+              ; SOURCE LINE # 108 
+003B 725F5233                          CLR    05233H
+              ; SOURCE LINE # 113 
+003F A60A       F                      LD     A,#00AH
+0041 CD0000     F DNF                  CALL   ?C?mv4_isa2bc
+0044 A604                              LD     A,#004H
+0046 CD0000     F                      CALL   ?C?sll328
+0049 CD0000     F DNF                  CALL   ?C?mv4_bc2sk
+004C CD0000     F                      CALL   ?CLK_GetClockFreq
+004F CD0000     F DNF                  CALL   ?C?divu3232
+0052 4F                                CLR    A
+0053 CD0000     F                      CALL   ?C?mv4_bc2isa
+              ; SOURCE LINE # 114 
+0056 A60A       F                      LD     A,#00AH
+0058 CD0000     F DNF                  CALL   ?C?mv4_isa2bc
+005B A604                              LD     A,#004H
+005D CD0000     F                      CALL   ?C?sll328
+0060 CD0000     F DNF                  CALL   ?C?mv4_bc2sk
+0063 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+0066         ?DATASTART_0003:
+0066 64                             M  DB     064H
+0067         ?DATAEND_0003:
+0067 CD0000     F                      CALL   ?CLK_GetClockFreq
+006A CD0000     F DNF                  CALL   ?C?muludivu3232
+006D A604       F                      LD     A,#004H
+006F CD0000     F                      CALL   ?C?mv4_bc2isa
+              ; SOURCE LINE # 116 
+0072 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+0075         ?DATASTART_0004:
+0075 64                             M  DB     064H
+0076         ?DATAEND_0004:
+0076 1E0B       F                      LDW    X,(00BH,SP)   ; [ BaudRate_Mantissa100 + 02H ]
+0078 89                                PUSHW  X
+0079 1E0B       F                      LDW    X,(00BH,SP)   ; [ BaudRate_Mantissa100 ]
+007B 89                                PUSHW  X
+007C CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+007F         ?DATASTART_0005:
+007F 64                             M  DB     064H
+0080         ?DATAEND_0005:
+0080 96           DNF                  LDW    X,SP
+0081 1C000D     F                      ADDW   X,#0000DH
+0084 CD0000     F DNF                  CALL   ?C?muluix32
+0087 CD0000     F DNF                  CALL   ?C?sub3232
+008A A604                              LD     A,#004H
+008C CD0000     F                      CALL   ?C?sll328
+008F CD0000     F DNF                  CALL   ?C?divu3232
+0092 B606       F                      LD     A,?CL
+0094 A40F                              AND    A,#00FH
+0096 CA5233                            OR     A,05233H
+0099 C75233                            LD     05233H,A
+              ; SOURCE LINE # 118 
+009C 4F                                CLR    A
+009D CD0000     F DNF                  CALL   ?C?mv4_isa2bc
+00A0 A604                              LD     A,#004H
+00A2 CD0000     F                      CALL   ?C?srl328
+00A5 B606       F                      LD     A,?CL
+00A7 A4F0                              AND    A,#0F0H
+00A9 CA5233                            OR     A,05233H
+00AC C75233                            LD     05233H,A
+              ; SOURCE LINE # 120 
+00AF C65232                            LD     A,05232H
+00B2 1A04       F                      OR     A,(004H,SP)   ; [ BaudRate_Mantissa + 03H ]
+00B4 C75232                            LD     05232H,A
+              ; SOURCE LINE # 123 
+00B7 A6F3                              LD     A,#0F3H
+00B9 C45235                            AND    A,05235H
+00BC C75235                            LD     05235H,A
+              ; SOURCE LINE # 125 
+00BF A6F8                              LD     A,#0F8H
+00C1 C45236                            AND    A,05236H
+00C4 C75236                            LD     05236H,A
+              ; SOURCE LINE # 128 
+00C7 7B16       F                      LD     A,(016H,SP)   ; [ SyncMode + 01H ]
+00C9 A407                              AND    A,#007H
+00CB CA5236                            OR     A,05236H
+00CE C75236                            LD     05236H,A
+              ; SOURCE LINE # 130 
+00D1 7B18       F                      LD     A,(018H,SP)   ; [ Mode + 01H ]
+00D3 A504                              BCP    A,#004H
+00D5 2706                              JREQ   ?ELSE_0003
+              ; SOURCE LINE # 133 
+00D7 72165235                          BSET   05235H,#003H
+00DB 2004                              JRA    ?NXT_0003
+00DD         ?ELSE_0003:
+              ; SOURCE LINE # 138 
+00DD 72175235                          BRES   05235H,#003H
+00E1         ?NXT_0003:
+              ; SOURCE LINE # 140 
+00E1 7B18       F                      LD     A,(018H,SP)   ; [ Mode + 01H ]
+00E3 A508                              BCP    A,#008H
+00E5 2706                              JREQ   ?ELSE_0004
+              ; SOURCE LINE # 143 
+00E7 72145235                          BSET   05235H,#002H
+00EB 2004                              JRA    ?NXT_0004
+00ED         ?ELSE_0004:
+              ; SOURCE LINE # 148 
+00ED 72155235                          BRES   05235H,#002H
+00F1         ?NXT_0004:
+              ; SOURCE LINE # 152 
+00F1 7B16       F                      LD     A,(016H,SP)   ; [ SyncMode + 01H ]
+00F3 A580                              BCP    A,#080H
+00F5 2706                              JREQ   ?ELSE_0005
+              ; SOURCE LINE # 155 
+00F7 72175236                          BRES   05236H,#003H
+00FB 200A                              JRA    ?EPILOG_0001
+00FD         ?ELSE_0005:
+              ; SOURCE LINE # 159 
+00FD 7B16       F                      LD     A,(016H,SP)   ; [ SyncMode + 01H ]
+00FF A408                              AND    A,#008H
+0101 CA5236                            OR     A,05236H
+0104 C75236                            LD     05236H,A
+0107         ?EPILOG_0001:
+              ; SOURCE LINE # 161 
+0107 5B08                              ADD    SP,#008H
+0109 81                                RET    
+              ; BaudRate     unsigned long  (size=4-Alg).  parameter in AUTO
+              ; WordLength   (size=2).  parameter in AUTO
+              ; StopBits     (size=2).  parameter in AUTO
+              ; Parity       (size=2).  parameter in AUTO
+              ; SyncMode     (size=2).  parameter in AUTO
+              ; Mode         (size=2).  parameter in AUTO
+              ; BaudRate_Mantissa unsigned long  (size=4-Alg). Automatic variable  in AUTO
+              ; BaudRate_Mantissa100 unsigned long  (size=4-Alg). Automatic variable  in AUTO
+
+              ; FUNCTION ?UART1_Init (END)
+
+              ; FUNCTION ?UART1_Cmd (BEGIN)
+              ; Register XW is assigned to parameter NewState
+              ; SOURCE LINE # 171 
+0000 5D                                TNZW   X
+0001 2705                              JREQ   ?ELSE_0007
+              ; SOURCE LINE # 174 
+0003 721B5234                          BRES   05234H,#005H
+0007 81                                RET    
+0008         ?ELSE_0007:
+              ; SOURCE LINE # 179 
+0008 721A5234                          BSET   05234H,#005H
+              ; SOURCE LINE # 181 
+000C 81                                RET    
+              ; NewState     (size=2). Register parameter(XW) in PAGE0
+
+              ; FUNCTION ?UART1_Cmd (END)
+
+              ; FUNCTION ?UART1_ITConfig (BEGIN)
+              ; Register-parameter UART1_IT (XW) is relocated (auto)
+              ; SOURCE LINE # 197 
+0000 89                                PUSHW  X
+0001 89                                PUSHW  X
+              ; SOURCE LINE # 202 
+0002 9E                                LD     A,XH
+0003 6B01       F                      LD     (001H,SP),A   ; [ uartreg ]
+              ; SOURCE LINE # 204 
+0005 5F                                CLRW   X
+0006 5C                                INCW   X
+0007 7B04       F                      LD     A,(004H,SP)   ; [ UART1_IT + 01H ]
+0009 A40F                              AND    A,#00FH
+000B CD0000     F                      CALL   ?C?sll168
+000E 9F                                LD     A,XL
+000F 6B02       F                      LD     (002H,SP),A   ; [ itpos ]
+              ; SOURCE LINE # 206 
+0011 1E07       F                      LDW    X,(007H,SP)   ; [ NewState ]
+0013 2729                              JREQ   ?ELSE_0013
+              ; SOURCE LINE # 209 
+0015 7B01       F                      LD     A,(001H,SP)   ; [ uartreg ]
+0017 4A                                DEC    A
+0018 260A                              JRNE   ?ELSE_0014
+              ; SOURCE LINE # 211 
+001A C65234                            LD     A,05234H
+001D 1A02       F                      OR     A,(002H,SP)   ; [ itpos ]
+001F C75234                            LD     05234H,A
+0022 2044                              JRA    ?EPILOG_0003
+0024         ?ELSE_0014:
+              ; SOURCE LINE # 213 
+0024 A602                              LD     A,#002H
+0026 1101       F                      CP     A,(001H,SP)   ; [ uartreg ]
+0028 260A                              JRNE   ?ELSE_0015
+              ; SOURCE LINE # 215 
+002A C65235                            LD     A,05235H
+002D 1A02       F                      OR     A,(002H,SP)   ; [ itpos ]
+002F C75235                            LD     05235H,A
+0032 2034                              JRA    ?EPILOG_0003
+0034         ?ELSE_0015:
+              ; SOURCE LINE # 219 
+0034 C65237                            LD     A,05237H
+0037 1A02       F                      OR     A,(002H,SP)   ; [ itpos ]
+0039 C75237                            LD     05237H,A
+003C 202A                              JRA    ?EPILOG_0003
+003E         ?ELSE_0013:
+              ; SOURCE LINE # 225 
+003E 7B01       F                      LD     A,(001H,SP)   ; [ uartreg ]
+0040 4A                                DEC    A
+0041 260B                              JRNE   ?ELSE_0016
+              ; SOURCE LINE # 227 
+0043 7B02       F                      LD     A,(002H,SP)   ; [ itpos ]
+0045 43                                CPL    A
+0046 C45234                            AND    A,05234H
+0049 C75234                            LD     05234H,A
+004C 201A                              JRA    ?EPILOG_0003
+004E         ?ELSE_0016:
+              ; SOURCE LINE # 229 
+004E A602                              LD     A,#002H
+0050 1101       F                      CP     A,(001H,SP)   ; [ uartreg ]
+0052 260B                              JRNE   ?ELSE_0017
+              ; SOURCE LINE # 231 
+0054 7B02       F                      LD     A,(002H,SP)   ; [ itpos ]
+0056 43                                CPL    A
+0057 C45235                            AND    A,05235H
+005A C75235                            LD     05235H,A
+005D 2009                              JRA    ?EPILOG_0003
+005F         ?ELSE_0017:
+              ; SOURCE LINE # 235 
+005F 7B02       F                      LD     A,(002H,SP)   ; [ itpos ]
+0061 43                                CPL    A
+0062 C45237                            AND    A,05237H
+0065 C75237                            LD     05237H,A
+0068         ?EPILOG_0003:
+              ; SOURCE LINE # 238 
+0068 5B04                              ADD    SP,#004H
+006A 81                                RET    
+              ; UART1_IT     (size=2).  parameter in AUTO
+              ; NewState     (size=2).  parameter in AUTO
+              ; uartreg      unsigned char  (size=1). Automatic variable  in AUTO
+              ; itpos        unsigned char  (size=1). Automatic variable  in AUTO
+
+              ; FUNCTION ?UART1_ITConfig (END)
+
+              ; FUNCTION ?UART1_HalfDuplexCmd (BEGIN)
+              ; Register XW is assigned to parameter NewState
+              ; SOURCE LINE # 247 
+0000 5D                                TNZW   X
+0001 2705                              JREQ   ?ELSE_0019
+              ; SOURCE LINE # 249 
+0003 72165238                          BSET   05238H,#003H
+0007 81                                RET    
+0008         ?ELSE_0019:
+              ; SOURCE LINE # 253 
+0008 72175238                          BRES   05238H,#003H
+              ; SOURCE LINE # 255 
+000C 81                                RET    
+              ; NewState     (size=2). Register parameter(XW) in PAGE0
+
+              ; FUNCTION ?UART1_HalfDuplexCmd (END)
+
+              ; FUNCTION ?UART1_IrDAConfig (BEGIN)
+              ; Register XW is assigned to parameter UART1_IrDAMode
+              ; SOURCE LINE # 265 
+0000 5D                                TNZW   X
+0001 2705                              JREQ   ?ELSE_0021
+              ; SOURCE LINE # 267 
+0003 72145238                          BSET   05238H,#002H
+0007 81                                RET    
+0008         ?ELSE_0021:
+              ; SOURCE LINE # 271 
+0008 72155238                          BRES   05238H,#002H
+              ; SOURCE LINE # 273 
+000C 81                                RET    
+              ; UART1_IrDAMode (size=2). Register parameter(XW) in PAGE0
+
+              ; FUNCTION ?UART1_IrDAConfig (END)
+
+              ; FUNCTION ?UART1_IrDACmd (BEGIN)
+              ; Register XW is assigned to parameter NewState
+              ; SOURCE LINE # 283 
+0000 5D                                TNZW   X
+0001 2705                              JREQ   ?ELSE_0023
+              ; SOURCE LINE # 286 
+0003 72125238                          BSET   05238H,#001H
+0007 81                                RET    
+0008         ?ELSE_0023:
+              ; SOURCE LINE # 291 
+0008 72135238                          BRES   05238H,#001H
+              ; SOURCE LINE # 293 
+000C 81                                RET    
+              ; NewState     (size=2). Register parameter(XW) in PAGE0
+
+              ; FUNCTION ?UART1_IrDACmd (END)
+
+              ; FUNCTION ?UART1_LINBreakDetectionConfig (BEGIN)
+              ; Register XW is assigned to parameter UART1_LINBreakDetectionLength
+              ; SOURCE LINE # 304 
+0000 5D                                TNZW   X
+0001 2705                              JREQ   ?ELSE_0025
+              ; SOURCE LINE # 306 
+0003 721A5237                          BSET   05237H,#005H
+0007 81                                RET    
+0008         ?ELSE_0025:
+              ; SOURCE LINE # 310 
+0008 721B5237                          BRES   05237H,#005H
+              ; SOURCE LINE # 312 
+000C 81                                RET    
+              ; UART1_LINBreakDetectionLength (size=2). Register parameter(XW) in PAGE0
+
+              ; FUNCTION ?UART1_LINBreakDetectionConfig (END)
+
+              ; FUNCTION ?UART1_LINCmd (BEGIN)
+              ; Register XW is assigned to parameter NewState
+              ; SOURCE LINE # 322 
+0000 5D                                TNZW   X
+0001 2705                              JREQ   ?ELSE_0027
+              ; SOURCE LINE # 325 
+0003 721C5236                          BSET   05236H,#006H
+0007 81                                RET    
+0008         ?ELSE_0027:
+              ; SOURCE LINE # 330 
+0008 721D5236                          BRES   05236H,#006H
+              ; SOURCE LINE # 332 
+000C 81                                RET    
+              ; NewState     (size=2). Register parameter(XW) in PAGE0
+
+              ; FUNCTION ?UART1_LINCmd (END)
+
+              ; FUNCTION ?UART1_SmartCardCmd (BEGIN)
+              ; Register XW is assigned to parameter NewState
+              ; SOURCE LINE # 341 
+0000 5D                                TNZW   X
+0001 2705                              JREQ   ?ELSE_0029
+              ; SOURCE LINE # 344 
+0003 721A5238                          BSET   05238H,#005H
+0007 81                                RET    
+0008         ?ELSE_0029:
+              ; SOURCE LINE # 349 
+0008 721B5238                          BRES   05238H,#005H
+              ; SOURCE LINE # 351 
+000C 81                                RET    
+              ; NewState     (size=2). Register parameter(XW) in PAGE0
+
+              ; FUNCTION ?UART1_SmartCardCmd (END)
+
+              ; FUNCTION ?UART1_SmartCardNACKCmd (BEGIN)
+              ; Register XW is assigned to parameter NewState
+              ; SOURCE LINE # 362 
+0000 5D                                TNZW   X
+0001 2705                              JREQ   ?ELSE_0031
+              ; SOURCE LINE # 365 
+0003 72185238                          BSET   05238H,#004H
+0007 81                                RET    
+0008         ?ELSE_0031:
+              ; SOURCE LINE # 370 
+0008 72195238                          BRES   05238H,#004H
+              ; SOURCE LINE # 372 
+000C 81                                RET    
+              ; NewState     (size=2). Register parameter(XW) in PAGE0
+
+              ; FUNCTION ?UART1_SmartCardNACKCmd (END)
+
+              ; FUNCTION ?UART1_WakeUpConfig (BEGIN)
+              ; Register XW is assigned to parameter UART1_WakeUp
+              ; SOURCE LINE # 382 
+0000 72175234                          BRES   05234H,#003H
+              ; SOURCE LINE # 383 
+0004 9F                                LD     A,XL
+0005 CA5234                            OR     A,05234H
+0008 C75234                            LD     05234H,A
+              ; SOURCE LINE # 384 
+000B 81                                RET    
+              ; UART1_WakeUp (size=2). Register parameter(XW) in PAGE0
+
+              ; FUNCTION ?UART1_WakeUpConfig (END)
+
+              ; FUNCTION ?UART1_ReceiverWakeUpCmd (BEGIN)
+              ; Register XW is assigned to parameter NewState
+              ; SOURCE LINE # 393 
+0000 5D                                TNZW   X
+0001 2705                              JREQ   ?ELSE_0033
+              ; SOURCE LINE # 396 
+0003 72125235                          BSET   05235H,#001H
+0007 81                                RET    
+0008         ?ELSE_0033:
+              ; SOURCE LINE # 401 
+0008 72135235                          BRES   05235H,#001H
+              ; SOURCE LINE # 403 
+000C 81                                RET    
+              ; NewState     (size=2). Register parameter(XW) in PAGE0
+
+              ; FUNCTION ?UART1_ReceiverWakeUpCmd (END)
+
+              ; FUNCTION ?UART1_ReceiveData8 (BEGIN)
+              ; SOURCE LINE # 412 
+0000 C65231                            LD     A,05231H
+              ; SOURCE LINE # 413 
+0003 81                                RET    
+
+              ; FUNCTION ?UART1_ReceiveData8 (END)
+
+              ; FUNCTION ?UART1_ReceiveData9 (BEGIN)
+              ; SOURCE LINE # 422 
+0000 5F                                CLRW   X
+0001 89                                PUSHW  X
+              ; SOURCE LINE # 424 
+0002 C65234                            LD     A,05234H
+0005 A480                              AND    A,#080H
+0007 97                                LD     XL,A
+0008 58                                SLAW   X
+0009 1F01       F                      LDW    (001H,SP),X   ; [ temp ]
+              ; SOURCE LINE # 425 
+000B C65231                            LD     A,05231H
+000E 1A02       F                      OR     A,(002H,SP)   ; [ temp + 01H ]
+0010 97                                LD     XL,A
+0011 A601                              LD     A,#001H
+0013 1401       F                      AND    A,(001H,SP)   ; [ temp ]
+0015 95                                LD     XH,A
+              ; SOURCE LINE # 426 
+0016 5B02                              ADD    SP,#002H
+0018 81                                RET    
+              ; temp         unsigned short  (size=2-Alg). Automatic variable  in AUTO
+
+              ; FUNCTION ?UART1_ReceiveData9 (END)
+
+              ; FUNCTION ?UART1_SendData8 (BEGIN)
+              ; Register-parameter Data (A) is relocated (auto)
+              ; SOURCE LINE # 436 
+0000 C75231                            LD     05231H,A
+              ; SOURCE LINE # 437 
+0003 81                                RET    
+              ; Data         unsigned char  (size=1).  parameter in AUTO
+
+              ; FUNCTION ?UART1_SendData8 (END)
+
+              ; FUNCTION ?UART1_SendData9 (BEGIN)
+              ; Register YW is assigned to parameter Data
+              ; SOURCE LINE # 445 
+0000 51                                EXGW   X,Y
+              ; SOURCE LINE # 448 
+0001 721D5234                          BRES   05234H,#006H
+              ; SOURCE LINE # 450 
+0005 93                                LDW    X,Y
+0006 54                                SRLW   X
+0007 54                                SRLW   X
+0008 9F                                LD     A,XL
+0009 A440                              AND    A,#040H
+000B CA5234                            OR     A,05234H
+000E C75234                            LD     05234H,A
+              ; SOURCE LINE # 452 
+0011 909F                              LD     A,YL
+0013 C75231                            LD     05231H,A
+              ; SOURCE LINE # 453 
+0016 81                                RET    
+              ; Data         unsigned short  (size=2-Alg). Register parameter(XW) in PAGE0
+
+              ; FUNCTION ?UART1_SendData9 (END)
+
+              ; FUNCTION ?UART1_SendBreak (BEGIN)
+              ; SOURCE LINE # 462 
+0000 72105235                          BSET   05235H,#000H
+              ; SOURCE LINE # 463 
+0004 81                                RET    
+
+              ; FUNCTION ?UART1_SendBreak (END)
+
+              ; FUNCTION ?UART1_SetAddress (BEGIN)
+              ; Register-parameter UART1_Address (A) is relocated (auto)
+              ; SOURCE LINE # 470 
+0000 88                                PUSH   A
+              ; SOURCE LINE # 473 
+0001 A6F0                              LD     A,#0F0H
+0003 C45237                            AND    A,05237H
+0006 C75237                            LD     05237H,A
+              ; SOURCE LINE # 475 
+0009 C65237                            LD     A,05237H
+000C 1A01       F                      OR     A,(001H,SP)   ; [ UART1_Address ]
+000E C75237                            LD     05237H,A
+              ; SOURCE LINE # 476 
+0011 84                                POP    A
+0012 81                                RET    
+              ; UART1_Address unsigned char  (size=1).  parameter in AUTO
+
+              ; FUNCTION ?UART1_SetAddress (END)
+
+              ; FUNCTION ?UART1_SetGuardTime (BEGIN)
+              ; Register-parameter UART1_GuardTime (A) is relocated (auto)
+              ; SOURCE LINE # 487 
+0000 C75239                            LD     05239H,A
+              ; SOURCE LINE # 488 
+0003 81                                RET    
+              ; UART1_GuardTime unsigned char  (size=1).  parameter in AUTO
+
+              ; FUNCTION ?UART1_SetGuardTime (END)
+
+              ; FUNCTION ?UART1_SetPrescaler (BEGIN)
+              ; Register-parameter UART1_Prescaler (A) is relocated (auto)
+              ; SOURCE LINE # 515 
+0000 C7523A                            LD     0523AH,A
+              ; SOURCE LINE # 516 
+0003 81                                RET    
+              ; UART1_Prescaler unsigned char  (size=1).  parameter in AUTO
+
+              ; FUNCTION ?UART1_SetPrescaler (END)
+
+              ; FUNCTION ?UART1_GetFlagStatus (BEGIN)
+              ; Register XW is assigned to parameter UART1_FLAG
+              ; SOURCE LINE # 524 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 529 
+0001 A30210                            CPW    X,#00210H
+0004 2612                              JRNE   ?ELSE_0039
+              ; SOURCE LINE # 531 
+0006 9F                                LD     A,XL
+0007 905F                              CLRW   Y
+0009 C55237                            BCP    A,05237H
+000C 2706                              JREQ   ?ELSE_0040
+              ; SOURCE LINE # 534 
+000E 905C                              INCW   Y
+0010 1701       F                      LDW    (001H,SP),Y   ; [ status ]
+0012 202B                              JRA    ?NXT_0042
+0014         ?ELSE_0040:
+              ; SOURCE LINE # 539 
+0014 1701       F                      LDW    (001H,SP),Y   ; [ status ]
+0016 2027                              JRA    ?NXT_0042
+0018         ?ELSE_0039:
+              ; SOURCE LINE # 542 
+0018 A30101                            CPW    X,#00101H
+001B 2612                              JRNE   ?ELSE_0041
+              ; SOURCE LINE # 544 
+001D 9F                                LD     A,XL
+001E 905F                              CLRW   Y
+0020 C55235                            BCP    A,05235H
+0023 2706                              JREQ   ?ELSE_0042
+              ; SOURCE LINE # 547 
+0025 905C                              INCW   Y
+0027 1701       F                      LDW    (001H,SP),Y   ; [ status ]
+0029 2014                              JRA    ?NXT_0042
+002B         ?ELSE_0042:
+              ; SOURCE LINE # 552 
+002B 1701       F                      LDW    (001H,SP),Y   ; [ status ]
+002D 2010                              JRA    ?NXT_0042
+002F         ?ELSE_0041:
+              ; SOURCE LINE # 557 
+002F 9F                                LD     A,XL
+0030 905F                              CLRW   Y
+0032 C55230                            BCP    A,05230H
+0035 2706                              JREQ   ?ELSE_0043
+              ; SOURCE LINE # 560 
+0037 905C                              INCW   Y
+0039 1701       F                      LDW    (001H,SP),Y   ; [ status ]
+003B 2002                              JRA    ?NXT_0042
+003D         ?ELSE_0043:
+              ; SOURCE LINE # 565 
+003D 1701       F                      LDW    (001H,SP),Y   ; [ status ]
+003F         ?NXT_0042:
+              ; SOURCE LINE # 570 
+003F 85                                POPW   X
+0040 81                                RET    
+              ; UART1_FLAG   (size=2). Register parameter(XW) in PAGE0
+              ; status       (size=2). Automatic variable  in AUTO
+
+              ; FUNCTION ?UART1_GetFlagStatus (END)
+
+              ; FUNCTION ?UART1_ClearFlag (BEGIN)
+              ; Register XW is assigned to parameter UART1_FLAG
+              ; SOURCE LINE # 602 
+0000 A30020                            CPW    X,#00020H
+0003 2605                              JRNE   ?ELSE_0045
+              ; SOURCE LINE # 604 
+0005 35DF5230                          MOV    05230H,#0DFH
+0009 81                                RET    
+000A         ?ELSE_0045:
+              ; SOURCE LINE # 609 
+000A 72195237                          BRES   05237H,#004H
+              ; SOURCE LINE # 611 
+000E 81                                RET    
+              ; UART1_FLAG   (size=2). Register parameter(XW) in PAGE0
+
+              ; FUNCTION ?UART1_ClearFlag (END)
+
+              ; FUNCTION ?UART1_GetITStatus (BEGIN)
+              ; Register-parameter UART1_IT (XW) is relocated (auto)
+              ; SOURCE LINE # 626 
+0000 89                                PUSHW  X
+0001 5206                              SUB    SP,#006H
+              ; SOURCE LINE # 635 
+0003 5F                                CLRW   X
+0004 5C                                INCW   X
+0005 7B08       F                      LD     A,(008H,SP)   ; [ UART1_IT + 01H ]
+0007 A40F                              AND    A,#00FH
+0009 CD0000     F                      CALL   ?C?sll168
+000C 9F                                LD     A,XL
+000D 6B03       F                      LD     (003H,SP),A   ; [ itpos ]
+              ; SOURCE LINE # 637 
+000F 7B08       F                      LD     A,(008H,SP)   ; [ UART1_IT + 01H ]
+0011 4E                                SWAP   A
+0012 A40F                              AND    A,#00FH
+              ; SOURCE LINE # 639 
+0014 5F                                CLRW   X
+0015 5C                                INCW   X
+0016 CD0000     F                      CALL   ?C?sll168
+0019 9F                                LD     A,XL
+001A 6B05       F                      LD     (005H,SP),A   ; [ itmask2 ]
+              ; SOURCE LINE # 642 
+001C AE0100                            LDW    X,#00100H
+001F 1307       F                      CPW    X,(007H,SP)   ; [ UART1_IT ]
+0021 261B                              JRNE   ?ELSE_0051
+              ; SOURCE LINE # 645 
+0023 C45234                            AND    A,05234H
+0026 6B06       F                      LD     (006H,SP),A   ; [ enablestatus ]
+              ; SOURCE LINE # 648 
+0028 7B03       F                      LD     A,(003H,SP)   ; [ itpos ]
+002A C55230                            BCP    A,05230H
+002D 270A                              JREQ   ?ELSE_0052
+002F 0D06       F                      TNZ    (006H,SP)   ; [ enablestatus ]
+0031 2706                              JREQ   ?ELSE_0052
+              ; SOURCE LINE # 651 
+0033 5F                                CLRW   X
+0034 5C                                INCW   X
+0035 1F01       F                      LDW    (001H,SP),X   ; [ pendingbitstatus ]
+0037 2042                              JRA    ?NXT_0057
+0039         ?ELSE_0052:
+              ; SOURCE LINE # 656 
+0039 5F                                CLRW   X
+003A 1F01       F                      LDW    (001H,SP),X   ; [ pendingbitstatus ]
+003C 203D                              JRA    ?NXT_0057
+003E         ?ELSE_0051:
+              ; SOURCE LINE # 660 
+003E AE0346                            LDW    X,#00346H
+0041 7B05       F                      LD     A,(005H,SP)   ; [ itmask2 ]
+0043 1307       F                      CPW    X,(007H,SP)   ; [ UART1_IT ]
+0045 261B                              JRNE   ?ELSE_0053
+              ; SOURCE LINE # 663 
+0047 C45237                            AND    A,05237H
+004A 6B06       F                      LD     (006H,SP),A   ; [ enablestatus ]
+              ; SOURCE LINE # 665 
+004C 7B03       F                      LD     A,(003H,SP)   ; [ itpos ]
+004E C55237                            BCP    A,05237H
+0051 270A                              JREQ   ?ELSE_0054
+0053 0D06       F                      TNZ    (006H,SP)   ; [ enablestatus ]
+0055 2706                              JREQ   ?ELSE_0054
+              ; SOURCE LINE # 668 
+0057 5F                                CLRW   X
+0058 5C                                INCW   X
+0059 1F01       F                      LDW    (001H,SP),X   ; [ pendingbitstatus ]
+005B 201E                              JRA    ?NXT_0057
+005D         ?ELSE_0054:
+              ; SOURCE LINE # 673 
+005D 5F                                CLRW   X
+005E 1F01       F                      LDW    (001H,SP),X   ; [ pendingbitstatus ]
+0060 2019                              JRA    ?NXT_0057
+0062         ?ELSE_0053:
+              ; SOURCE LINE # 679 
+0062 C45235                            AND    A,05235H
+0065 6B06       F                      LD     (006H,SP),A   ; [ enablestatus ]
+              ; SOURCE LINE # 681 
+0067 7B03       F                      LD     A,(003H,SP)   ; [ itpos ]
+0069 C55230                            BCP    A,05230H
+006C 270A                              JREQ   ?ELSE_0055
+006E 0D06       F                      TNZ    (006H,SP)   ; [ enablestatus ]
+0070 2706                              JREQ   ?ELSE_0055
+              ; SOURCE LINE # 684 
+0072 5F                                CLRW   X
+0073 5C                                INCW   X
+0074 1F01       F                      LDW    (001H,SP),X   ; [ pendingbitstatus ]
+0076 2003                              JRA    ?NXT_0057
+0078         ?ELSE_0055:
+              ; SOURCE LINE # 689 
+0078 5F                                CLRW   X
+0079 1F01       F                      LDW    (001H,SP),X   ; [ pendingbitstatus ]
+007B         ?NXT_0057:
+              ; SOURCE LINE # 694 
+007B 1E01       F                      LDW    X,(001H,SP)   ; [ pendingbitstatus ]
+              ; SOURCE LINE # 695 
+007D 5B08                              ADD    SP,#008H
+007F 81                                RET    
+              ; UART1_IT     (size=2).  parameter in AUTO
+              ; pendingbitstatus (size=2). Automatic variable  in AUTO
+              ; itpos        unsigned char  (size=1). Automatic variable  in AUTO
+              ; itmask1      unsigned char  (size=1). Automatic variable  in AUTO
+              ; itmask2      unsigned char  (size=1). Automatic variable  in AUTO
+              ; enablestatus unsigned char  (size=1). Automatic variable  in AUTO
+
+              ; FUNCTION ?UART1_GetITStatus (END)
+
+              ; FUNCTION ?UART1_ClearITPendingBit (BEGIN)
+              ; Register XW is assigned to parameter UART1_IT
+              ; SOURCE LINE # 725 
+0000 A30255                            CPW    X,#00255H
+0003 2605                              JRNE   ?ELSE_0057
+              ; SOURCE LINE # 727 
+0005 35DF5230                          MOV    05230H,#0DFH
+0009 81                                RET    
+000A         ?ELSE_0057:
+              ; SOURCE LINE # 732 
+000A 72195237                          BRES   05237H,#004H
+              ; SOURCE LINE # 734 
+000E 81                                RET    
+              ; UART1_IT     (size=2). Register parameter(XW) in PAGE0
+
+              ; FUNCTION ?UART1_ClearITPendingBit (END)
+
+RCSTM8 COMPILER V2.42.12.083
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    856    ----
+   CONSTANT SIZE    =   ----    ----
+   DATA SIZE        =   ----    ----
+   PAGE0 SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+RCSTM8 COMPILATION COMPLETE.  0 WARNING,  0 ERROR

@@ -1,0 +1,2054 @@
+RCSTM8 COMPILER V2.42.12.083,  MAIN               05/19/25  15:34:38
+
+QCW(0x00963FA0)
+
+RCSTM8 COMPILER V2.42.12.083, COMPILATION OF MODULE MAIN      
+OBJECT MODULE PLACED IN C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\bin\main.obj
+COMPILER INVOKED BY: QUIET GENERATEDEPFILE CODE DB OJ(C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\bin\main.obj) PR(C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\lst\main.lst) PIN(C:\Raisonance\Ride\Inc;C:\Raisonance\Ride\Inc\ST7;C:\Raisonance\Ride\Inc\STM8;C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\inc) STM8(SMALL) O(3,SIZE) NOINITSTATICVAR SMALLOBJECT ET(INT) 
+
+stmt level    source
+   1          #include "main.h"
+   2          #include "stm8s_tim4.h"
+   3          #include "stm8s_flash.h"
+   4          #include "stm8s_eol.h"
+   5          #include "stm8s_Kline.h"
+   6          
+   7          //////  DEBUG ENABLE/DISABLE    ////////
+   8          //#define DEBUG
+   9          ////////////////////////////////////////
+  10          
+  11          /* This below 0x8100 is mandatory for dorman rights checking - Do not change any thing */
+  12          at 0x8100 code const unsigned char dorman[58] = {'(','c',')',' ','C','o','p','y','r','i','g','h','t',' ','2','0','1','7',' ','D','o','r','m','a','n',' ', 'P','r','o','d','u','c','t','s',',','I','n','c', '.','A','l','l',' ','R','i','g','h','t','s',' ','R','e','s','e','r','v','e','d'};
+  13          at 0x813A code const unsigned char dorman_ver[70] = "#HSCAN and KLINE Ver-2.0.0,Developed by Dorman Products Inc, Colmar#";
+  14          at 0x8181 code const unsigned char nose[40] = "#Up your nose with a rubber hose!#";
+  15              
+  16          // Variable for Dorman copyright check
+  17          uint8_t test_char_t1[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+  18          uint8_t dorman_flag = 0;
+  19          
+  20          // Function prototypes
+  21          static void check_dorman_rights(void);
+  22          static void flash_process(void);
+  23          static void Program_Sequence(void);
+  24          
+  25          // Variables for CAN configuration
+  26          uint8_t CAN_cofig_baud = 2;
+  27          
+  28          // EEPROM Address and variable
+  29          uint32_t EEPROM_address_of_dongle_uses = 0x4100;
+  30          uint8_t number_of_dongle_uses = 0;
+  31          
+  32          uint8_t programming_step = 0;
+  33          uint8_t number_of_remotes_programmed_to_vehicle = 0;
+  34          
+  35          uint8_t keys_learned = 0;
+  36          
+  37          /* CAN Global Transmit Parameters */
+  38          CAN_Id_TypeDef Tx_IDE = CAN_Id_Standard;
+  39          CAN_RTR_TypeDef Tx_RTR = CAN_RTR_Data;
+  40          uint8_t Tx_DLC = 8;
+  41          uint8_t Tx_Data[8] = {0};
+  42          uint32_t Tx_Id = 0x7E0;
+  43          
+  44          /*******************************************/
+  45          // GPIO to blink LED and Beep
+  46          // 0x01 - Unused
+  47          // 0x02 - Beep
+  48          // 0x04 - Green
+  49          // 0x08 - Red
+  50          /*******************************************/
+  51          
+  52          
+  53          void main(void)
+  54          {
+  55   1          //Dorman rights checking ------------------------------------*/
+  56   1          check_dorman_rights();
+  57   1          
+  58   1          /* Clock configuration --------------------------------------*/
+  59   1          CLK_Config();
+  60   1      
+  61   1          /* GPIO Configuration ---------------------------------------*/
+  62   1          GPIO_Config();
+  63   1      
+  64   1          /* UART configuration ---------------------------------------*/
+  65   1          UART_Config();
+  66   1      
+  67   1          /*  TIM4 1ms Timer configuration ----------------------------*/
+  68   1          TIM4->IER  = 0x01;
+  69   1          TIM4->CNTR = 0x00;
+  70   1          TIM4->PSCR = 0x06;
+  71   1          TIM4->ARR  = 0xF9;
+  72   1          TIM4->SR1  = 0x00;
+  73   1          TIM4->CR1  = 0x01;
+  74   1      
+  75   1          /* CAN configuration ----------------------------------------*/
+  76   1          CAN_Config();
+  77   1      
+  78   1          /* Enable Interrupts ----------------------------------------*/
+  79   1          enableInterrupts();
+  80   1      
+  81   1          /* Configures Flash and checks to see how many fobs have been programmed  */
+  82   1          flash_process();
+  83   1      
+  84   1      
+  85   1      #ifndef DEBUG
+  86   1      
+  87   1          if (number_of_dongle_uses <= 8)
+  88   1          {
+  89   2              //~ // Trigger buzzer and green LED when the dongle gets power
+  90   2              //~ GPIOC->ODR = 0x06;   
+  91   2              //~ wait_time(40);
+  92   2              //~ GPIOC->ODR = 0x00;
+  93   2              programming_step = 1;
+  94   2              
+  95   2              while(1)
+  96   2              { 
+  97   3                  if((l_can_receive_flag==1)&&(Tester_Present==0))
+  98   3                  {
+  99   4                      Program_Sequence();
+ 100   4                  }
+ 101   3              }
+ 102   2          }
+ 103   1      #endif
+ 104   1      
+ 105   1      #ifdef DEBUG
+       1      #endif
+ 107   1      
+ 108   1      }
+ 109          
+ 110          // Dorman copyright check
+ 111          static void check_dorman_rights(void)
+ 112          {
+ 113   1          uint8_t check_char[6] = {'E','p','s','n','b','o'};
+ 114   1          test_char_t1[0] = dorman[19];
+ 115   1          test_char_t1[1] = dorman[20];
+ 116   1          test_char_t1[2] = dorman[21];
+ 117   1          test_char_t1[3] = dorman[22];
+ 118   1          test_char_t1[4] = dorman[23];
+ 119   1          test_char_t1[5] = dorman[24];
+ 120   1      
+ 121   1          if( (dorman[19] == 'D') && (dorman[20] == 'o') && (dorman[21] == 'r') && (dorman[22] == 'm') && (dorman[23] == 'a') && (dorman[24] == 'n') ) 
+ 122   1          {
+ 123   2              dorman_flag = 1;
+ 124   2          }
+ 125   1          else
+ 126   1          {
+ 127   2              halt();
+ 128   2          }
+ 129   1      
+ 130   1          if( (test_char_t1[0] == (check_char[0]-1)) && (test_char_t1[1] == (check_char[1]-1)) &&
+ 131   1              (test_char_t1[2] == (check_char[2]-1)) && (test_char_t1[3] == (check_char[3]-1)) &&
+ 132   1              (test_char_t1[4] == (check_char[4]-1)) && (test_char_t1[5] == (check_char[5]-1))
+ 133   1            )
+ 134   1          {
+ 135   2              dorman_flag = 2;
+ 136   2          }
+ 137   1          else
+ 138   1          {
+ 139   2              halt();
+ 140   2          }
+ 141   1      }
+ 142          
+ 143          
+ 144          static void flash_process(void)
+ 145          {
+ 146   1          /* Define FLASH programming time */
+ 147   1          FLASH_SetProgrammingTime(FLASH_PROGRAMTIME_STANDARD);
+ 148   1      
+ 149   1          /* Unlock Data memory */
+ 150   1          FLASH_Unlock(FLASH_MEMTYPE_DATA);
+ 151   1      
+ 152   1          /* read number_of_dongle_uses of programmed keys*/
+ 153   1          number_of_dongle_uses = FLASH_ReadByte(EEPROM_address_of_dongle_uses);
+ 154   1      }
+ 155          
+ 156          /** Configure system clock to run at 16Mhz */
+ 157          void CLK_Config(void)
+ 158          {
+ 159   1          CLK_HSIPrescalerConfig(CLK_PRESCALER_HSIDIV1);
+ 160   1      }
+ 161          
+ 162          /** Configures the CAN ******/
+ 163          void CAN_Config(void)
+ 164          {
+ 165   1          CAN_InitStatus_TypeDef status = CAN_InitStatus_Failed;
+ 166   1      
+ 167   1          /* Filter Parameters */
+ 168   1          CAN_FilterNumber_TypeDef CAN_FilterNumber;
+ 169   1          FunctionalState CAN_FilterActivation;
+ 170   1          CAN_FilterMode_TypeDef CAN_FilterMode;
+ 171   1          CAN_FilterScale_TypeDef CAN_FilterScale;
+ 172   1          uint8_t CAN_FilterID1;
+ 173   1          uint8_t CAN_FilterID2;
+ 174   1          uint8_t CAN_FilterID3;
+ 175   1          uint8_t CAN_FilterID4;
+ 176   1          uint8_t CAN_FilterIDMask1;
+ 177   1          uint8_t CAN_FilterIDMask2;
+ 178   1          uint8_t CAN_FilterIDMask3;
+ 179   1          uint8_t CAN_FilterIDMask4; 
+ 180   1      
+ 181   1          /* Init Parameters*/
+ 182   1          CAN_MasterCtrl_TypeDef CAN_MasterCtrl;
+ 183   1          CAN_Mode_TypeDef CAN_Mode;
+ 184   1          CAN_SynJumpWidth_TypeDef CAN_SynJumpWidth;
+ 185   1          CAN_BitSeg1_TypeDef CAN_BitSeg1;
+ 186   1          CAN_BitSeg2_TypeDef CAN_BitSeg2;
+ 187   1          uint8_t CAN_Prescaler;  
+ 188   1      
+ 189   1          /* CAN register init */
+ 190   1          CAN_DeInit();
+ 191   1      
+ 192   1          /* CAN  init */
+ 193   1          CAN_MasterCtrl=CAN_MasterCtrl_AllDisabled;
+ 194   1          CAN_Mode = CAN_Mode_Normal;
+ 195   1          CAN_SynJumpWidth = CAN_SynJumpWidth_1TimeQuantum;
+ 196   1          CAN_BitSeg1 = CAN_BitSeg1_8TimeQuantum;
+ 197   1          CAN_BitSeg2 = CAN_BitSeg2_7TimeQuantum;
+ 198   1          CAN_Prescaler = CAN_cofig_baud; //1-1Mbps, 2-500kbps, 30-33.333kbps
+ 199   1          status = CAN_Init(CAN_MasterCtrl, CAN_Mode, CAN_SynJumpWidth, CAN_BitSeg1, \
+ 200   1              CAN_BitSeg2, CAN_Prescaler);
+ 201   1      
+ 202   1          /* CAN filter init */
+ 203   1          CAN_FilterNumber = CAN_FilterNumber_0;
+ 204   1          CAN_FilterActivation = ENABLE;
+ 205   1          CAN_FilterMode = CAN_FilterMode_IdMask;
+ 206   1          CAN_FilterScale = CAN_FilterScale_32Bit;
+ 207   1          CAN_FilterID1=0;  
+ 208   1          CAN_FilterID2=0;
+ 209   1          CAN_FilterID3=0;
+ 210   1          CAN_FilterID4=0;
+ 211   1          CAN_FilterIDMask1=0;
+ 212   1          CAN_FilterIDMask2=0;
+ 213   1          CAN_FilterIDMask3=0;
+ 214   1          CAN_FilterIDMask4=0;  
+ 215   1          CAN_FilterInit(CAN_FilterNumber, CAN_FilterActivation, CAN_FilterMode, 
+ 216   1              CAN_FilterScale,CAN_FilterID1, CAN_FilterID2, CAN_FilterID3,
+ 217   1              CAN_FilterID4,CAN_FilterIDMask1, CAN_FilterIDMask2, 
+ 218   1              CAN_FilterIDMask3, CAN_FilterIDMask4);
+ 219   1              
+ 220   1          /* Enable Fifo message pending interrupt*/
+ 221   1          /* Message reception is done by CAN_RX ISR*/
+ 222   1          CAN_ITConfig(CAN_IT_FMP, ENABLE);
+ 223   1      }
+ 224          
+ 225          
+ 226          void GPIO_Config(void)
+ 227          {
+ 228   1          /* LED and Buzzer setup */
+ 229   1          GPIOC->DDR = 0x0E;
+ 230   1          GPIOC->CR1 = 0x0E;
+ 231   1          GPIOC->CR2 = 0x0E;
+ 232   1          GPIOC->ODR = 0x00;
+ 233   1      
+ 234   1          /* HS CAN setup, disable SW CAN */
+ 235   1          GPIOA->DDR = 0x40;
+ 236   1          GPIOA->CR1 = 0x40;
+ 237   1          GPIOA->CR2 = 0x40;
+ 238   1          GPIOA->ODR = 0x40;   
+ 239   1      
+ 240   1         /* Kline set up */
+ 241   1      
+ 242   1          GPIOD->DDR = 0x01;
+ 243   1          GPIOD->CR1 = 0x01;
+ 244   1          GPIOD->ODR = 0x01; // Set SLP N pin to enable LIN Transceive
+ 245   1      }
+ 246          
+ 247          /** Generates a delay time.  */
+ 248          void Delay (uint16_t nCount)
+ 249          {
+ 250   1        /* Decrement nCount value */
+ 251   1        for (; nCount != 0; nCount--);
+ 252   1      }
+ 253          
+ 254          void wait_time(uint8_t xcount)
+ 255          {
+ 256   1      	uint8_t l_ct;
+ 257   1      	for(l_ct = 0; l_ct <= xcount; l_ct++)
+ 258   1      	{
+ 259   2              Delay(0x7FFF);
+ 260   2      	}
+ 261   1      }
+ 262          
+ 263          #ifdef USE_FULL_ASSERT
+ 264          /********************************************************************/
+ 265          /* Reports the name of the source file and the source line number   */
+ 266          /* where the assert_param error has occurred.                       */ 
+ 267          /********************************************************************/
+ 268          void assert_failed(uint8_t* file, uint32_t line)
+ 269          { 
+ 270   1          /* User can add his own implementation to report the file name and line number,
+ 271   1           ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+ 272   1          /* Infinite loop */
+ 273   1          while (1)
+ 274   1          {
+ 275   2          }
+ 276   1      }
+
+*** WARNING C092 IN LINE 268 OF C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\src\main.c : 'file' is declared but not used
+
+*** WARNING C092 IN LINE 268 OF C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\src\main.c : 'line' is declared but not used
+ 277          #endif
+ 278          
+ 279          
+ 280          static void Program_Sequence(void)
+ 281          { 
+ 282   1          switch(programming_step)
+ 283   1          {
+ 284   2              // Determine how many keys are currently programmed to vehicle
+ 285   2              case 1:
+ 286   2              {
+ 287   3                  // Request data by PID for number of keys programmed
+ 288   3                  Tx_Data[0] = 0x03;
+ 289   3                  Tx_Data[1] = 0x22;
+ 290   3                  Tx_Data[2] = 0xC1;
+ 291   3                  Tx_Data[3] = 0x04;
+ 292   3                  Tx_Data[4] = 0x00;
+ 293   3                  Tx_Data[5] = 0x00;
+ 294   3                  Tx_Data[6] = 0x00;
+ 295   3                  Tx_Data[7] = 0x00;
+ 296   3                  
+ 297   3                  wait_time(5);
+ 298   3                  CAN_Transmit(Tx_Id,Tx_IDE,Tx_RTR,Tx_DLC,Tx_Data);
+ 299   3                  wait_time(2);
+ 300   3                    
+ 301   3                  // Check for received message
+ 302   3                  if (l_can_receive_flag == 1)
+ 303   3                  {
+ 304   4                      l_can_receive_flag = 0;
+ 305   4                      
+ 306   4                      // Check if received message is a negative response
+ 307   4                      if(l_can_data[1] == 0x7F)
+ 308   4                      {
+ 309   5                          // Change arbitration ID to 720 and resend message
+ 310   5                          Tx_Id = 0x720;
+ 311   5                      }
+ 312   4                      
+ 313   4                      // Check if received message is positive response to request
+ 314   4                      else if((l_can_data[1] == 0x62) && (l_can_data[2] == 0xC1) && (l_can_data[3] == 0x04))
+ 315   4                      {
+ 316   5                          number_of_remotes_programmed_to_vehicle = l_can_data[4];
+ 317   5                          
+ 318   5                          programming_step++;
+ 319   5                      }
+ 320   4                      
+ 321   4                  }
+ 322   3                  
+ 323   3                  break;
+ 324   3              }
+ 325   2              
+ 326   2              // Check for valid OEM key
+ 327   2              case 2:
+ 328   2              {
+ 329   3                  // Request data by PID for anti-theft status
+ 330   3                  Tx_Data[0] = 0x03;
+ 331   3                  Tx_Data[1] = 0x22;
+ 332   3                  Tx_Data[2] = 0xC1;
+ 333   3                  Tx_Data[3] = 0x24;
+ 334   3                  Tx_Data[4] = 0x00;
+ 335   3                  Tx_Data[5] = 0x00;
+ 336   3                  Tx_Data[6] = 0x00;
+ 337   3                  Tx_Data[7] = 0x00;
+ 338   3                  
+ 339   3                  wait_time(5);
+ 340   3                  CAN_Transmit(Tx_Id,Tx_IDE,Tx_RTR,Tx_DLC,Tx_Data);
+ 341   3                  wait_time(2);
+ 342   3                    
+ 343   3                  // Check for received message
+ 344   3                  if (l_can_receive_flag == 1)
+ 345   3                  {
+ 346   4                      l_can_receive_flag = 0;
+ 347   4                      
+ 348   4                      // Check if received message is positive response to request
+ 349   4                      if((l_can_data[1] == 0x62) && (l_can_data[2] == 0xC1) && (l_can_data[3] == 0x24))
+ 350   4                      {
+ 351   5                          // Check for master key
+ 352   5                          if ((l_can_data[4] & 0x20) == 0x20)
+ 353   5                          {
+ 354   6                              programming_step++;
+ 355   6                              
+ 356   6                              // Trigger buzzer and green LED when the OEM key is authenticated
+ 357   6                              GPIOC->ODR = 0x06;   
+ 358   6                              wait_time(40);
+ 359   6                              GPIOC->ODR = 0x00;
+ 360   6                          }
+ 361   5                      }
+ 362   4                      
+ 363   4                  }
+ 364   3                  
+ 365   3                  break;
+ 366   3              }
+ 367   2              
+ 368   2              // Check for valid new key
+ 369   2              case 3:
+ 370   2              {
+ 371   3                  // Request data by PID for anti-theft status
+ 372   3                  Tx_Data[0] = 0x03;
+ 373   3                  Tx_Data[1] = 0x22;
+ 374   3                  Tx_Data[2] = 0xC1;
+ 375   3                  Tx_Data[3] = 0x24;
+ 376   3                  Tx_Data[4] = 0x00;
+ 377   3                  Tx_Data[5] = 0x00;
+ 378   3                  Tx_Data[6] = 0x00;
+ 379   3                  Tx_Data[7] = 0x00;
+ 380   3                  
+ 381   3                  wait_time(5);
+ 382   3                  CAN_Transmit(Tx_Id,Tx_IDE,Tx_RTR,Tx_DLC,Tx_Data);
+ 383   3                  wait_time(2);
+ 384   3                    
+ 385   3                  // Check for received message
+ 386   3                  if (l_can_receive_flag == 1)
+ 387   3                  {
+ 388   4                      l_can_receive_flag = 0;
+ 389   4                      
+ 390   4                      // Check if received message is positive response to request
+ 391   4                      if((l_can_data[1] == 0x62) && (l_can_data[2] == 0xC1) && (l_can_data[3] == 0x24))
+ 392   4                      {
+ 393   5                          // Check for master key
+ 394   5                          if ((l_can_data[4] & 0x20) == 0x00)
+ 395   5                          {
+ 396   6                              programming_step++;
+ 397   6                              
+ 398   6                              // Trigger buzzer and green LED when the new key is authenticated
+ 399   6                              GPIOC->ODR = 0x06;   
+ 400   6                              wait_time(40);
+ 401   6                              GPIOC->ODR = 0x00;
+ 402   6                          }
+ 403   5                      }
+ 404   4                      
+ 405   4                  }
+ 406   3                  
+ 407   3                  break;
+ 408   3              }
+ 409   2      
+ 410   2              // Check vehicle security access status
+ 411   2              case 4:
+ 412   2              {
+ 413   3                  // Request data by PID for security access status
+ 414   3                  Tx_Data[0] = 0x03;
+ 415   3                  Tx_Data[1] = 0x22;
+ 416   3                  Tx_Data[2] = 0xC1;
+ 417   3                  Tx_Data[3] = 0x15;
+ 418   3                  Tx_Data[4] = 0x00;
+ 419   3                  Tx_Data[5] = 0x00;
+ 420   3                  Tx_Data[6] = 0x00;
+ 421   3                  Tx_Data[7] = 0x00;
+ 422   3                  
+ 423   3                  wait_time(5);
+ 424   3                  CAN_Transmit(Tx_Id,Tx_IDE,Tx_RTR,Tx_DLC,Tx_Data);
+ 425   3                  wait_time(2);
+ 426   3                  
+ 427   3                  // Check for received message
+ 428   3                  if (l_can_receive_flag == 1)
+ 429   3                  {
+ 430   4                      l_can_receive_flag = 0;
+ 431   4                      
+ 432   4                      // Check if received message is positive response to request
+ 433   4                      if((l_can_data[1] == 0x62) && (l_can_data[2] == 0xC1) && (l_can_data[3] == 0x15))
+ 434   4                      {
+ 435   5                          // Access denied
+ 436   5                          if (l_can_data[4] == 0x33)
+ 437   5                          {
+ 438   6                              programming_step++;
+ 439   6                          }
+ 440   5                          // Access in progress
+ 441   5                          else if (l_can_data[4] == 0x55)
+ 442   5                          {
+ 443   6                              // Continue access
+ 444   6                              programming_step = 7;
+ 445   6                          }
+ 446   5                          // Access granted
+ 447   5                          else if (l_can_data[4] == 0xAA)
+ 448   5                          {
+ 449   6                              // Move to learn key
+ 450   6                              programming_step = 10;
+ 451   6                              
+ 452   6                              // Stop light blinking by disabling counter
+ 453   6                              TIM4->CR1  = 0x00;
+ 454   6                              
+ 455   6                              // Trigger buzzer and green LED
+ 456   6                              GPIOC->ODR = 0x06;   
+ 457   6                              wait_time(40);
+ 458   6                              GPIOC->ODR = 0x00;
+ 459   6                              wait_time(40);
+ 460   6                              GPIOC->ODR = 0x06;   
+ 461   6                              wait_time(40);
+ 462   6                              GPIOC->ODR = 0x00;
+ 463   6                          }
+ 464   5                      }
+ 465   4                  }
+ 466   3                  
+ 467   3                  break;
+ 468   3              }
+ 469   2              
+ 470   2              // Initiate diagnostic session
+ 471   2              case 5:
+ 472   2              {
+ 473   3                  // Send diagnostic command to start timed access
+ 474   3                  Tx_Data[0] = 0x02;
+ 475   3                  Tx_Data[1] = 0x10;
+ 476   3                  Tx_Data[2] = 0x87;
+ 477   3                  Tx_Data[3] = 0x00;
+ 478   3                  Tx_Data[4] = 0x00;
+ 479   3                  Tx_Data[5] = 0x00;
+ 480   3                  Tx_Data[6] = 0x00;
+ 481   3                  Tx_Data[7] = 0x00;
+ 482   3                  
+ 483   3                  wait_time(5);
+ 484   3                  CAN_Transmit(Tx_Id,Tx_IDE,Tx_RTR,Tx_DLC,Tx_Data);
+ 485   3                  wait_time(2);
+ 486   3                  
+ 487   3                  // Check for received message
+ 488   3                  if (l_can_receive_flag == 1)
+ 489   3                  {
+ 490   4                      l_can_receive_flag = 0;
+ 491   4                      
+ 492   4                      // Check if received message is positive response to request
+ 493   4                      if((l_can_data[1] == 0x50) && (l_can_data[2] == 0x87))
+ 494   4                      {
+ 495   5                          // PATS 5 system
+ 496   5                          programming_step++;
+ 497   5                      }
+ 498   4                      else if ((l_can_data[1] == 0x7F) && (l_can_data[2] == 0x10))
+ 499   4                      {
+ 500   5                          // PATS 3/4 system
+ 501   5                          programming_step++;
+ 502   5                      }
+ 503   4                  }
+ 504   3                  
+ 505   3                  break;
+ 506   3              }
+ 507   2              
+ 508   2              // Initiate timed security access
+ 509   2              case 6:
+ 510   2              {
+ 511   3                  // Send diagnostic command to start timed access
+ 512   3                  Tx_Data[0] = 0x03;
+ 513   3                  Tx_Data[1] = 0xB1;
+ 514   3                  Tx_Data[2] = 0x01;
+ 515   3                  Tx_Data[3] = 0x9C;
+ 516   3                  Tx_Data[4] = 0x00;
+ 517   3                  Tx_Data[5] = 0x00;
+ 518   3                  Tx_Data[6] = 0x00;
+ 519   3                  Tx_Data[7] = 0x00;
+ 520   3                  
+ 521   3                  wait_time(5);
+ 522   3                  CAN_Transmit(Tx_Id,Tx_IDE,Tx_RTR,Tx_DLC,Tx_Data);
+ 523   3                  wait_time(2);
+ 524   3                  
+ 525   3                  // Check for received message
+ 526   3                  if (l_can_receive_flag == 1)
+ 527   3                  {
+ 528   4                      l_can_receive_flag = 0;
+ 529   4                      
+ 530   4                      // Check if received message is positive response to request
+ 531   4                      if((l_can_data[1] == 0xF1) && (l_can_data[2] == 0x01) && (l_can_data[3] == 0x9C))
+ 532   4                      {
+ 533   5                          programming_step++;
+ 534   5                          
+ 535   5                          // Trigger buzzer and green LED
+ 536   5                          GPIOC->ODR = 0x06;   
+ 537   5                          wait_time(40);
+ 538   5                          GPIOC->ODR = 0x00;
+ 539   5                          
+ 540   5                          // Start light blinking by enabling counter
+ 541   5                          TIM4->CR1  = 0x01;
+ 542   5                      }
+ 543   4                  }
+ 544   3                  
+ 545   3                  break;
+ 546   3              }
+ 547   2              
+ 548   2              // Check security access status
+ 549   2              case 7:
+ 550   2              {
+ 551   3                  // Request data by PID for security access status
+ 552   3                  Tx_Data[0] = 0x03;
+ 553   3                  Tx_Data[1] = 0x22;
+ 554   3                  Tx_Data[2] = 0xC1;
+ 555   3                  Tx_Data[3] = 0x15;
+ 556   3                  Tx_Data[4] = 0x00;
+ 557   3                  Tx_Data[5] = 0x00;
+ 558   3                  Tx_Data[6] = 0x00;
+ 559   3                  Tx_Data[7] = 0x00;
+ 560   3                  
+ 561   3                  wait_time(40);
+ 562   3                  CAN_Transmit(Tx_Id,Tx_IDE,Tx_RTR,Tx_DLC,Tx_Data);
+ 563   3                  wait_time(2);
+ 564   3                  
+ 565   3                  // Check for received message
+ 566   3                  if (l_can_receive_flag == 1)
+ 567   3                  {
+ 568   4                      l_can_receive_flag = 0;
+ 569   4                      
+ 570   4                      // Check if received message is positive response to request
+ 571   4                      if((l_can_data[1] == 0x62) && (l_can_data[2] == 0xC1) && (l_can_data[3] == 0x15))
+ 572   4                      {
+ 573   5                          // Access denied
+ 574   5                          if (l_can_data[4] == 0x33)
+ 575   5                          {
+ 576   6                              // Request timed access again
+ 577   6                              programming_step = 2;
+ 578   6                          }
+ 579   5                          // Access in progress
+ 580   5                          else if (l_can_data[4] == 0x55)
+ 581   5                          {
+ 582   6                              // Do nothing
+ 583   6                          }
+ 584   5                          // Access granted
+ 585   5                          else if (l_can_data[4] == 0xAA)
+ 586   5                          {
+ 587   6                              // Move to learn key
+ 588   6                              programming_step = 10;
+ 589   6                          }
+ 590   5                          
+ 591   5                      }
+ 592   4                  }
+ 593   3                  
+ 594   3                  break;
+ 595   3              }
+ 596   2              
+ 597   2              // Erase key
+ 598   2              case 10:
+ 599   2              {
+ 600   3                  // Send diagnostic command to erase keys
+ 601   3                  Tx_Data[0] = 0x04;
+ 602   3                  Tx_Data[1] = 0xB1;
+ 603   3                  Tx_Data[2] = 0x00;
+ 604   3                  Tx_Data[3] = 0x39;
+ 605   3                  Tx_Data[4] = 0x01;
+ 606   3                  Tx_Data[5] = 0x00;
+ 607   3                  Tx_Data[6] = 0x00;
+ 608   3                  Tx_Data[7] = 0x00;
+ 609   3                  
+ 610   3                  wait_time(5);
+ 611   3                  CAN_Transmit(Tx_Id,Tx_IDE,Tx_RTR,Tx_DLC,Tx_Data);
+ 612   3                  wait_time(2);
+ 613   3                  
+ 614   3                  // Check for received message
+ 615   3                  if (l_can_receive_flag == 1)
+ 616   3                  {
+ 617   4                      l_can_receive_flag = 0;
+ 618   4                      
+ 619   4                      // Check if received message is positive response to request
+ 620   4                      if((l_can_data[1] == 0xF1) && (l_can_data[2] == 0x00) && (l_can_data[3] == 0x39))
+ 621   4                      {
+ 622   5                          programming_step++;
+ 623   5                      }
+ 624   4                  }
+ 625   3                  
+ 626   3                  break;
+ 627   3              }
+ 628   2              
+ 629   2              // Determine how many keys are currently programmed to vehicle
+ 630   2              case 11:
+ 631   2              {
+ 632   3                  // Request data by PID for number of keys programmed
+ 633   3                  Tx_Data[0] = 0x03;
+ 634   3                  Tx_Data[1] = 0x22;
+ 635   3                  Tx_Data[2] = 0xC1;
+ 636   3                  Tx_Data[3] = 0x04;
+ 637   3                  Tx_Data[4] = 0x00;
+ 638   3                  Tx_Data[5] = 0x00;
+ 639   3                  Tx_Data[6] = 0x00;
+ 640   3                  Tx_Data[7] = 0x00;
+ 641   3                  
+ 642   3                  wait_time(40);
+ 643   3                  CAN_Transmit(Tx_Id,Tx_IDE,Tx_RTR,Tx_DLC,Tx_Data);
+ 644   3                  wait_time(2);
+ 645   3                    
+ 646   3                  // Check for received message
+ 647   3                  if (l_can_receive_flag == 1)
+ 648   3                  {
+ 649   4                      l_can_receive_flag = 0;
+ 650   4                      
+ 651   4                      // Check if received message is positive response to request
+ 652   4                      if((l_can_data[1] == 0x62) && (l_can_data[2] == 0xC1) && (l_can_data[3] == 0x04))
+ 653   4                      {
+ 654   5                          // Check if the new keyfob/remote has been learned
+ 655   5                          if(l_can_data[4] == 0x00)
+ 656   5                          {
+ 657   6                              programming_step++;
+ 658   6                          }
+ 659   5                      }
+ 660   4                  }
+ 661   3                  
+ 662   3                  break;
+ 663   3              }
+ 664   2              
+ 665   2              // Set Service Mode
+ 666   2              case 12:
+ 667   2              {
+ 668   3                  // Send diagnostic command to set service mode
+ 669   3                  Tx_Data[0] = 0x04;
+ 670   3                  Tx_Data[1] = 0xB1;
+ 671   3                  Tx_Data[2] = 0xF0;
+ 672   3                  Tx_Data[3] = 0x10;
+ 673   3                  Tx_Data[4] = 0x00;
+ 674   3                  Tx_Data[5] = 0x00;
+ 675   3                  Tx_Data[6] = 0x00;
+ 676   3                  Tx_Data[7] = 0x00;
+ 677   3                  
+ 678   3                  wait_time(40);
+ 679   3                  CAN_Transmit(Tx_Id,Tx_IDE,Tx_RTR,Tx_DLC,Tx_Data);
+ 680   3                  wait_time(2);
+ 681   3                  
+ 682   3                  // Check for received message
+ 683   3                  if (l_can_receive_flag == 1)
+ 684   3                  {
+ 685   4                      l_can_receive_flag = 0;
+ 686   4                      
+ 687   4                      // Check if received message is positive response to request
+ 688   4                      if((l_can_data[1] == 0xF1) && (l_can_data[2] == 0xF0) && (l_can_data[3] == 0x10))
+ 689   4                      {
+ 690   5                          programming_step++;
+ 691   5                          
+ 692   5                          // Stop light blinking by disabling counter
+ 693   5                          TIM4->CR1  = 0x00;
+ 694   5                          
+ 695   5                          // Beep twice to let operator know to cycle key 1
+ 696   5                          GPIOC->ODR = 0x06;   
+ 697   5                          wait_time(40);
+ 698   5                          GPIOC->ODR = 0x00;
+ 699   5                          wait_time(40);
+ 700   5                          GPIOC->ODR = 0x06;   
+ 701   5                          wait_time(40);
+ 702   5                          GPIOC->ODR = 0x00;
+ 703   5                      }
+ 704   4                  }
+ 705   3                  
+ 706   3                  break;
+ 707   3              }
+ 708   2              
+ 709   2              // Determine how many keys are currently programmed to vehicle
+ 710   2              case 13:
+ 711   2              {
+ 712   3                  // Request data by PID for number of keys programmed
+ 713   3                  Tx_Data[0] = 0x03;
+ 714   3                  Tx_Data[1] = 0x22;
+ 715   3                  Tx_Data[2] = 0xC1;
+ 716   3                  Tx_Data[3] = 0x04;
+ 717   3                  Tx_Data[4] = 0x00;
+ 718   3                  Tx_Data[5] = 0x00;
+ 719   3                  Tx_Data[6] = 0x00;
+ 720   3                  Tx_Data[7] = 0x00;
+ 721   3                  
+ 722   3                  wait_time(40);
+ 723   3                  CAN_Transmit(Tx_Id,Tx_IDE,Tx_RTR,Tx_DLC,Tx_Data);
+ 724   3                  wait_time(2);
+ 725   3                    
+ 726   3                  // Check for received message
+ 727   3                  if (l_can_receive_flag == 1)
+ 728   3                  {
+ 729   4                      l_can_receive_flag = 0;
+ 730   4                      
+ 731   4                      // Check if received message is positive response to request
+ 732   4                      if((l_can_data[1] == 0x62) && (l_can_data[2] == 0xC1) && (l_can_data[3] == 0x04))
+ 733   4                      {
+ 734   5                          // Check if the new keyfob/remote has been learned
+ 735   5                          if(l_can_data[4] == 0x01)
+ 736   5                          {
+ 737   6                              
+ 738   6                              if (keys_learned == 0)
+ 739   6                              {
+ 740   7                                  // Write new amount of fobs/remotes learned to EEPROM
+ 741   7                                  //FLASH_ProgramByte(EEPROM_address_of_dongle_uses, number_of_dongle_uses + 1);
+ 742   7                                  
+ 743   7                                  keys_learned = 1;
+ 744   7                                  
+ 745   7                                  // Beep once for the first key
+ 746   7                                  GPIOC->ODR = 0x06;
+ 747   7                                  wait_time(40);
+ 748   7                                  GPIOC->ODR = 0x00;
+ 749   7                              }
+ 750   6                          }
+ 751   5                          
+ 752   5                          // Check if the new keyfob/remote has been learned
+ 753   5                          else if(l_can_data[4] == 0x02)
+ 754   5                          {
+ 755   6                              if (keys_learned == 1)
+ 756   6                              {
+ 757   7                                  // Write new amount of fobs/remotes learned to EEPROM
+ 758   7                                  FLASH_ProgramByte(EEPROM_address_of_dongle_uses, number_of_dongle_uses + 1);
+ 759   7                                  
+ 760   7                                  keys_learned = 2;
+ 761   7                                  
+ 762   7                                  programming_step++;
+ 763   7                                  
+ 764   7                                  // Beep three times for the second key
+ 765   7                                  GPIOC->ODR = 0x06;   
+ 766   7                                  wait_time(40);
+ 767   7                                  GPIOC->ODR = 0x00;
+ 768   7                                  wait_time(40);
+ 769   7                                  GPIOC->ODR = 0x06;   
+ 770   7                                  wait_time(40);
+ 771   7                                  GPIOC->ODR = 0x00;
+ 772   7                                  wait_time(40);
+ 773   7                                  GPIOC->ODR = 0x06;   
+ 774   7                                  wait_time(40);
+ 775   7                                  GPIOC->ODR = 0x00;
+ 776   7                              }
+ 777   6                          }
+ 778   5                      }
+ 779   4                  }
+ 780   3                  
+ 781   3                  break;
+ 782   3              }
+ 783   2              
+ 784   2              default:
+ 785   2              {
+ 786   3                  1;
+ 787   3              }
+ 788   2          }
+ 789   1      }
+ 790          
+RCSTM8 COMPILER V2.42.12.083
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+              ; FUNCTION main (BEGIN)
+              ; SOURCE LINE # 56 
+0000 CD0000     F                      CALL   ?check_dorman_rights?MAIN?S
+              ; SOURCE LINE # 59 
+0003 CD0000     F                      CALL   ?CLK_Config
+              ; SOURCE LINE # 62 
+0006 CD0000     F                      CALL   ?GPIO_Config
+              ; SOURCE LINE # 65 
+0009 CD0000     F                      CALL   ?UART_Config
+              ; SOURCE LINE # 68 
+000C 35015341                          MOV    05341H,#001H
+              ; SOURCE LINE # 69 
+0010 725F5344                          CLR    05344H
+              ; SOURCE LINE # 70 
+0014 35065345                          MOV    05345H,#006H
+              ; SOURCE LINE # 71 
+0018 35F95346                          MOV    05346H,#0F9H
+              ; SOURCE LINE # 72 
+001C 725F5342                          CLR    05342H
+              ; SOURCE LINE # 73 
+0020 35015340                          MOV    05340H,#001H
+              ; SOURCE LINE # 76 
+0024 CD0000     F                      CALL   ?CAN_Config
+              ; SOURCE LINE # 79 
+0027 9A                                RIM    
+              ; SOURCE LINE # 82 
+0028 CD0000     F                      CALL   ?flash_process?MAIN?S
+              ; SOURCE LINE # 87 
+002B A608                              LD     A,#008H
+002D B100       F                      CP     A,number_of_dongle_uses
+002F 2512                              JRULT  ?EPILOG_0000
+              ; SOURCE LINE # 93 
+0031 35010000   F                      MOV    programming_step,#001H
+0035         ?WHILE_0001:
+              ; SOURCE LINE # 97 
+0035 B600       F                      LD     A,l_can_receive_flag
+0037 4A                                DEC    A
+0038 26FB                              JRNE   ?WHILE_0001
+003A 3D00       F                      TNZ    Tester_Present
+003C 26F7                              JRNE   ?WHILE_0001
+              ; SOURCE LINE # 99 
+003E CD0000     F                      CALL   ?Program_Sequence?MAIN?S
+0041 20F2                              JRA    ?WHILE_0001
+0043         ?EPILOG_0000:
+              ; SOURCE LINE # 108 
+0043 81                                RET    
+
+              ; FUNCTION main (END)
+
+              ; FUNCTION ?check_dorman_rights?MAIN?S (BEGIN)
+              ; SOURCE LINE # 111 
+0000 5206                              SUB    SP,#006H
+              ; SOURCE LINE # 113 
+0002 4B06                              PUSH   #006H
+0004 90AE0000   F                      LDW    Y,#HIGH(?STR?MAIN?BASE)
+0008 96           DNF                  LDW    X,SP
+0009 1C0002     F DNF                  ADDW   X,#00002H
+000C CD0000     F DNF                  CALL   ?C?memcpy
+              ; SOURCE LINE # 114 
+000F 5581130000 F                      MOV    test_char_t1,dorman + 013H
+              ; SOURCE LINE # 115 
+0014 5581140000 F                      MOV    test_char_t1 + 01H,dorman + 014H
+              ; SOURCE LINE # 116 
+0019 5581150000 F                      MOV    test_char_t1 + 02H,dorman + 015H
+              ; SOURCE LINE # 117 
+001E 5581160000 F                      MOV    test_char_t1 + 03H,dorman + 016H
+              ; SOURCE LINE # 118 
+0023 5581170000 F                      MOV    test_char_t1 + 04H,dorman + 017H
+              ; SOURCE LINE # 119 
+0028 5581180000 F                      MOV    test_char_t1 + 05H,dorman + 018H
+              ; SOURCE LINE # 123 
+002D 35010000   F                      MOV    dorman_flag,#001H
+              ; SOURCE LINE # 130 
+0031 7B01       F                      LD     A,(001H,SP)   ; [ check_char ]
+0033 5F                                CLRW   X
+0034 97                                LD     XL,A
+0035 5A                                DECW   X
+0036 BF02       F                      LDW    ?BH.w,X
+0038 B600       F                      LD     A,test_char_t1
+003A 5F                                CLRW   X
+003B 97                                LD     XL,A
+003C B302       F                      CPW    X,?BH.w
+003E 264C                              JRNE   ?ELSE_0005
+0040 7B02       F                      LD     A,(002H,SP)   ; [ check_char + 01H ]
+0042 97                                LD     XL,A
+0043 5A                                DECW   X
+0044 BF02       F                      LDW    ?BH.w,X
+0046 B600       F                      LD     A,test_char_t1 + 01H
+0048 5F                                CLRW   X
+0049 97                                LD     XL,A
+004A B302       F                      CPW    X,?BH.w
+004C 263E                              JRNE   ?ELSE_0005
+004E 7B03       F                      LD     A,(003H,SP)   ; [ check_char + 02H ]
+0050 97                                LD     XL,A
+0051 5A                                DECW   X
+0052 BF02       F                      LDW    ?BH.w,X
+0054 B600       F                      LD     A,test_char_t1 + 02H
+0056 5F                                CLRW   X
+0057 97                                LD     XL,A
+0058 B302       F                      CPW    X,?BH.w
+005A 2630                              JRNE   ?ELSE_0005
+005C 7B04       F                      LD     A,(004H,SP)   ; [ check_char + 03H ]
+005E 97                                LD     XL,A
+005F 5A                                DECW   X
+0060 BF02       F                      LDW    ?BH.w,X
+0062 B600       F                      LD     A,test_char_t1 + 03H
+0064 5F                                CLRW   X
+0065 97                                LD     XL,A
+0066 B302       F                      CPW    X,?BH.w
+0068 2622                              JRNE   ?ELSE_0005
+006A 7B05       F                      LD     A,(005H,SP)   ; [ check_char + 04H ]
+006C 97                                LD     XL,A
+006D 5A                                DECW   X
+006E BF02       F                      LDW    ?BH.w,X
+0070 B600       F                      LD     A,test_char_t1 + 04H
+0072 5F                                CLRW   X
+0073 97                                LD     XL,A
+0074 B302       F                      CPW    X,?BH.w
+0076 2614                              JRNE   ?ELSE_0005
+0078 7B06       F                      LD     A,(006H,SP)   ; [ check_char + 05H ]
+007A 97                                LD     XL,A
+007B 5A                                DECW   X
+007C BF02       F                      LDW    ?BH.w,X
+007E B600       F                      LD     A,test_char_t1 + 05H
+0080 5F                                CLRW   X
+0081 97                                LD     XL,A
+0082 B302       F                      CPW    X,?BH.w
+0084 2606                              JRNE   ?ELSE_0005
+              ; SOURCE LINE # 135 
+0086 35020000   F                      MOV    dorman_flag,#002H
+008A 2001                              JRA    ?EPILOG_0001
+008C         ?ELSE_0005:
+              ; SOURCE LINE # 139 
+008C 8E                                HALT   
+008D         ?EPILOG_0001:
+              ; SOURCE LINE # 141 
+008D 5B06                              ADD    SP,#006H
+008F 81                                RET    
+              ; check_char   array of unsigned char  (size=6). Automatic variable  in AUTO
+
+              ; FUNCTION ?check_dorman_rights?MAIN?S (END)
+
+              ; FUNCTION ?flash_process?MAIN?S (BEGIN)
+              ; SOURCE LINE # 147 
+0000 5F                                CLRW   X
+0001 CD0000     F                      CALL   ?FLASH_SetProgrammingTime
+              ; SOURCE LINE # 150 
+0004 AE00F7                            LDW    X,#000F7H
+0007 CD0000     F                      CALL   ?FLASH_Unlock
+              ; SOURCE LINE # 153 
+000A AE0000     F                      LDW    X,#EEPROM_address_of_dongle_uses
+000D CD0000     F DNF                  CALL   ?C?mv4_ix2sk
+0010 CD0000     F                      CALL   ?FLASH_ReadByte
+0013 5B04                              ADD    SP,#004H
+0015 B700       F                      LD     number_of_dongle_uses,A
+              ; SOURCE LINE # 154 
+0017 81                                RET    
+
+              ; FUNCTION ?flash_process?MAIN?S (END)
+
+              ; FUNCTION ?CLK_Config (BEGIN)
+              ; SOURCE LINE # 159 
+0000 5F                                CLRW   X
+0001 CC0000     F                      JP     ?CLK_HSIPrescalerConfig
+
+              ; FUNCTION ?CLK_Config (END)
+
+              ; FUNCTION ?CAN_Config (BEGIN)
+              ; SOURCE LINE # 163 
+0000 5203                              SUB    SP,#003H
+              ; SOURCE LINE # 190 
+0002 CD0000     F                      CALL   ?CAN_DeInit
+              ; SOURCE LINE # 198 
+0005 B600       F                      LD     A,CAN_cofig_baud
+              ; SOURCE LINE # 200 
+0007 88                                PUSH   A
+0008 AE0060                            LDW    X,#00060H
+000B 89                                PUSHW  X
+000C AE0007                            LDW    X,#00007H
+000F 89                                PUSHW  X
+0010 5F                                CLRW   X
+0011 89                                PUSHW  X
+0012 89                                PUSHW  X
+0013 CD0000     F                      CALL   ?CAN_Init
+0016 5B09                              ADD    SP,#009H
+              ; SOURCE LINE # 218 
+0018 5F                                CLRW   X
+0019 89                                PUSHW  X
+001A 89                                PUSHW  X
+001B 89                                PUSHW  X
+001C 89                                PUSHW  X
+001D AE0006                            LDW    X,#00006H
+0020 89                                PUSHW  X
+0021 5F                                CLRW   X
+0022 89                                PUSHW  X
+0023 5C                                INCW   X
+0024 89                                PUSHW  X
+0025 5F                                CLRW   X
+0026 CD0000     F                      CALL   ?CAN_FilterInit
+0029 5B0E                              ADD    SP,#00EH
+              ; SOURCE LINE # 222 
+002B 5F                                CLRW   X
+002C 5C                                INCW   X
+002D 89                                PUSHW  X
+002E 5C                                INCW   X
+002F CD0000     F                      CALL   ?CAN_ITConfig
+0032 85                                POPW   X
+              ; SOURCE LINE # 223 
+0033 5B03                              ADD    SP,#003H
+0035 81                                RET    
+              ; status       (size=2). Automatic variable  in AUTO
+              ; CAN_FilterNumber (size=2). Automatic variable  in AUTO
+              ; CAN_FilterActivation (size=2). Automatic variable  in AUTO
+              ; CAN_FilterMode (size=2). Automatic variable  in AUTO
+              ; CAN_FilterScale (size=2). Automatic variable  in AUTO
+              ; CAN_FilterID1 unsigned char  (size=1). Automatic variable  in AUTO
+              ; CAN_FilterID2 unsigned char  (size=1). Automatic variable  in AUTO
+              ; CAN_FilterID3 unsigned char  (size=1). Automatic variable  in AUTO
+              ; CAN_FilterID4 unsigned char  (size=1). Automatic variable  in AUTO
+              ; CAN_FilterIDMask1 unsigned char  (size=1). Automatic variable  in AUTO
+              ; CAN_FilterIDMask2 unsigned char  (size=1). Automatic variable  in AUTO
+              ; CAN_FilterIDMask3 unsigned char  (size=1). Automatic variable  in AUTO
+              ; CAN_FilterIDMask4 unsigned char  (size=1). Automatic variable  in AUTO
+              ; CAN_MasterCtrl (size=2). Automatic variable  in AUTO
+              ; CAN_Mode     (size=2). Automatic variable  in AUTO
+              ; CAN_SynJumpWidth (size=2). Automatic variable  in AUTO
+              ; CAN_BitSeg1  (size=2). Automatic variable  in AUTO
+              ; CAN_BitSeg2  (size=2). Automatic variable  in AUTO
+              ; CAN_Prescaler unsigned char  (size=1). Automatic variable  in AUTO
+
+              ; FUNCTION ?CAN_Config (END)
+
+              ; FUNCTION ?GPIO_Config (BEGIN)
+              ; SOURCE LINE # 229 
+0000 350E500C                          MOV    0500CH,#00EH
+              ; SOURCE LINE # 230 
+0004 350E500D                          MOV    0500DH,#00EH
+              ; SOURCE LINE # 231 
+0008 350E500E                          MOV    0500EH,#00EH
+              ; SOURCE LINE # 232 
+000C 725F500A                          CLR    0500AH
+              ; SOURCE LINE # 235 
+0010 35405002                          MOV    05002H,#040H
+              ; SOURCE LINE # 236 
+0014 35405003                          MOV    05003H,#040H
+              ; SOURCE LINE # 237 
+0018 35405004                          MOV    05004H,#040H
+              ; SOURCE LINE # 238 
+001C 35405000                          MOV    05000H,#040H
+              ; SOURCE LINE # 242 
+0020 35015011                          MOV    05011H,#001H
+              ; SOURCE LINE # 243 
+0024 35015012                          MOV    05012H,#001H
+              ; SOURCE LINE # 244 
+0028 3501500F                          MOV    0500FH,#001H
+              ; SOURCE LINE # 245 
+002C 81                                RET    
+
+              ; FUNCTION ?GPIO_Config (END)
+
+              ; FUNCTION ?Delay (BEGIN)
+              ; Register XW is assigned to parameter nCount
+0000         ?FOR_0001:
+              ; SOURCE LINE # 251 
+0000 5D                                TNZW   X
+0001 2703                              JREQ   ?EPILOG_0006
+0003 5A                                DECW   X
+0004 20FA                              JRA    ?FOR_0001
+0006         ?EPILOG_0006:
+              ; SOURCE LINE # 252 
+0006 81                                RET    
+              ; nCount       unsigned short  (size=2-Alg). Register parameter(XW) in PAGE0
+
+              ; FUNCTION ?Delay (END)
+
+              ; FUNCTION ?wait_time (BEGIN)
+              ; Register-parameter xcount (A) is relocated (auto)
+              ; SOURCE LINE # 254 
+0000 88                                PUSH   A
+              ; SOURCE LINE # 257 
+0001 4B00                              PUSH   #000H
+0003         ?FOR_0003:
+0003 7B02       F                      LD     A,(002H,SP)   ; [ xcount ]
+0005 1101       F                      CP     A,(001H,SP)   ; [ l_ct ]
+0007 250A                              JRULT  ?EPILOG_0007
+              ; SOURCE LINE # 259 
+0009 AE7FFF                            LDW    X,#07FFFH
+000C CD0000     F                      CALL   ?Delay
+              ; SOURCE LINE # 257 
+000F 0C01       F                      INC    (001H,SP)   ; [ l_ct ]
+0011 20F0                              JRA    ?FOR_0003
+0013         ?EPILOG_0007:
+              ; SOURCE LINE # 261 
+0013 85                                POPW   X
+0014 81                                RET    
+              ; xcount       unsigned char  (size=1).  parameter in AUTO
+              ; l_ct         unsigned char  (size=1). Automatic variable  in AUTO
+
+              ; FUNCTION ?wait_time (END)
+
+              ; FUNCTION ?assert_failed (BEGIN)
+0000         ?WHILE_0003:
+              ; SOURCE LINE # 274 
+0000 20FE                              JRA    ?WHILE_0003
+              ; file         pointer to (unsigned char   in )(size=2). Register parameter(XW) in AUTO
+              ; line         unsigned long  (size=4-Alg).  parameter in AUTO
+
+              ; FUNCTION ?assert_failed (END)
+
+              ; FUNCTION ?Program_Sequence?MAIN?S (BEGIN)
+              ; SOURCE LINE # 282 
+0000 450003     F                      MOV    ?BH,programming_step
+0003 B603       F                      LD     A,?BH
+0005 4A                                DEC    A
+0006 2746                              JREQ   ?CASE_0011
+0008 B603       F                      LD     A,?BH
+000A A102                              CP     A,#002H
+000C 2603                              JRNE   ?LAB_0072
+000E CC0000     F                      JP     ?CASE_0012
+0011         ?LAB_0072:
+0011 A103                              CP     A,#003H
+0013 2603                              JRNE   ?LAB_0073
+0015 CC0000     F                      JP     ?CASE_0013
+0018         ?LAB_0073:
+0018 A104                              CP     A,#004H
+001A 2603                              JRNE   ?LAB_0074
+001C CC0000     F                      JP     ?CASE_0014
+001F         ?LAB_0074:
+001F A105                              CP     A,#005H
+0021 2603                              JRNE   ?LAB_0075
+0023 CC0000     F                      JP     ?CASE_0015
+0026         ?LAB_0075:
+0026 A106                              CP     A,#006H
+0028 2603                              JRNE   ?LAB_0076
+002A CC0000     F                      JP     ?CASE_0016
+002D         ?LAB_0076:
+002D A107                              CP     A,#007H
+002F 2603                              JRNE   ?LAB_0077
+0031 CC0000     F                      JP     ?CASE_0017
+0034         ?LAB_0077:
+0034 A00A                              SUB    A,#00AH
+0036 2603                              JRNE   ?LAB_0078
+0038 CC0000     F                      JP     ?CASE_0018
+003B         ?LAB_0078:
+003B 4A                                DEC    A
+003C 2603                              JRNE   ?LAB_0079
+003E CC0000     F                      JP     ?CASE_0019
+0041         ?LAB_0079:
+0041 4A                                DEC    A
+0042 2603                              JRNE   ?LAB_0080
+0044 CC0000     F                      JP     ?CASE_0020
+0047         ?LAB_0080:
+0047 4A                                DEC    A
+0048 2603                              JRNE   ?LAB_0081
+004A CC0000     F                      JP     ?CASE_0021
+004D         ?LAB_0081:
+004D 81                                RET    
+004E         ?CASE_0011:
+              ; SOURCE LINE # 288 
+004E 35030000   F                      MOV    Tx_Data,#003H
+              ; SOURCE LINE # 289 
+0052 35220000   F                      MOV    Tx_Data + 01H,#022H
+              ; SOURCE LINE # 290 
+0056 35C10000   F                      MOV    Tx_Data + 02H,#0C1H
+              ; SOURCE LINE # 291 
+005A 35040000   F                      MOV    Tx_Data + 03H,#004H
+              ; SOURCE LINE # 292 
+005E 3F00       F                      CLR    Tx_Data + 04H
+              ; SOURCE LINE # 293 
+0060 3F00       F                      CLR    Tx_Data + 05H
+              ; SOURCE LINE # 294 
+0062 3F00       F                      CLR    Tx_Data + 06H
+              ; SOURCE LINE # 295 
+0064 3F00       F                      CLR    Tx_Data + 07H
+              ; SOURCE LINE # 297 
+0066 A605                              LD     A,#005H
+0068 CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 298 
+006B AE0000     F                      LDW    X,#Tx_Data
+006E 89                                PUSHW  X
+006F B600       F                      LD     A,Tx_DLC
+0071 88                                PUSH   A
+0072 BE00       F                      LDW    X,Tx_RTR
+0074 89                                PUSHW  X
+0075 BE00       F                      LDW    X,Tx_IDE
+0077 89                                PUSHW  X
+0078 AE0000     F                      LDW    X,#Tx_Id
+007B CD0000     F DNF                  CALL   ?C?mv4_ix2sk
+007E CD0000     F                      CALL   ?CAN_Transmit
+0081 5B0B                              ADD    SP,#00BH
+              ; SOURCE LINE # 299 
+0083 A602                              LD     A,#002H
+0085 CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 302 
+0088 B600       F                      LD     A,l_can_receive_flag
+008A 4A                                DEC    A
+008B 2703                              JREQ   ?LAB_0082
+008D CC0000     F                      JP     ?EPILOG_0009
+0090         ?LAB_0082:
+              ; SOURCE LINE # 304 
+0090 3F00       F                      CLR    l_can_receive_flag
+              ; SOURCE LINE # 307 
+0092 A67F                              LD     A,#07FH
+0094 B100       F                      CP     A,l_can_data + 01H
+0096 260B                              JRNE   ?ELSE_0044
+              ; SOURCE LINE # 310 
+0098 AE0000     F                      LDW    X,#Tx_Id
+009B CD0000     F DNF            M(07)  CALL  ?C?mv4_pg2ix
+009E         ?DATASTART_0001:
+009E 00                             M  DB     000H
+009F 00                             M  DB     000H
+00A0 07                             M  DB     007H
+00A1 20                             M  DB     020H
+00A2         ?DATAEND_0001:
+00A2 81                                RET    
+00A3         ?ELSE_0044:
+              ; SOURCE LINE # 314 
+00A3 A662                              LD     A,#062H
+00A5 B100       F                      CP     A,l_can_data + 01H
+00A7 2703                              JREQ   ?LAB_0083
+00A9 CC0000     F                      JP     ?EPILOG_0009
+00AC         ?LAB_0083:
+00AC B600       F                      LD     A,l_can_data + 02H
+00AE A1C1                              CP     A,#0C1H
+00B0 2703                              JREQ   ?LAB_0084
+00B2 CC0000     F                      JP     ?EPILOG_0009
+00B5         ?LAB_0084:
+00B5 A604                              LD     A,#004H
+00B7 B100       F                      CP     A,l_can_data + 03H
+00B9 2703                              JREQ   ?LAB_0085
+00BB CC0000     F                      JP     ?EPILOG_0009
+00BE         ?LAB_0085:
+              ; SOURCE LINE # 316 
+00BE 450000     F                      MOV    number_of_remotes_programmed_to_vehicle,l_can_data + 04H
+00C1         ?OPTI_0003:
+              ; SOURCE LINE # 318 
+00C1 3C00       F                      INC    programming_step
+              ; SOURCE LINE # 323 
+00C3 81                                RET    
+00C4         ?CASE_0012:
+              ; SOURCE LINE # 330 
+00C4 35030000   F                      MOV    Tx_Data,#003H
+              ; SOURCE LINE # 331 
+00C8 35220000   F                      MOV    Tx_Data + 01H,#022H
+              ; SOURCE LINE # 332 
+00CC 35C10000   F                      MOV    Tx_Data + 02H,#0C1H
+              ; SOURCE LINE # 333 
+00D0 35240000   F                      MOV    Tx_Data + 03H,#024H
+              ; SOURCE LINE # 334 
+00D4 3F00       F                      CLR    Tx_Data + 04H
+              ; SOURCE LINE # 335 
+00D6 3F00       F                      CLR    Tx_Data + 05H
+              ; SOURCE LINE # 336 
+00D8 3F00       F                      CLR    Tx_Data + 06H
+              ; SOURCE LINE # 337 
+00DA 3F00       F                      CLR    Tx_Data + 07H
+              ; SOURCE LINE # 339 
+00DC A605                              LD     A,#005H
+00DE CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 340 
+00E1 AE0000     F                      LDW    X,#Tx_Data
+00E4 89                                PUSHW  X
+00E5 B600       F                      LD     A,Tx_DLC
+00E7 88                                PUSH   A
+00E8 BE00       F                      LDW    X,Tx_RTR
+00EA 89                                PUSHW  X
+00EB BE00       F                      LDW    X,Tx_IDE
+00ED 89                                PUSHW  X
+00EE AE0000     F                      LDW    X,#Tx_Id
+00F1 CD0000     F DNF                  CALL   ?C?mv4_ix2sk
+00F4 CD0000     F                      CALL   ?CAN_Transmit
+00F7 5B0B                              ADD    SP,#00BH
+              ; SOURCE LINE # 341 
+00F9 A602                              LD     A,#002H
+00FB CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 344 
+00FE B600       F                      LD     A,l_can_receive_flag
+0100 4A                                DEC    A
+0101 2703                              JREQ   ?LAB_0086
+0103 CC0000     F                      JP     ?EPILOG_0009
+0106         ?LAB_0086:
+              ; SOURCE LINE # 346 
+0106 3F00       F                      CLR    l_can_receive_flag
+              ; SOURCE LINE # 349 
+0108 A662                              LD     A,#062H
+010A B100       F                      CP     A,l_can_data + 01H
+010C 2703                              JREQ   ?LAB_0087
+010E CC0000     F                      JP     ?EPILOG_0009
+0111         ?LAB_0087:
+0111 B600       F                      LD     A,l_can_data + 02H
+0113 A1C1                              CP     A,#0C1H
+0115 2703                              JREQ   ?LAB_0088
+0117 CC0000     F                      JP     ?EPILOG_0009
+011A         ?LAB_0088:
+011A A624                              LD     A,#024H
+011C B100       F                      CP     A,l_can_data + 03H
+011E 2703                              JREQ   ?LAB_0089
+0120 CC0000     F                      JP     ?EPILOG_0009
+0123         ?LAB_0089:
+              ; SOURCE LINE # 352 
+0123 720B00000F F                      BTJF   l_can_data + 04H,#005H,?NXT_0062
+              ; SOURCE LINE # 354 
+0128 3C00       F                      INC    programming_step
+              ; SOURCE LINE # 357 
+012A 3506500A                          MOV    0500AH,#006H
+              ; SOURCE LINE # 358 
+012E A628                              LD     A,#028H
+0130 CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 359 
+0133 725F500A                          CLR    0500AH
+0137         ?NXT_0062:
+              ; SOURCE LINE # 365 
+0137 81                                RET    
+0138         ?CASE_0013:
+              ; SOURCE LINE # 372 
+0138 35030000   F                      MOV    Tx_Data,#003H
+              ; SOURCE LINE # 373 
+013C 35220000   F                      MOV    Tx_Data + 01H,#022H
+              ; SOURCE LINE # 374 
+0140 35C10000   F                      MOV    Tx_Data + 02H,#0C1H
+              ; SOURCE LINE # 375 
+0144 35240000   F                      MOV    Tx_Data + 03H,#024H
+              ; SOURCE LINE # 376 
+0148 3F00       F                      CLR    Tx_Data + 04H
+              ; SOURCE LINE # 377 
+014A 3F00       F                      CLR    Tx_Data + 05H
+              ; SOURCE LINE # 378 
+014C 3F00       F                      CLR    Tx_Data + 06H
+              ; SOURCE LINE # 379 
+014E 3F00       F                      CLR    Tx_Data + 07H
+              ; SOURCE LINE # 381 
+0150 A605                              LD     A,#005H
+0152 CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 382 
+0155 AE0000     F                      LDW    X,#Tx_Data
+0158 89                                PUSHW  X
+0159 B600       F                      LD     A,Tx_DLC
+015B 88                                PUSH   A
+015C BE00       F                      LDW    X,Tx_RTR
+015E 89                                PUSHW  X
+015F BE00       F                      LDW    X,Tx_IDE
+0161 89                                PUSHW  X
+0162 AE0000     F                      LDW    X,#Tx_Id
+0165 CD0000     F DNF                  CALL   ?C?mv4_ix2sk
+0168 CD0000     F                      CALL   ?CAN_Transmit
+016B 5B0B                              ADD    SP,#00BH
+              ; SOURCE LINE # 383 
+016D A602                              LD     A,#002H
+016F CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 386 
+0172 B600       F                      LD     A,l_can_receive_flag
+0174 4A                                DEC    A
+0175 2703                              JREQ   ?LAB_0090
+0177 CC0000     F                      JP     ?EPILOG_0009
+017A         ?LAB_0090:
+              ; SOURCE LINE # 388 
+017A 3F00       F                      CLR    l_can_receive_flag
+              ; SOURCE LINE # 391 
+017C A662                              LD     A,#062H
+017E B100       F                      CP     A,l_can_data + 01H
+0180 2703                              JREQ   ?LAB_0091
+0182 CC0000     F                      JP     ?EPILOG_0009
+0185         ?LAB_0091:
+0185 B600       F                      LD     A,l_can_data + 02H
+0187 A1C1                              CP     A,#0C1H
+0189 2703                              JREQ   ?LAB_0092
+018B CC0000     F                      JP     ?EPILOG_0009
+018E         ?LAB_0092:
+018E A624                              LD     A,#024H
+0190 B100       F                      CP     A,l_can_data + 03H
+0192 2703                              JREQ   ?LAB_0093
+0194 CC0000     F                      JP     ?EPILOG_0009
+0197         ?LAB_0093:
+              ; SOURCE LINE # 394 
+0197 720A00000F F                      BTJT   l_can_data + 04H,#005H,?NXT_0065
+              ; SOURCE LINE # 396 
+019C 3C00       F                      INC    programming_step
+              ; SOURCE LINE # 399 
+019E 3506500A                          MOV    0500AH,#006H
+              ; SOURCE LINE # 400 
+01A2 A628                              LD     A,#028H
+01A4 CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 401 
+01A7 725F500A                          CLR    0500AH
+01AB         ?NXT_0065:
+              ; SOURCE LINE # 407 
+01AB 81                                RET    
+01AC         ?CASE_0014:
+              ; SOURCE LINE # 414 
+01AC 35030000   F                      MOV    Tx_Data,#003H
+              ; SOURCE LINE # 415 
+01B0 35220000   F                      MOV    Tx_Data + 01H,#022H
+              ; SOURCE LINE # 416 
+01B4 35C10000   F                      MOV    Tx_Data + 02H,#0C1H
+              ; SOURCE LINE # 417 
+01B8 35150000   F                      MOV    Tx_Data + 03H,#015H
+              ; SOURCE LINE # 418 
+01BC 3F00       F                      CLR    Tx_Data + 04H
+              ; SOURCE LINE # 419 
+01BE 3F00       F                      CLR    Tx_Data + 05H
+              ; SOURCE LINE # 420 
+01C0 3F00       F                      CLR    Tx_Data + 06H
+              ; SOURCE LINE # 421 
+01C2 3F00       F                      CLR    Tx_Data + 07H
+              ; SOURCE LINE # 423 
+01C4 A605                              LD     A,#005H
+01C6 CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 424 
+01C9 AE0000     F                      LDW    X,#Tx_Data
+01CC 89                                PUSHW  X
+01CD B600       F                      LD     A,Tx_DLC
+01CF 88                                PUSH   A
+01D0 BE00       F                      LDW    X,Tx_RTR
+01D2 89                                PUSHW  X
+01D3 BE00       F                      LDW    X,Tx_IDE
+01D5 89                                PUSHW  X
+01D6 AE0000     F                      LDW    X,#Tx_Id
+01D9 CD0000     F DNF                  CALL   ?C?mv4_ix2sk
+01DC CD0000     F                      CALL   ?CAN_Transmit
+01DF 5B0B                              ADD    SP,#00BH
+              ; SOURCE LINE # 425 
+01E1 A602                              LD     A,#002H
+01E3 CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 428 
+01E6 B600       F                      LD     A,l_can_receive_flag
+01E8 4A                                DEC    A
+01E9 2703                              JREQ   ?LAB_0094
+01EB CC0000     F                      JP     ?EPILOG_0009
+01EE         ?LAB_0094:
+              ; SOURCE LINE # 430 
+01EE 3F00       F                      CLR    l_can_receive_flag
+              ; SOURCE LINE # 433 
+01F0 A662                              LD     A,#062H
+01F2 B100       F                      CP     A,l_can_data + 01H
+01F4 2703                              JREQ   ?LAB_0095
+01F6 CC0000     F                      JP     ?EPILOG_0009
+01F9         ?LAB_0095:
+01F9 B600       F                      LD     A,l_can_data + 02H
+01FB A1C1                              CP     A,#0C1H
+01FD 2703                              JREQ   ?LAB_0096
+01FF CC0000     F                      JP     ?EPILOG_0009
+0202         ?LAB_0096:
+0202 A615                              LD     A,#015H
+0204 B100       F                      CP     A,l_can_data + 03H
+0206 2703                              JREQ   ?LAB_0097
+0208 CC0000     F                      JP     ?EPILOG_0009
+020B         ?LAB_0097:
+              ; SOURCE LINE # 436 
+020B A633                              LD     A,#033H
+020D B100       F                      CP     A,l_can_data + 04H
+020F 2603                              JRNE   ?ELSE_0054
+0211         ?OPTI_0000:
+              ; SOURCE LINE # 438 
+0211 3C00       F                      INC    programming_step
+0213 81                                RET    
+0214         ?ELSE_0054:
+              ; SOURCE LINE # 441 
+0214 A655                              LD     A,#055H
+0216 B100       F                      CP     A,l_can_data + 04H
+0218 2605                              JRNE   ?ELSE_0055
+              ; SOURCE LINE # 444 
+021A 35070000   F                      MOV    programming_step,#007H
+021E 81                                RET    
+021F         ?ELSE_0055:
+              ; SOURCE LINE # 447 
+021F B600       F                      LD     A,l_can_data + 04H
+0221 A1AA                              CP     A,#0AAH
+0223 2703                              JREQ   ?LAB_0098
+0225 CC0000     F                      JP     ?EPILOG_0009
+0228         ?LAB_0098:
+              ; SOURCE LINE # 450 
+0228 350A0000   F                      MOV    programming_step,#00AH
+022C         ?OPTI_0001:
+              ; SOURCE LINE # 453 
+022C 725F5340                          CLR    05340H
+              ; SOURCE LINE # 456 
+0230 3506500A                          MOV    0500AH,#006H
+              ; SOURCE LINE # 457 
+0234 A628                              LD     A,#028H
+0236 CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 458 
+0239 725F500A                          CLR    0500AH
+              ; SOURCE LINE # 459 
+023D A628                              LD     A,#028H
+023F CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 460 
+0242 3506500A                          MOV    0500AH,#006H
+              ; SOURCE LINE # 461 
+0246 A628                              LD     A,#028H
+0248 CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 462 
+024B 725F500A                          CLR    0500AH
+              ; SOURCE LINE # 467 
+024F 81                                RET    
+0250         ?CASE_0015:
+              ; SOURCE LINE # 474 
+0250 35020000   F                      MOV    Tx_Data,#002H
+              ; SOURCE LINE # 475 
+0254 35100000   F                      MOV    Tx_Data + 01H,#010H
+              ; SOURCE LINE # 476 
+0258 35870000   F                      MOV    Tx_Data + 02H,#087H
+              ; SOURCE LINE # 477 
+025C 3F00       F                      CLR    Tx_Data + 03H
+              ; SOURCE LINE # 478 
+025E 3F00       F                      CLR    Tx_Data + 04H
+              ; SOURCE LINE # 479 
+0260 3F00       F                      CLR    Tx_Data + 05H
+              ; SOURCE LINE # 480 
+0262 3F00       F                      CLR    Tx_Data + 06H
+              ; SOURCE LINE # 481 
+0264 3F00       F                      CLR    Tx_Data + 07H
+              ; SOURCE LINE # 483 
+0266 A605                              LD     A,#005H
+0268 CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 484 
+026B AE0000     F                      LDW    X,#Tx_Data
+026E 89                                PUSHW  X
+026F B600       F                      LD     A,Tx_DLC
+0271 88                                PUSH   A
+0272 BE00       F                      LDW    X,Tx_RTR
+0274 89                                PUSHW  X
+0275 BE00       F                      LDW    X,Tx_IDE
+0277 89                                PUSHW  X
+0278 AE0000     F                      LDW    X,#Tx_Id
+027B CD0000     F DNF                  CALL   ?C?mv4_ix2sk
+027E CD0000     F                      CALL   ?CAN_Transmit
+0281 5B0B                              ADD    SP,#00BH
+              ; SOURCE LINE # 485 
+0283 A602                              LD     A,#002H
+0285 CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 488 
+0288 B600       F                      LD     A,l_can_receive_flag
+028A 4A                                DEC    A
+028B 2703                              JREQ   ?LAB_0099
+028D CC0000     F                      JP     ?EPILOG_0009
+0290         ?LAB_0099:
+              ; SOURCE LINE # 490 
+0290 3F00       F                      CLR    l_can_receive_flag
+              ; SOURCE LINE # 493 
+0292 A650                              LD     A,#050H
+0294 B100       F                      CP     A,l_can_data + 01H
+0296 2609                              JRNE   ?ELSE_0058
+0298 B600       F                      LD     A,l_can_data + 02H
+029A A187                              CP     A,#087H
+              ; SOURCE LINE # 496 
+029C 2603                              JRNE   ?LAB_0100
+029E CC0000     F                      JP     ?OPTI_0000
+02A1         ?LAB_0100:
+
+02A1         ?ELSE_0058:
+              ; SOURCE LINE # 498 
+02A1 A67F                              LD     A,#07FH
+02A3 B100       F                      CP     A,l_can_data + 01H
+02A5 2703                              JREQ   ?LAB_0101
+02A7 CC0000     F                      JP     ?EPILOG_0009
+02AA         ?LAB_0101:
+02AA A610                              LD     A,#010H
+02AC B100       F                      CP     A,l_can_data + 02H
+02AE 2703                              JREQ   ?LAB_0102
+02B0 CC0000     F                      JP     ?EPILOG_0009
+02B3         ?LAB_0102:
+              ; SOURCE LINE # 503 
+02B3 CC0000     F                      JP     ?OPTI_0000
+02B6         ?CASE_0016:
+              ; SOURCE LINE # 512 
+02B6 35030000   F                      MOV    Tx_Data,#003H
+              ; SOURCE LINE # 513 
+02BA 35B10000   F                      MOV    Tx_Data + 01H,#0B1H
+              ; SOURCE LINE # 514 
+02BE 35010000   F                      MOV    Tx_Data + 02H,#001H
+              ; SOURCE LINE # 515 
+02C2 359C0000   F                      MOV    Tx_Data + 03H,#09CH
+              ; SOURCE LINE # 516 
+02C6 3F00       F                      CLR    Tx_Data + 04H
+              ; SOURCE LINE # 517 
+02C8 3F00       F                      CLR    Tx_Data + 05H
+              ; SOURCE LINE # 518 
+02CA 3F00       F                      CLR    Tx_Data + 06H
+              ; SOURCE LINE # 519 
+02CC 3F00       F                      CLR    Tx_Data + 07H
+              ; SOURCE LINE # 521 
+02CE A605                              LD     A,#005H
+02D0 CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 522 
+02D3 AE0000     F                      LDW    X,#Tx_Data
+02D6 89                                PUSHW  X
+02D7 B600       F                      LD     A,Tx_DLC
+02D9 88                                PUSH   A
+02DA BE00       F                      LDW    X,Tx_RTR
+02DC 89                                PUSHW  X
+02DD BE00       F                      LDW    X,Tx_IDE
+02DF 89                                PUSHW  X
+02E0 AE0000     F                      LDW    X,#Tx_Id
+02E3 CD0000     F DNF                  CALL   ?C?mv4_ix2sk
+02E6 CD0000     F                      CALL   ?CAN_Transmit
+02E9 5B0B                              ADD    SP,#00BH
+              ; SOURCE LINE # 523 
+02EB A602                              LD     A,#002H
+02ED CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 526 
+02F0 B600       F                      LD     A,l_can_receive_flag
+02F2 4A                                DEC    A
+02F3 2703                              JREQ   ?LAB_0103
+02F5 CC0000     F                      JP     ?EPILOG_0009
+02F8         ?LAB_0103:
+              ; SOURCE LINE # 528 
+02F8 3F00       F                      CLR    l_can_receive_flag
+              ; SOURCE LINE # 531 
+02FA B600       F                      LD     A,l_can_data + 01H
+02FC A1F1                              CP     A,#0F1H
+02FE 2703                              JREQ   ?LAB_0104
+0300 CC0000     F                      JP     ?EPILOG_0009
+0303         ?LAB_0104:
+0303 B600       F                      LD     A,l_can_data + 02H
+0305 4A                                DEC    A
+0306 2703                              JREQ   ?LAB_0105
+0308 CC0000     F                      JP     ?EPILOG_0009
+030B         ?LAB_0105:
+030B B600       F                      LD     A,l_can_data + 03H
+030D A19C                              CP     A,#09CH
+030F 2703                              JREQ   ?LAB_0106
+0311 CC0000     F                      JP     ?EPILOG_0009
+0314         ?LAB_0106:
+              ; SOURCE LINE # 533 
+0314 3C00       F                      INC    programming_step
+              ; SOURCE LINE # 536 
+0316 3506500A                          MOV    0500AH,#006H
+              ; SOURCE LINE # 537 
+031A A628                              LD     A,#028H
+031C CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 538 
+031F 725F500A                          CLR    0500AH
+              ; SOURCE LINE # 541 
+0323 35015340                          MOV    05340H,#001H
+              ; SOURCE LINE # 545 
+0327 81                                RET    
+0328         ?CASE_0017:
+              ; SOURCE LINE # 552 
+0328 35030000   F                      MOV    Tx_Data,#003H
+              ; SOURCE LINE # 553 
+032C 35220000   F                      MOV    Tx_Data + 01H,#022H
+              ; SOURCE LINE # 554 
+0330 35C10000   F                      MOV    Tx_Data + 02H,#0C1H
+              ; SOURCE LINE # 555 
+0334 35150000   F                      MOV    Tx_Data + 03H,#015H
+              ; SOURCE LINE # 556 
+0338 3F00       F                      CLR    Tx_Data + 04H
+              ; SOURCE LINE # 557 
+033A 3F00       F                      CLR    Tx_Data + 05H
+              ; SOURCE LINE # 558 
+033C 3F00       F                      CLR    Tx_Data + 06H
+              ; SOURCE LINE # 559 
+033E 3F00       F                      CLR    Tx_Data + 07H
+              ; SOURCE LINE # 561 
+0340 A628                              LD     A,#028H
+0342 CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 562 
+0345 AE0000     F                      LDW    X,#Tx_Data
+0348 89                                PUSHW  X
+0349 B600       F                      LD     A,Tx_DLC
+034B 88                                PUSH   A
+034C BE00       F                      LDW    X,Tx_RTR
+034E 89                                PUSHW  X
+034F BE00       F                      LDW    X,Tx_IDE
+0351 89                                PUSHW  X
+0352 AE0000     F                      LDW    X,#Tx_Id
+0355 CD0000     F DNF                  CALL   ?C?mv4_ix2sk
+0358 CD0000     F                      CALL   ?CAN_Transmit
+035B 5B0B                              ADD    SP,#00BH
+              ; SOURCE LINE # 563 
+035D A602                              LD     A,#002H
+035F CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 566 
+0362 B600       F                      LD     A,l_can_receive_flag
+0364 4A                                DEC    A
+0365 2703                              JREQ   ?LAB_0107
+0367 CC0000     F                      JP     ?EPILOG_0009
+036A         ?LAB_0107:
+              ; SOURCE LINE # 568 
+036A 3F00       F                      CLR    l_can_receive_flag
+              ; SOURCE LINE # 571 
+036C A662                              LD     A,#062H
+036E B100       F                      CP     A,l_can_data + 01H
+0370 2703                              JREQ   ?LAB_0108
+0372 CC0000     F                      JP     ?EPILOG_0009
+0375         ?LAB_0108:
+0375 B600       F                      LD     A,l_can_data + 02H
+0377 A1C1                              CP     A,#0C1H
+0379 2703                              JREQ   ?LAB_0109
+037B CC0000     F                      JP     ?EPILOG_0009
+037E         ?LAB_0109:
+037E A615                              LD     A,#015H
+0380 B100       F                      CP     A,l_can_data + 03H
+0382 2703                              JREQ   ?LAB_0110
+0384 CC0000     F                      JP     ?EPILOG_0009
+0387         ?LAB_0110:
+              ; SOURCE LINE # 574 
+0387 A633                              LD     A,#033H
+0389 B100       F                      CP     A,l_can_data + 04H
+038B 2605                              JRNE   ?ELSE_0064
+              ; SOURCE LINE # 577 
+038D 35020000   F                      MOV    programming_step,#002H
+0391 81                                RET    
+0392         ?ELSE_0064:
+              ; SOURCE LINE # 580 
+0392 A655                              LD     A,#055H
+0394 B100       F                      CP     A,l_can_data + 04H
+              ; SOURCE LINE # 581 
+0396 2603                              JRNE   ?LAB_0111
+0398 CC0000     F                      JP     ?EPILOG_0009
+039B         ?LAB_0111:
+              ; SOURCE LINE # 585 
+039B B600       F                      LD     A,l_can_data + 04H
+039D A1AA                              CP     A,#0AAH
+039F 2703                              JREQ   ?LAB_0112
+03A1 CC0000     F                      JP     ?EPILOG_0009
+03A4         ?LAB_0112:
+              ; SOURCE LINE # 588 
+03A4 350A0000   F                      MOV    programming_step,#00AH
+              ; SOURCE LINE # 594 
+03A8 81                                RET    
+03A9         ?CASE_0018:
+              ; SOURCE LINE # 601 
+03A9 35040000   F                      MOV    Tx_Data,#004H
+              ; SOURCE LINE # 602 
+03AD 35B10000   F                      MOV    Tx_Data + 01H,#0B1H
+              ; SOURCE LINE # 603 
+03B1 3F00       F                      CLR    Tx_Data + 02H
+              ; SOURCE LINE # 604 
+03B3 35390000   F                      MOV    Tx_Data + 03H,#039H
+              ; SOURCE LINE # 605 
+03B7 35010000   F                      MOV    Tx_Data + 04H,#001H
+              ; SOURCE LINE # 606 
+03BB 3F00       F                      CLR    Tx_Data + 05H
+              ; SOURCE LINE # 607 
+03BD 3F00       F                      CLR    Tx_Data + 06H
+              ; SOURCE LINE # 608 
+03BF 3F00       F                      CLR    Tx_Data + 07H
+              ; SOURCE LINE # 610 
+03C1 A605                              LD     A,#005H
+03C3 CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 611 
+03C6 AE0000     F                      LDW    X,#Tx_Data
+03C9 89                                PUSHW  X
+03CA B600       F                      LD     A,Tx_DLC
+03CC 88                                PUSH   A
+03CD BE00       F                      LDW    X,Tx_RTR
+03CF 89                                PUSHW  X
+03D0 BE00       F                      LDW    X,Tx_IDE
+03D2 89                                PUSHW  X
+03D3 AE0000     F                      LDW    X,#Tx_Id
+03D6 CD0000     F DNF                  CALL   ?C?mv4_ix2sk
+03D9 CD0000     F                      CALL   ?CAN_Transmit
+03DC 5B0B                              ADD    SP,#00BH
+              ; SOURCE LINE # 612 
+03DE A602                              LD     A,#002H
+03E0 CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 615 
+03E3 B600       F                      LD     A,l_can_receive_flag
+03E5 4A                                DEC    A
+03E6 2703                              JREQ   ?LAB_0113
+03E8 CC0000     F                      JP     ?EPILOG_0009
+03EB         ?LAB_0113:
+              ; SOURCE LINE # 617 
+03EB 3F00       F                      CLR    l_can_receive_flag
+              ; SOURCE LINE # 620 
+03ED B600       F                      LD     A,l_can_data + 01H
+03EF A1F1                              CP     A,#0F1H
+03F1 2703                              JREQ   ?LAB_0114
+03F3 CC0000     F                      JP     ?EPILOG_0009
+03F6         ?LAB_0114:
+03F6 3D00       F                      TNZ    l_can_data + 02H
+03F8 2703                              JREQ   ?LAB_0115
+03FA CC0000     F                      JP     ?EPILOG_0009
+03FD         ?LAB_0115:
+03FD A639                              LD     A,#039H
+03FF B100       F                      CP     A,l_can_data + 03H
+0401         ?OPTI_0002:
+0401 2703                              JREQ   ?LAB_0116
+0403 CC0000     F                      JP     ?EPILOG_0009
+0406         ?LAB_0116:
+              ; SOURCE LINE # 626 
+0406 CC0000     F                      JP     ?OPTI_0003
+0409         ?CASE_0019:
+              ; SOURCE LINE # 633 
+0409 35030000   F                      MOV    Tx_Data,#003H
+              ; SOURCE LINE # 634 
+040D 35220000   F                      MOV    Tx_Data + 01H,#022H
+              ; SOURCE LINE # 635 
+0411 35C10000   F                      MOV    Tx_Data + 02H,#0C1H
+              ; SOURCE LINE # 636 
+0415 35040000   F                      MOV    Tx_Data + 03H,#004H
+              ; SOURCE LINE # 637 
+0419 3F00       F                      CLR    Tx_Data + 04H
+              ; SOURCE LINE # 638 
+041B 3F00       F                      CLR    Tx_Data + 05H
+              ; SOURCE LINE # 639 
+041D 3F00       F                      CLR    Tx_Data + 06H
+              ; SOURCE LINE # 640 
+041F 3F00       F                      CLR    Tx_Data + 07H
+              ; SOURCE LINE # 642 
+0421 A628                              LD     A,#028H
+0423 CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 643 
+0426 AE0000     F                      LDW    X,#Tx_Data
+0429 89                                PUSHW  X
+042A B600       F                      LD     A,Tx_DLC
+042C 88                                PUSH   A
+042D BE00       F                      LDW    X,Tx_RTR
+042F 89                                PUSHW  X
+0430 BE00       F                      LDW    X,Tx_IDE
+0432 89                                PUSHW  X
+0433 AE0000     F                      LDW    X,#Tx_Id
+0436 CD0000     F DNF                  CALL   ?C?mv4_ix2sk
+0439 CD0000     F                      CALL   ?CAN_Transmit
+043C 5B0B                              ADD    SP,#00BH
+              ; SOURCE LINE # 644 
+043E A602                              LD     A,#002H
+0440 CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 647 
+0443 B600       F                      LD     A,l_can_receive_flag
+0445 4A                                DEC    A
+0446 2703                              JREQ   ?LAB_0117
+0448 CC0000     F                      JP     ?EPILOG_0009
+044B         ?LAB_0117:
+              ; SOURCE LINE # 649 
+044B 3F00       F                      CLR    l_can_receive_flag
+              ; SOURCE LINE # 652 
+044D A662                              LD     A,#062H
+044F B100       F                      CP     A,l_can_data + 01H
+0451 2703                              JREQ   ?LAB_0118
+0453 CC0000     F                      JP     ?EPILOG_0009
+0456         ?LAB_0118:
+0456 B600       F                      LD     A,l_can_data + 02H
+0458 A1C1                              CP     A,#0C1H
+045A 2703                              JREQ   ?LAB_0119
+045C CC0000     F                      JP     ?EPILOG_0009
+045F         ?LAB_0119:
+045F A604                              LD     A,#004H
+0461 B100       F                      CP     A,l_can_data + 03H
+0463 2703                              JREQ   ?LAB_0120
+0465 CC0000     F                      JP     ?EPILOG_0009
+0468         ?LAB_0120:
+              ; SOURCE LINE # 655 
+0468 3D00       F                      TNZ    l_can_data + 04H
+              ; SOURCE LINE # 662 
+046A 2095                              JRA    ?OPTI_0002
+046C         ?CASE_0020:
+              ; SOURCE LINE # 669 
+046C 35040000   F                      MOV    Tx_Data,#004H
+              ; SOURCE LINE # 670 
+0470 35B10000   F                      MOV    Tx_Data + 01H,#0B1H
+              ; SOURCE LINE # 671 
+0474 35F00000   F                      MOV    Tx_Data + 02H,#0F0H
+              ; SOURCE LINE # 672 
+0478 35100000   F                      MOV    Tx_Data + 03H,#010H
+              ; SOURCE LINE # 673 
+047C 3F00       F                      CLR    Tx_Data + 04H
+              ; SOURCE LINE # 674 
+047E 3F00       F                      CLR    Tx_Data + 05H
+              ; SOURCE LINE # 675 
+0480 3F00       F                      CLR    Tx_Data + 06H
+              ; SOURCE LINE # 676 
+0482 3F00       F                      CLR    Tx_Data + 07H
+              ; SOURCE LINE # 678 
+0484 A628                              LD     A,#028H
+0486 CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 679 
+0489 AE0000     F                      LDW    X,#Tx_Data
+048C 89                                PUSHW  X
+048D B600       F                      LD     A,Tx_DLC
+048F 88                                PUSH   A
+0490 BE00       F                      LDW    X,Tx_RTR
+0492 89                                PUSHW  X
+0493 BE00       F                      LDW    X,Tx_IDE
+0495 89                                PUSHW  X
+0496 AE0000     F                      LDW    X,#Tx_Id
+0499 CD0000     F DNF                  CALL   ?C?mv4_ix2sk
+049C CD0000     F                      CALL   ?CAN_Transmit
+049F 5B0B                              ADD    SP,#00BH
+              ; SOURCE LINE # 680 
+04A1 A602                              LD     A,#002H
+04A3 CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 683 
+04A6 B600       F                      LD     A,l_can_receive_flag
+04A8 4A                                DEC    A
+04A9 2703                              JREQ   ?LAB_0121
+04AB CC0000     F                      JP     ?EPILOG_0009
+04AE         ?LAB_0121:
+              ; SOURCE LINE # 685 
+04AE 3F00       F                      CLR    l_can_receive_flag
+              ; SOURCE LINE # 688 
+04B0 B600       F                      LD     A,l_can_data + 01H
+04B2 A1F1                              CP     A,#0F1H
+04B4 2703                              JREQ   ?LAB_0122
+04B6 CC0000     F                      JP     ?EPILOG_0009
+04B9         ?LAB_0122:
+04B9 B600       F                      LD     A,l_can_data + 02H
+04BB A1F0                              CP     A,#0F0H
+04BD 2703                              JREQ   ?LAB_0123
+04BF CC0000     F                      JP     ?EPILOG_0009
+04C2         ?LAB_0123:
+04C2 A610                              LD     A,#010H
+04C4 B100       F                      CP     A,l_can_data + 03H
+04C6 2703                              JREQ   ?LAB_0124
+04C8 CC0000     F                      JP     ?EPILOG_0009
+04CB         ?LAB_0124:
+              ; SOURCE LINE # 690 
+04CB 3C00       F                      INC    programming_step
+              ; SOURCE LINE # 706 
+04CD CC0000     F                      JP     ?OPTI_0001
+04D0         ?CASE_0021:
+              ; SOURCE LINE # 713 
+04D0 35030000   F                      MOV    Tx_Data,#003H
+              ; SOURCE LINE # 714 
+04D4 35220000   F                      MOV    Tx_Data + 01H,#022H
+              ; SOURCE LINE # 715 
+04D8 35C10000   F                      MOV    Tx_Data + 02H,#0C1H
+              ; SOURCE LINE # 716 
+04DC 35040000   F                      MOV    Tx_Data + 03H,#004H
+              ; SOURCE LINE # 717 
+04E0 3F00       F                      CLR    Tx_Data + 04H
+              ; SOURCE LINE # 718 
+04E2 3F00       F                      CLR    Tx_Data + 05H
+              ; SOURCE LINE # 719 
+04E4 3F00       F                      CLR    Tx_Data + 06H
+              ; SOURCE LINE # 720 
+04E6 3F00       F                      CLR    Tx_Data + 07H
+              ; SOURCE LINE # 722 
+04E8 A628                              LD     A,#028H
+04EA CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 723 
+04ED AE0000     F                      LDW    X,#Tx_Data
+04F0 89                                PUSHW  X
+04F1 B600       F                      LD     A,Tx_DLC
+04F3 88                                PUSH   A
+04F4 BE00       F                      LDW    X,Tx_RTR
+04F6 89                                PUSHW  X
+04F7 BE00       F                      LDW    X,Tx_IDE
+04F9 89                                PUSHW  X
+04FA AE0000     F                      LDW    X,#Tx_Id
+04FD CD0000     F DNF                  CALL   ?C?mv4_ix2sk
+0500 CD0000     F                      CALL   ?CAN_Transmit
+0503 5B0B                              ADD    SP,#00BH
+              ; SOURCE LINE # 724 
+0505 A602                              LD     A,#002H
+0507 CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 727 
+050A B600       F                      LD     A,l_can_receive_flag
+050C 4A                                DEC    A
+050D 2703                              JREQ   ?LAB_0125
+050F CC0000     F                      JP     ?EPILOG_0009
+0512         ?LAB_0125:
+              ; SOURCE LINE # 729 
+0512 3F00       F                      CLR    l_can_receive_flag
+              ; SOURCE LINE # 732 
+0514 A662                              LD     A,#062H
+0516 B100       F                      CP     A,l_can_data + 01H
+0518 2678                              JRNE   ?EPILOG_0009
+051A B600       F                      LD     A,l_can_data + 02H
+051C A1C1                              CP     A,#0C1H
+051E 2672                              JRNE   ?EPILOG_0009
+0520 A604                              LD     A,#004H
+0522 B100       F                      CP     A,l_can_data + 03H
+0524 266C                              JRNE   ?EPILOG_0009
+              ; SOURCE LINE # 735 
+0526 B600       F                      LD     A,l_can_data + 04H
+0528 4A                                DEC    A
+0529 2616                              JRNE   ?ELSE_0076
+              ; SOURCE LINE # 738 
+052B 3D00       F                      TNZ    keys_learned
+052D 2663                              JRNE   ?EPILOG_0009
+              ; SOURCE LINE # 743 
+052F 35010000   F                      MOV    keys_learned,#001H
+              ; SOURCE LINE # 746 
+0533 3506500A                          MOV    0500AH,#006H
+              ; SOURCE LINE # 747 
+0537 A628                              LD     A,#028H
+0539 CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 748 
+053C 725F500A                          CLR    0500AH
+0540 81                                RET    
+0541         ?ELSE_0076:
+              ; SOURCE LINE # 753 
+0541 A602                              LD     A,#002H
+0543 B100       F                      CP     A,l_can_data + 04H
+0545 264B                              JRNE   ?EPILOG_0009
+              ; SOURCE LINE # 755 
+0547 B600       F                      LD     A,keys_learned
+0549 4A                                DEC    A
+054A 2646                              JRNE   ?EPILOG_0009
+              ; SOURCE LINE # 758 
+054C B600       F                      LD     A,number_of_dongle_uses
+054E 4C                                INC    A
+054F 88                                PUSH   A
+0550 AE0000     F                      LDW    X,#EEPROM_address_of_dongle_uses
+0553 CD0000     F DNF                  CALL   ?C?mv4_ix2sk
+0556 CD0000     F                      CALL   ?FLASH_ProgramByte
+0559 5B05                              ADD    SP,#005H
+              ; SOURCE LINE # 760 
+055B 35020000   F                      MOV    keys_learned,#002H
+              ; SOURCE LINE # 762 
+055F 3C00       F                      INC    programming_step
+              ; SOURCE LINE # 765 
+0561 3506500A                          MOV    0500AH,#006H
+              ; SOURCE LINE # 766 
+0565 A628                              LD     A,#028H
+0567 CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 767 
+056A 725F500A                          CLR    0500AH
+              ; SOURCE LINE # 768 
+056E A628                              LD     A,#028H
+0570 CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 769 
+0573 3506500A                          MOV    0500AH,#006H
+              ; SOURCE LINE # 770 
+0577 A628                              LD     A,#028H
+0579 CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 771 
+057C 725F500A                          CLR    0500AH
+              ; SOURCE LINE # 772 
+0580 A628                              LD     A,#028H
+0582 CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 773 
+0585 3506500A                          MOV    0500AH,#006H
+              ; SOURCE LINE # 774 
+0589 A628                              LD     A,#028H
+058B CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 775 
+058E 725F500A                          CLR    0500AH
+0592         ?EPILOG_0009:
+              ; SOURCE LINE # 789 
+0592 81                                RET    
+
+              ; FUNCTION ?Program_Sequence?MAIN?S (END)
+
+RCSTM8 COMPILER V2.42.12.083
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1796    ----
+   CONSTANT SIZE    =    190    ----
+   DATA SIZE        =   ----    ----
+   PAGE0 SIZE       =     33    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+RCSTM8 COMPILATION COMPLETE.  2 WARNINGS,  0 ERROR

@@ -1,0 +1,471 @@
+RCSTM8 COMPILER V2.42.12.083,  STM8S_IT           05/19/25  15:34:41
+
+QCW(0x00963FA0)
+
+RCSTM8 COMPILER V2.42.12.083, COMPILATION OF MODULE STM8S_IT  
+OBJECT MODULE PLACED IN C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\bin\stm8s_it.obj
+COMPILER INVOKED BY: QUIET GENERATEDEPFILE CODE DB OJ(C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\bin\stm8s_it.obj) PR(C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\lst\stm8s_it.lst) PIN(C:\Raisonance\Ride\Inc;C:\Raisonance\Ride\Inc\ST7;C:\Raisonance\Ride\Inc\STM8;C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\inc) STM8(SMALL) O(3,SIZE) NOINITSTATICVAR SMALLOBJECT ET(INT) 
+
+stmt level    source
+   1          /* Includes ------------------------------------------------------------------*/
+   2          #include "stm8s_it.h"
+   3          #include "stm8s_eol.h"
+   4          #include "main.h"
+   5          
+   6          // Global variable
+   7          uint8_t timer_counts = 0;
+   8          uint8_t timer_10ms_counts = 0;
+   9          uint16_t Timeout_EOL = 0;
+  10          #ifdef _COSMIC_
+              /**
+                * @brief  Dummy interrupt routine
+                * @param  None
+                * @retval None
+                */
+              INTERRUPT_HANDLER(NonHandledInterrupt, 25)
+              {
+                /* In order to detect unexpected events during development,
+                   it is recommended to set a breakpoint on the following instruction.
+                */
+              }
+              #endif /*_COSMIC_*/
+  23          
+  24          /** TRAP interrupt routine */
+  25          INTERRUPT_HANDLER_TRAP(TRAP_IRQHandler)
+  26          {
+  27   1      }
+  28          /** Top Level Interrupt routine  */
+  29          INTERRUPT_HANDLER(TLI_IRQHandler, 0)
+  30          {
+  31   1      }
+  32          
+  33          /**Auto Wake Up Interrupt routine  */
+  34          INTERRUPT_HANDLER(AWU_IRQHandler, 1)
+  35          {
+  36   1      }
+  37          
+  38          /** Clock Controller Interrupt routine  */
+  39          INTERRUPT_HANDLER(CLK_IRQHandler, 2)
+  40          {
+  41   1      }
+  42          
+  43          /** External Interrupt PORTA Interrupt routine  */
+  44          INTERRUPT_HANDLER(EXTI_PORTA_IRQHandler, 3)
+  45          {
+  46   1      }
+  47          
+  48          /** External Interrupt PORTB Interrupt routine  */
+  49          INTERRUPT_HANDLER(EXTI_PORTB_IRQHandler, 4)
+  50          {
+  51   1      }
+  52          
+  53          /** External Interrupt PORTC Interrupt routine  */
+  54          INTERRUPT_HANDLER(EXTI_PORTC_IRQHandler, 5)
+  55          {
+  56   1      }
+  57          
+  58          /** External Interrupt PORTD Interrupt routine */
+  59          INTERRUPT_HANDLER(EXTI_PORTD_IRQHandler, 6)
+  60          {
+  61   1      }
+  62          
+  63          /** External Interrupt PORTE Interrupt routine  */
+  64          INTERRUPT_HANDLER(EXTI_PORTE_IRQHandler, 7)
+  65          {
+  66   1      }
+  67          
+  68          
+  69          /** CAN RX Interrupt routine. */
+  70          INTERRUPT_HANDLER(CAN_RX_IRQHandler, 8)
+  71          {
+  72   1      	/* Receiver Receives Frame */
+  73   1          CAN_Receive();
+  74   1      }
+  75          
+  76          /** CAN TX Interrupt routine  */
+  77          INTERRUPT_HANDLER(CAN_TX_IRQHandler, 9)
+  78          {
+  79   1      }
+  80          
+  81          /** SPI Interrupt routine  */
+  82          INTERRUPT_HANDLER(SPI_IRQHandler, 10)
+  83          {
+  84   1      }
+  85          
+  86          /** Timer1 Update/Overflow/Trigger/Break Interrupt routine  */
+  87          INTERRUPT_HANDLER(TIM1_UPD_OVF_TRG_BRK_IRQHandler, 11)
+  88          {
+  89   1      }
+  90          
+  91          /** Timer1 Capture/Compare Interrupt routine  */
+  92          INTERRUPT_HANDLER(TIM1_CAP_COM_IRQHandler, 12)
+  93          {
+  94   1      }
+  95          
+  96          /** Timer2 Update/Overflow/Break Interrupt routine */
+  97          INTERRUPT_HANDLER(TIM2_UPD_OVF_BRK_IRQHandler, 13)
+  98          {
+  99   1      }
+ 100          
+ 101          /** Timer2 Capture/Compare Interrupt routine  */
+ 102          INTERRUPT_HANDLER(TIM2_CAP_COM_IRQHandler, 14)
+ 103          {
+ 104   1      }
+ 105          
+ 106          /** Timer3 Update/Overflow/Break Interrupt routine. */
+ 107          INTERRUPT_HANDLER(TIM3_UPD_OVF_BRK_IRQHandler, 15)
+ 108          {
+ 109   1      
+ 110   1      }
+ 111          
+ 112          /** Timer3 Capture/Compare Interrupt routine  */
+ 113          INTERRUPT_HANDLER(TIM3_CAP_COM_IRQHandler, 16)
+ 114          {
+ 115   1      }
+ 116          
+ 117          
+ 118          //~ /** UART1 TX Interrupt routine  */
+ 119          //~ INTERRUPT_HANDLER(UART1_TX_IRQHandler, 17)
+ 120          //~ {
+ 121          
+ 122          //~ }
+ 123          
+ 124          //~ /** UART1 RX Interrupt routine  */
+ 125          //~ INTERRUPT_HANDLER(UART1_RX_IRQHandler, 18)
+ 126          //~ {
+ 127          
+ 128          //~ }
+ 129          
+ 130          
+ 131          /*** @brief  I2C Interrupt routine  */
+ 132          INTERRUPT_HANDLER(I2C_IRQHandler, 19)
+ 133          {
+ 134   1      
+ 135   1      }
+ 136          
+ 137          /** UART3 TX interrupt routine.  */
+ 138          INTERRUPT_HANDLER(UART3_TX_IRQHandler, 20)
+ 139          {
+ 140   1      
+ 141   1       }
+ 142          
+ 143          /*** @brief  UART3 RX interrupt routine.  */
+ 144          INTERRUPT_HANDLER(UART3_RX_IRQHandler, 21)
+ 145          {
+ 146   1      }
+ 147          
+ 148          /** ADC2 interrupt routine.  */
+ 149          INTERRUPT_HANDLER(ADC2_IRQHandler, 22)
+ 150          {
+ 151   1      }
+ 152          
+ 153          /** Timer4 Update/Overflow Interrupt routine  */
+ 154          INTERRUPT_HANDLER(TIM4_UPD_OVF_IRQHandler, 23)
+ 155          {
+ 156   1         // TIM4->SR1 = 0x00;
+ 157   1          TIM4->SR1=(TIM4->SR1)&~(0x01);
+ 158   1      
+ 159   1          //~ timer_counts++; 
+ 160   1          //~ if (timer_counts == 100)
+ 161   1          //~ {
+ 162   1              //~ timer_counts = 0;
+ 163   1              //~ // Toggle green LED
+ 164   1              //~ GPIOC->ODR ^= 0x04;
+ 165   1          //~ }
+ 166   1      
+ 167   1          if((Timeout_EOL_Flag==FALSE)&&(++Timeout_EOL>=2000))
+ 168   1          {
+ 169   2              Timeout_EOL = 0;
+ 170   2              Timeout_EOL_Flag=TRUE;
+ 171   2              if(Tester_Present==FALSE)
+ 172   2              {
+ 173   3                  // Trigger buzzer and green LED when the dongle gets power
+ 174   3                  GPIOC->ODR = 0x06;   
+ 175   3                  wait_time(40);
+ 176   3                  GPIOC->ODR = 0x00;
+ 177   3              }        
+ 178   2          }
+ 179   1      
+ 180   1      
+ 181   1          if(++timer_10ms_counts>=10)
+ 182   1          {   
+ 183   2              timer_10ms_counts = 0;
+ 184   2          
+ 185   2              if(Tester_Present==TRUE)
+ 186   2              {
+ 187   3                  switch(gEOL_State)
+ 188   3                  {
+ 189   4                      case EOL_IDLE: 
+ 190   4                          break;
+ 191   4                      
+ 192   4                      case EOL_ENTRY:
+ 193   4                          EOL_tester_function();
+ 194   4                          break;
+ 195   4                      
+ 196   4                      case EOL_EXIT:
+ 197   4                          GPIOC->ODR = 0x00;    //buzzer off and led off
+ 198   4                          gEOL_State = EOL_IDLE;
+ 199   4                          break;
+ 200   4                      default:
+ 201   4                          break;
+ 202   4                  }
+ 203   3              }
+ 204   2              else
+ 205   2              {
+ 206   3              
+ 207   3              }
+ 208   2          }
+ 209   1      }
+ 210          
+ 211          /** Eeprom EEC Interrupt routine  */
+ 212          INTERRUPT_HANDLER(EEPROM_EEC_IRQHandler, 24)
+ 213          {
+ 214   1      }
+ 215          
+RCSTM8 COMPILER V2.42.12.083
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+              ; FUNCTION ?TRAP_IRQHandler (BEGIN)
+              ; SOURCE LINE # 27 
+0000 80                                IRET   
+
+              ; FUNCTION ?TRAP_IRQHandler (END)
+
+              ; FUNCTION ?TLI_IRQHandler (BEGIN)
+              ; SOURCE LINE # 31 
+0000 80                                IRET   
+
+              ; FUNCTION ?TLI_IRQHandler (END)
+
+              ; FUNCTION ?AWU_IRQHandler (BEGIN)
+              ; SOURCE LINE # 36 
+0000 80                                IRET   
+
+              ; FUNCTION ?AWU_IRQHandler (END)
+
+              ; FUNCTION ?CLK_IRQHandler (BEGIN)
+              ; SOURCE LINE # 41 
+0000 80                                IRET   
+
+              ; FUNCTION ?CLK_IRQHandler (END)
+
+              ; FUNCTION ?EXTI_PORTA_IRQHandler (BEGIN)
+              ; SOURCE LINE # 46 
+0000 80                                IRET   
+
+              ; FUNCTION ?EXTI_PORTA_IRQHandler (END)
+
+              ; FUNCTION ?EXTI_PORTB_IRQHandler (BEGIN)
+              ; SOURCE LINE # 51 
+0000 80                                IRET   
+
+              ; FUNCTION ?EXTI_PORTB_IRQHandler (END)
+
+              ; FUNCTION ?EXTI_PORTC_IRQHandler (BEGIN)
+              ; SOURCE LINE # 56 
+0000 80                                IRET   
+
+              ; FUNCTION ?EXTI_PORTC_IRQHandler (END)
+
+              ; FUNCTION ?EXTI_PORTD_IRQHandler (BEGIN)
+              ; SOURCE LINE # 61 
+0000 80                                IRET   
+
+              ; FUNCTION ?EXTI_PORTD_IRQHandler (END)
+
+              ; FUNCTION ?EXTI_PORTE_IRQHandler (BEGIN)
+              ; SOURCE LINE # 66 
+0000 80                                IRET   
+
+              ; FUNCTION ?EXTI_PORTE_IRQHandler (END)
+
+              ; FUNCTION ?CAN_RX_IRQHandler (BEGIN)
+              ; SOURCE LINE # 70 
+0000 8A                                PUSH   CC
+0001 84                                POP    A
+0002 A4BF                              AND    A,#0BFH
+0004 88                                PUSH   A
+0005 86                                POP    CC
+0006 BE03       F                      LDW    X,?CH.w
+0008 89                                PUSHW  X
+0009 BE02       F                      LDW    X,?BH.w
+000B 89                                PUSHW  X
+              ; SOURCE LINE # 73 
+000C CD0000     F                      CALL   ?CAN_Receive
+              ; SOURCE LINE # 74 
+000F 85                                POPW   X
+0010 BF02       F                      LDW    ?BH.w,X
+0012 85                                POPW   X
+0013 BF03       F                      LDW    ?CH.w,X
+0015 80                                IRET   
+
+              ; FUNCTION ?CAN_RX_IRQHandler (END)
+
+              ; FUNCTION ?CAN_TX_IRQHandler (BEGIN)
+              ; SOURCE LINE # 79 
+0000 80                                IRET   
+
+              ; FUNCTION ?CAN_TX_IRQHandler (END)
+
+              ; FUNCTION ?SPI_IRQHandler (BEGIN)
+              ; SOURCE LINE # 84 
+0000 80                                IRET   
+
+              ; FUNCTION ?SPI_IRQHandler (END)
+
+              ; FUNCTION ?TIM1_UPD_OVF_TRG_BRK_IRQHandler (BEGIN)
+              ; SOURCE LINE # 89 
+0000 80                                IRET   
+
+              ; FUNCTION ?TIM1_UPD_OVF_TRG_BRK_IRQHandler (END)
+
+              ; FUNCTION ?TIM1_CAP_COM_IRQHandler (BEGIN)
+              ; SOURCE LINE # 94 
+0000 80                                IRET   
+
+              ; FUNCTION ?TIM1_CAP_COM_IRQHandler (END)
+
+              ; FUNCTION ?TIM2_UPD_OVF_BRK_IRQHandler (BEGIN)
+              ; SOURCE LINE # 99 
+0000 80                                IRET   
+
+              ; FUNCTION ?TIM2_UPD_OVF_BRK_IRQHandler (END)
+
+              ; FUNCTION ?TIM2_CAP_COM_IRQHandler (BEGIN)
+              ; SOURCE LINE # 104 
+0000 80                                IRET   
+
+              ; FUNCTION ?TIM2_CAP_COM_IRQHandler (END)
+
+              ; FUNCTION ?TIM3_UPD_OVF_BRK_IRQHandler (BEGIN)
+              ; SOURCE LINE # 110 
+0000 80                                IRET   
+
+              ; FUNCTION ?TIM3_UPD_OVF_BRK_IRQHandler (END)
+
+              ; FUNCTION ?TIM3_CAP_COM_IRQHandler (BEGIN)
+              ; SOURCE LINE # 115 
+0000 80                                IRET   
+
+              ; FUNCTION ?TIM3_CAP_COM_IRQHandler (END)
+
+              ; FUNCTION ?I2C_IRQHandler (BEGIN)
+              ; SOURCE LINE # 135 
+0000 80                                IRET   
+
+              ; FUNCTION ?I2C_IRQHandler (END)
+
+              ; FUNCTION ?UART3_TX_IRQHandler (BEGIN)
+              ; SOURCE LINE # 141 
+0000 80                                IRET   
+
+              ; FUNCTION ?UART3_TX_IRQHandler (END)
+
+              ; FUNCTION ?UART3_RX_IRQHandler (BEGIN)
+              ; SOURCE LINE # 146 
+0000 80                                IRET   
+
+              ; FUNCTION ?UART3_RX_IRQHandler (END)
+
+              ; FUNCTION ?ADC2_IRQHandler (BEGIN)
+              ; SOURCE LINE # 151 
+0000 80                                IRET   
+
+              ; FUNCTION ?ADC2_IRQHandler (END)
+
+              ; FUNCTION ?TIM4_UPD_OVF_IRQHandler (BEGIN)
+              ; SOURCE LINE # 154 
+0000 8A                                PUSH   CC
+0001 84                                POP    A
+0002 A4BF                              AND    A,#0BFH
+0004 88                                PUSH   A
+0005 86                                POP    CC
+0006 BE03       F                      LDW    X,?CH.w
+0008 89                                PUSHW  X
+0009 BE02       F                      LDW    X,?BH.w
+000B 89                                PUSHW  X
+              ; SOURCE LINE # 157 
+000C 72115342                          BRES   05342H,#000H
+              ; SOURCE LINE # 167 
+0010 3D00       F                      TNZ    Timeout_EOL_Flag
+0012 2622                              JRNE   ?NXT_0050
+0014 BE00       F                      LDW    X,Timeout_EOL
+0016 5C                                INCW   X
+0017 BF00       F                      LDW    Timeout_EOL,X
+0019 A307D0                            CPW    X,#007D0H
+001C 2518                              JRULT  ?NXT_0050
+              ; SOURCE LINE # 169 
+001E 5F                                CLRW   X
+001F BF00       F                      LDW    Timeout_EOL,X
+              ; SOURCE LINE # 170 
+0021 35010000   F                      MOV    Timeout_EOL_Flag,#001H
+              ; SOURCE LINE # 171 
+0025 3D00       F                      TNZ    Tester_Present
+0027 260D                              JRNE   ?NXT_0050
+              ; SOURCE LINE # 174 
+0029 3506500A                          MOV    0500AH,#006H
+              ; SOURCE LINE # 175 
+002D A628                              LD     A,#028H
+002F CD0000     F                      CALL   ?wait_time
+              ; SOURCE LINE # 176 
+0032 725F500A                          CLR    0500AH
+0036         ?NXT_0050:
+              ; SOURCE LINE # 181 
+0036 3C00       F                      INC    timer_10ms_counts
+0038 A60A                              LD     A,#00AH
+003A B100       F                      CP     A,timer_10ms_counts
+003C 221F                              JRUGT  ?NXT_0055
+              ; SOURCE LINE # 183 
+003E 3F00       F                      CLR    timer_10ms_counts
+              ; SOURCE LINE # 185 
+0040 B600       F                      LD     A,Tester_Present
+0042 4A                                DEC    A
+0043 2618                              JRNE   ?NXT_0055
+              ; SOURCE LINE # 187 
+0045 BE00       F                      LDW    X,gEOL_State
+0047 2714                              JREQ   ?NXT_0055
+0049 5A                                DECW   X
+004A 2705                              JREQ   ?CASE_0004
+004C 5A                                DECW   X
+004D 2707                              JREQ   ?CASE_0005
+              ; SOURCE LINE # 201 
+004F 200C                              JRA    ?NXT_0055
+0051         ?CASE_0004:
+              ; SOURCE LINE # 193 
+0051 CD0000     F                      CALL   ?EOL_tester_function
+              ; SOURCE LINE # 194 
+0054 2007                              JRA    ?NXT_0055
+0056         ?CASE_0005:
+              ; SOURCE LINE # 197 
+0056 725F500A                          CLR    0500AH
+              ; SOURCE LINE # 198 
+005A 5F                                CLRW   X
+005B BF00       F                      LDW    gEOL_State,X
+005D         ?NXT_0055:
+              ; SOURCE LINE # 209 
+005D 85                                POPW   X
+005E BF02       F                      LDW    ?BH.w,X
+0060 85                                POPW   X
+0061 BF03       F                      LDW    ?CH.w,X
+0063 80                                IRET   
+
+              ; FUNCTION ?TIM4_UPD_OVF_IRQHandler (END)
+
+              ; FUNCTION ?EEPROM_EEC_IRQHandler (BEGIN)
+              ; SOURCE LINE # 214 
+0000 80                                IRET   
+
+              ; FUNCTION ?EEPROM_EEC_IRQHandler (END)
+
+RCSTM8 COMPILER V2.42.12.083
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    144    ----
+   CONSTANT SIZE    =     96    ----
+   DATA SIZE        =   ----    ----
+   PAGE0 SIZE       =      4    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+RCSTM8 COMPILATION COMPLETE.  0 WARNING,  0 ERROR

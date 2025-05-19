@@ -1,0 +1,401 @@
+RCSTM8 COMPILER V2.42.12.083,  STM8S_EXTI         05/19/25  15:34:40
+
+QCW(0x00963FA0)
+
+RCSTM8 COMPILER V2.42.12.083, COMPILATION OF MODULE STM8S_EXTI
+OBJECT MODULE PLACED IN C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\bin\stm8s_exti.obj
+COMPILER INVOKED BY: QUIET GENERATEDEPFILE CODE DB OJ(C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\bin\stm8s_exti.obj) PR(C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\lst\stm8s_exti.lst) PIN(C:\Raisonance\Ride\Inc;C:\Raisonance\Ride\Inc\ST7;C:\Raisonance\Ride\Inc\STM8;C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\inc) STM8(SMALL) O(3,SIZE) NOINITSTATICVAR SMALLOBJECT ET(INT) 
+
+stmt level    source
+   1          /* Includes ------------------------------------------------------------------*/
+   2          #include "stm8s_exti.h"
+   3          
+   4          /** Deinit external interrupt control registers to default reset value  */
+   5          void EXTI_DeInit(void)
+   6          {
+   7   1          EXTI->CR1 = EXTI_CR1_RESET_VALUE;
+   8   1          EXTI->CR2 = EXTI_CR2_RESET_VALUE;
+   9   1      }
+  10          
+  11          /** Set the external interrupt sensitivity of the selected port.  */
+  12          void EXTI_SetExtIntSensitivity(EXTI_Port_TypeDef Port, EXTI_Sensitivity_TypeDef SensitivityValue)
+  13          {
+  14   1          /* Check function parameters */
+  15   1          assert_param(IS_EXTI_PORT_OK(Port));
+  16   1          assert_param(IS_EXTI_SENSITIVITY_OK(SensitivityValue));
+  17   1      
+  18   1          /* Set external interrupt sensitivity */
+  19   1          switch (Port)
+  20   1          {
+  21   2          case EXTI_PORT_GPIOA:
+  22   2              EXTI->CR1 &= (uint8_t)(~EXTI_CR1_PAIS);
+  23   2              EXTI->CR1 |= (uint8_t)(SensitivityValue);
+  24   2              break;
+  25   2          case EXTI_PORT_GPIOB:
+  26   2              EXTI->CR1 &= (uint8_t)(~EXTI_CR1_PBIS);
+  27   2              EXTI->CR1 |= (uint8_t)((uint8_t)(SensitivityValue) << 2);
+  28   2              break;
+  29   2          case EXTI_PORT_GPIOC:
+  30   2              EXTI->CR1 &= (uint8_t)(~EXTI_CR1_PCIS);
+  31   2              EXTI->CR1 |= (uint8_t)((uint8_t)(SensitivityValue) << 4);
+  32   2              break;
+  33   2          case EXTI_PORT_GPIOD:
+  34   2              EXTI->CR1 &= (uint8_t)(~EXTI_CR1_PDIS);
+  35   2              EXTI->CR1 |= (uint8_t)((uint8_t)(SensitivityValue) << 6);
+  36   2              break;
+  37   2          case EXTI_PORT_GPIOE:
+  38   2              EXTI->CR2 &= (uint8_t)(~EXTI_CR2_PEIS);
+  39   2              EXTI->CR2 |= (uint8_t)(SensitivityValue);
+  40   2              break;
+  41   2          default:
+  42   2              break;
+  43   2          }
+  44   1      }
+  45          
+  46          /** Set the TLI interrupt sensitivity.  */
+  47          void EXTI_SetTLISensitivity(EXTI_TLISensitivity_TypeDef SensitivityValue)
+  48          {
+  49   1          /* Check function parameters */
+  50   1          assert_param(IS_EXTI_TLISENSITIVITY_OK(SensitivityValue));
+  51   1      
+  52   1          /* Set TLI interrupt sensitivity */
+  53   1          EXTI->CR2 &= (uint8_t)(~EXTI_CR2_TLIS);
+  54   1          EXTI->CR2 |= (uint8_t)(SensitivityValue);
+  55   1      }
+  56          
+  57          /** Get the external interrupt sensitivity of the selected port.  */
+  58          EXTI_Sensitivity_TypeDef EXTI_GetExtIntSensitivity(EXTI_Port_TypeDef Port)
+  59          {
+  60   1          uint8_t value = 0;
+  61   1      
+  62   1          /* Check function parameters */
+  63   1          assert_param(IS_EXTI_PORT_OK(Port));
+  64   1      
+  65   1          switch (Port)
+  66   1          {
+  67   2          case EXTI_PORT_GPIOA:
+  68   2              value = (uint8_t)(EXTI->CR1 & EXTI_CR1_PAIS);
+  69   2              break;
+  70   2          case EXTI_PORT_GPIOB:
+  71   2              value = (uint8_t)((uint8_t)(EXTI->CR1 & EXTI_CR1_PBIS) >> 2);
+  72   2              break;
+  73   2          case EXTI_PORT_GPIOC:
+  74   2              value = (uint8_t)((uint8_t)(EXTI->CR1 & EXTI_CR1_PCIS) >> 4);
+  75   2              break;
+  76   2          case EXTI_PORT_GPIOD:
+  77   2              value = (uint8_t)((uint8_t)(EXTI->CR1 & EXTI_CR1_PDIS) >> 6);
+  78   2              break;
+  79   2          case EXTI_PORT_GPIOE:
+  80   2              value = (uint8_t)(EXTI->CR2 & EXTI_CR2_PEIS);
+  81   2              break;
+  82   2          default:
+  83   2              break;
+  84   2          }
+  85   1      
+  86   1          return((EXTI_Sensitivity_TypeDef)value);
+  87   1      }
+  88          
+  89          /** Get the TLI interrupt sensitivity.  */
+  90          EXTI_TLISensitivity_TypeDef EXTI_GetTLISensitivity(void)
+  91          {
+  92   1      
+  93   1          uint8_t value = 0;
+  94   1      
+  95   1          /* Get TLI interrupt sensitivity */
+  96   1          value = (uint8_t)(EXTI->CR2 & EXTI_CR2_TLIS);
+  97   1      
+  98   1          return((EXTI_TLISensitivity_TypeDef)value);
+  99   1      }
+ 100          
+RCSTM8 COMPILER V2.42.12.083
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+              ; FUNCTION ?EXTI_DeInit (BEGIN)
+              ; SOURCE LINE # 7 
+0000 725F50A0                          CLR    050A0H
+              ; SOURCE LINE # 8 
+0004 725F50A1                          CLR    050A1H
+              ; SOURCE LINE # 9 
+0008 81                                RET    
+
+              ; FUNCTION ?EXTI_DeInit (END)
+
+              ; FUNCTION ?EXTI_SetExtIntSensitivity (BEGIN)
+              ; Register-parameter Port (XW) is relocated (auto)
+              ; SOURCE LINE # 12 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 15 
+0001 5D                                TNZW   X
+0002 2720                              JREQ   ?NXT_0003
+0004 5A                                DECW   X
+0005 271D                              JREQ   ?NXT_0003
+0007 AE0002                            LDW    X,#00002H
+000A 1301       F                      CPW    X,(001H,SP)   ; [ Port ]
+000C 2716                              JREQ   ?NXT_0003
+000E 5C                                INCW   X
+000F 1301       F                      CPW    X,(001H,SP)   ; [ Port ]
+0011 2711                              JREQ   ?NXT_0003
+0013 5C                                INCW   X
+0014 1301       F                      CPW    X,(001H,SP)   ; [ Port ]
+0016 270C                              JREQ   ?NXT_0003
+0018 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+001B         ?DATASTART_0002:
+001B 0F                             M  DB     00FH
+001C         ?DATAEND_0002:
+001C AE0000     F                      LDW    X,#HIGH(?STR?STM8S_EXTI?BASE)
+001F CD0000     F                      CALL   ?assert_failed
+0022 5B04                              ADD    SP,#004H
+0024         ?NXT_0003:
+              ; SOURCE LINE # 16 
+0024 1E05       F                      LDW    X,(005H,SP)   ; [ SensitivityValue ]
+0026 271B                              JREQ   ?NXT_0004
+0028 5A                                DECW   X
+0029 2718                              JREQ   ?NXT_0004
+002B AE0002                            LDW    X,#00002H
+002E 1305       F                      CPW    X,(005H,SP)   ; [ SensitivityValue ]
+0030 2711                              JREQ   ?NXT_0004
+0032 5C                                INCW   X
+0033 1305       F                      CPW    X,(005H,SP)   ; [ SensitivityValue ]
+0035 270C                              JREQ   ?NXT_0004
+0037 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+003A         ?DATASTART_0003:
+003A 10                             M  DB     010H
+003B         ?DATAEND_0003:
+003B AE0000     F                      LDW    X,#HIGH(?STR?STM8S_EXTI?BASE)
+003E CD0000     F                      CALL   ?assert_failed
+0041 5B04                              ADD    SP,#004H
+0043         ?NXT_0004:
+              ; SOURCE LINE # 19 
+0043 1E01       F                      LDW    X,(001H,SP)   ; [ Port ]
+0045 270E                              JREQ   ?CASE_0005
+0047 5A                                DECW   X
+0048 271D                              JREQ   ?CASE_0006
+004A 5A                                DECW   X
+004B 272E                              JREQ   ?CASE_0007
+004D 5A                                DECW   X
+004E 273C                              JREQ   ?CASE_0008
+0050 5A                                DECW   X
+0051 2749                              JREQ   ?CASE_0009
+              ; SOURCE LINE # 42 
+0053 2057                              JRA    ?EPILOG_0001
+0055         ?CASE_0005:
+              ; SOURCE LINE # 22 
+0055 A6FC                              LD     A,#0FCH
+0057 C450A0                            AND    A,050A0H
+005A C750A0                            LD     050A0H,A
+              ; SOURCE LINE # 23 
+005D C650A0                            LD     A,050A0H
+0060 1A06       F                      OR     A,(006H,SP)   ; [ SensitivityValue + 01H ]
+0062         ?OPTI_0002:
+0062 C750A0                            LD     050A0H,A
+              ; SOURCE LINE # 24 
+0065 2045                              JRA    ?EPILOG_0001
+0067         ?CASE_0006:
+              ; SOURCE LINE # 26 
+0067 A6F3                              LD     A,#0F3H
+0069 C450A0                            AND    A,050A0H
+006C C750A0                            LD     050A0H,A
+              ; SOURCE LINE # 27 
+006F 7B06       F                      LD     A,(006H,SP)   ; [ SensitivityValue + 01H ]
+0071 5F                                CLRW   X
+0072 97                                LD     XL,A
+0073 58                                SLAW   X
+0074 58                                SLAW   X
+0075         ?OPTI_0001:
+0075 9F                                LD     A,XL
+0076 CA50A0                            OR     A,050A0H
+              ; SOURCE LINE # 28 
+0079 20E7                              JRA    ?OPTI_0002
+007B         ?CASE_0007:
+              ; SOURCE LINE # 30 
+007B A6CF                              LD     A,#0CFH
+007D C450A0                            AND    A,050A0H
+0080 C750A0                            LD     050A0H,A
+              ; SOURCE LINE # 31 
+0083 7B06       F                      LD     A,(006H,SP)   ; [ SensitivityValue + 01H ]
+0085 5F                                CLRW   X
+0086 97                                LD     XL,A
+0087 A610                              LD     A,#010H
+0089         ?OPTI_0000:
+0089 42                                MUL    X,A
+              ; SOURCE LINE # 32 
+008A 20E9                              JRA    ?OPTI_0001
+008C         ?CASE_0008:
+              ; SOURCE LINE # 34 
+008C A63F                              LD     A,#03FH
+008E C450A0                            AND    A,050A0H
+0091 C750A0                            LD     050A0H,A
+              ; SOURCE LINE # 35 
+0094 7B06       F                      LD     A,(006H,SP)   ; [ SensitivityValue + 01H ]
+0096 5F                                CLRW   X
+0097 97                                LD     XL,A
+0098 A640                              LD     A,#040H
+              ; SOURCE LINE # 36 
+009A 20ED                              JRA    ?OPTI_0000
+009C         ?CASE_0009:
+              ; SOURCE LINE # 38 
+009C A6FC                              LD     A,#0FCH
+009E C450A1                            AND    A,050A1H
+00A1 C750A1                            LD     050A1H,A
+              ; SOURCE LINE # 39 
+00A4 C650A1                            LD     A,050A1H
+00A7 1A06       F                      OR     A,(006H,SP)   ; [ SensitivityValue + 01H ]
+00A9 C750A1                            LD     050A1H,A
+00AC         ?EPILOG_0001:
+              ; SOURCE LINE # 44 
+00AC 85                                POPW   X
+00AD 81                                RET    
+              ; Port         (size=2).  parameter in AUTO
+              ; SensitivityValue (size=2).  parameter in AUTO
+
+              ; FUNCTION ?EXTI_SetExtIntSensitivity (END)
+
+              ; FUNCTION ?EXTI_SetTLISensitivity (BEGIN)
+              ; Register-parameter SensitivityValue (XW) is relocated (auto)
+              ; SOURCE LINE # 47 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 50 
+0001 5D                                TNZW   X
+0002 2711                              JREQ   ?NXT_0007
+0004 A30004                            CPW    X,#00004H
+0007 270C                              JREQ   ?NXT_0007
+0009 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+000C         ?DATASTART_0005:
+000C 32                             M  DB     032H
+000D         ?DATAEND_0005:
+000D AE0000     F                      LDW    X,#HIGH(?STR?STM8S_EXTI?BASE)
+0010 CD0000     F                      CALL   ?assert_failed
+0013 5B04                              ADD    SP,#004H
+0015         ?NXT_0007:
+              ; SOURCE LINE # 53 
+0015 721550A1                          BRES   050A1H,#002H
+              ; SOURCE LINE # 54 
+0019 C650A1                            LD     A,050A1H
+001C 1A02       F                      OR     A,(002H,SP)   ; [ SensitivityValue + 01H ]
+001E C750A1                            LD     050A1H,A
+              ; SOURCE LINE # 55 
+0021 85                                POPW   X
+0022 81                                RET    
+              ; SensitivityValue (size=2).  parameter in AUTO
+
+              ; FUNCTION ?EXTI_SetTLISensitivity (END)
+
+              ; FUNCTION ?EXTI_GetExtIntSensitivity (BEGIN)
+              ; Register-parameter Port (XW) is relocated (auto)
+              ; SOURCE LINE # 58 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 60 
+0001 4B00                              PUSH   #000H
+              ; SOURCE LINE # 63 
+0003 5D                                TNZW   X
+0004 2721                              JREQ   ?NXT_0010
+0006 5F                                CLRW   X
+0007 5C                                INCW   X
+0008 1302       F                      CPW    X,(002H,SP)   ; [ Port ]
+000A 271B                              JREQ   ?NXT_0010
+000C 5C                                INCW   X
+000D 1302       F                      CPW    X,(002H,SP)   ; [ Port ]
+000F 2716                              JREQ   ?NXT_0010
+0011 5C                                INCW   X
+0012 1302       F                      CPW    X,(002H,SP)   ; [ Port ]
+0014 2711                              JREQ   ?NXT_0010
+0016 5C                                INCW   X
+0017 1302       F                      CPW    X,(002H,SP)   ; [ Port ]
+0019 270C                              JREQ   ?NXT_0010
+001B CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+001E         ?DATASTART_0007:
+001E 3F                             M  DB     03FH
+001F         ?DATAEND_0007:
+001F AE0000     F                      LDW    X,#HIGH(?STR?STM8S_EXTI?BASE)
+0022 CD0000     F                      CALL   ?assert_failed
+0025 5B04                              ADD    SP,#004H
+0027         ?NXT_0010:
+              ; SOURCE LINE # 65 
+0027 1E02       F                      LDW    X,(002H,SP)   ; [ Port ]
+0029 270E                              JREQ   ?CASE_0015
+002B 5A                                DECW   X
+002C 2714                              JREQ   ?CASE_0016
+002E 5A                                DECW   X
+002F 271A                              JREQ   ?CASE_0017
+0031 5A                                DECW   X
+0032 2721                              JREQ   ?CASE_0018
+0034 5A                                DECW   X
+0035 2728                              JREQ   ?CASE_0019
+              ; SOURCE LINE # 83 
+0037 202D                              JRA    ?NXT_0011
+0039         ?CASE_0015:
+              ; SOURCE LINE # 68 
+0039 C650A0                            LD     A,050A0H
+003C A403                              AND    A,#003H
+003E         ?OPTI_0005:
+003E 6B01       F                      LD     (001H,SP),A   ; [ value ]
+              ; SOURCE LINE # 69 
+0040 2024                              JRA    ?NXT_0011
+0042         ?CASE_0016:
+              ; SOURCE LINE # 71 
+0042 C650A0                            LD     A,050A0H
+0045 A40C                              AND    A,#00CH
+0047         ?OPTI_0003:
+0047 44                                SRL    A
+0048 44                                SRL    A
+              ; SOURCE LINE # 72 
+0049 20F3                              JRA    ?OPTI_0005
+004B         ?CASE_0017:
+              ; SOURCE LINE # 74 
+004B C650A0                            LD     A,050A0H
+004E A430                              AND    A,#030H
+0050 4E                                SWAP   A
+0051 A40F                              AND    A,#00FH
+              ; SOURCE LINE # 75 
+0053 20E9                              JRA    ?OPTI_0005
+0055         ?CASE_0018:
+              ; SOURCE LINE # 77 
+0055 C650A0                            LD     A,050A0H
+0058 A4C0                              AND    A,#0C0H
+005A 4E                                SWAP   A
+005B A40F                              AND    A,#00FH
+              ; SOURCE LINE # 78 
+005D 20E8                              JRA    ?OPTI_0003
+005F         ?CASE_0019:
+              ; SOURCE LINE # 80 
+005F C650A1                            LD     A,050A1H
+0062 A403                              AND    A,#003H
+0064 6B01       F                      LD     (001H,SP),A   ; [ value ]
+0066         ?NXT_0011:
+              ; SOURCE LINE # 86 
+0066 7B01       F                      LD     A,(001H,SP)   ; [ value ]
+0068 5F                                CLRW   X
+0069 97                                LD     XL,A
+              ; SOURCE LINE # 87 
+006A 5B03                              ADD    SP,#003H
+006C 81                                RET    
+              ; Port         (size=2).  parameter in AUTO
+              ; value        unsigned char  (size=1). Automatic variable  in AUTO
+
+              ; FUNCTION ?EXTI_GetExtIntSensitivity (END)
+
+              ; FUNCTION ?EXTI_GetTLISensitivity (BEGIN)
+              ; SOURCE LINE # 96 
+0000 C650A1                            LD     A,050A1H
+0003 A404                              AND    A,#004H
+              ; SOURCE LINE # 98 
+0005 5F                                CLRW   X
+0006 97                                LD     XL,A
+              ; SOURCE LINE # 99 
+0007 81                                RET    
+              ; value        unsigned char  (size=1). Automatic variable  in AUTO
+
+              ; FUNCTION ?EXTI_GetTLISensitivity (END)
+
+RCSTM8 COMPILER V2.42.12.083
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    335    ----
+   CONSTANT SIZE    =     71    ----
+   DATA SIZE        =   ----    ----
+   PAGE0 SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+RCSTM8 COMPILATION COMPLETE.  0 WARNING,  0 ERROR

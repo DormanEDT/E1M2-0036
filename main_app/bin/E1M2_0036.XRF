@@ -1,0 +1,275 @@
+RLSTM8 LINKER/LOCATOR V2.42,  INVOKED BY: 
+C:\Raisonance\Ride\Bin\RLSTM8.EXE -CP C:\USERS\SRAVI\DOWNLOADS\E1M2_0036\E1M2_0036\MAIN_APP\BIN\STM8S_UART1.OBJ,C:\USERS\SRAVI\DOWNLOADS\E1M2_0036\E1M2_0036\MAIN_APP\BIN\MAIN.OBJ,C:\USERS\SRAVI\DOWNLOADS\E1M2_0036\E1M2_0036\MAIN_APP\BIN\STM8S_CAN.OBJ,C:\USERS\SRAVI\DOWNLOADS\E1M2_0036\E1M2_0036\MAIN_APP\BIN\STM8S_CLK.OBJ,C:\USERS\SRAVI\DOWNLOADS\E1M2_0036\E1M2_0036\MAIN_APP\BIN\STM8S_EOL.OBJ,C:\USERS\SRAVI\DOWNLOADS\E1M2_0036\E1M2_0036\MAIN_APP\BIN\STM8S_EXTI.OBJ,C:\USERS\SRAVI\DOWNLOADS\E1M2_0036\E1M2_0036\MAIN_APP\BIN\STM8S_FLASH.OBJ,C:\USERS\SRAVI\DOWNLOADS\E1M2_0036\E1M2_0036\MAIN_APP\BIN\STM8S_GPIO.OBJ,C:\USERS\SRAVI\DOWNLOADS\E1M2_0036\E1M2_0036\MAIN_APP\BIN\STM8S_IT.OBJ,C:\USERS\SRAVI\DOWNLOADS\E1M2_0036\E1M2_0036\MAIN_APP\BIN\STM8S_KLINE.OBJ,C:\USERS\SRAVI\DOWNLOADS\E1M2_0036\E1M2_0036\MAIN_APP\BIN\STM8S_TIM4.OBJ TO(C:\USERS\SRAVI\DOWNLOADS\E1M2_0036\E1M2_0036\MAIN_APP\BIN\E1M2_0036.AOF) LIBPATH(C:\RAISONANCE\RIDE\LIB\ST7) PR(C:\USERS\SRAVI\DOWNLOADS\E1M2_0036\E1M2_0036\MAIN_APP\LST\E1M2_0036.MAP) SCINAME(STM8) GENERATEDEPFILE CODESIZE(0X20000) CODESTART(0X8000) RAMSIZE(0X1800) DATASTART(0X0000) EEPROMSTART(0X4000) EEPROMSIZE(0X800) STACKSIZE(0X400) STACKTOP(6144) REMOVEUNCALLED IX CODE(0X8080) 
+
+INTER-MODULE CROSS-REFERENCE LISTING
+------------------------------------
+
+	NAME. . . . . . . . USAGE   MODULE NAMES
+	----------------------------------------
+	?ADC2_IRQHandler  . CODE    [STM8S_IT]: 
+	?AWU_IRQHandler . . CODE    [STM8S_IT]: 
+	?BH . . . . . . . . DATA    [REGISTERS]:  STARTUP_V_Z, CPU3232IX, SRL328, SUB3232, SLL328, OR3232, MV4_PG2BC, MV4_NULL2BC, MV4_IX2BC, MV4_ISA2BC, MV4_BC2SK, MV4_BC2IX, MV4_BC2ISA, MULU3232, IX32, DIVU3232, AND3232, ADD3232, INTTOL, CHARTOL, STM8S_TIM4, STM8S_KLINE, STM8S_IT, STM8S_GPIO, STM8S_FLASH, STM8S_EXTI, STM8S_EOL, STM8S_CLK, STM8S_CAN, MAIN, STM8S_UART1 
+	?BL . . . . . . . . DATA    [REGISTERS]:  OR3232, MV4_NULL2BC, MULU3232, DIVU3232, AND3232, CHARTOL, STM8S_TIM4, STM8S_KLINE, STM8S_GPIO, STM8S_FLASH, STM8S_EXTI, STM8S_EOL, STM8S_CLK, STM8S_CAN, STM8S_UART1 
+	?C?accix328 . . . . CODE    [ACCIX328]:  STM8S_FLASH 
+	?C?add3232  . . . . CODE    [ADD3232]:  ADDIX32, STM8S_FLASH 
+	?C?addix32  . . . . CODE    [ADDIX32]:  STM8S_FLASH 
+	?C?and3232  . . . . CODE    [AND3232]:  STM8S_CAN 
+	?C?chartol  . . . . CODE    [CHARTOL]: 
+	?C?cpu3232ix  . . . CODE    [CPU3232IX]:  STM8S_FLASH, STM8S_CAN 
+	?C?divu3232 . . . . CODE    [DIVU3232]:  MULUDIVU3232, STM8S_KLINE, STM8S_CLK, STM8S_UART1 
+	?C?inttol . . . . . CODE    [INTTOL]:  STM8S_CAN 
+	?C?memcpy . . . . . CODE    [_MEMCPY]:  MAIN 
+	?C?modu3232 . . . . CODE    [DIVU3232]: 
+	?C?mulu3232 . . . . CODE    [MULU3232]:  MULUDIVU3232, MULUIX32, STM8S_FLASH, STM8S_UART1 
+	?C?muludivu3232 . . CODE    [MULUDIVU3232]:  STM8S_UART1 
+	?C?muluix32 . . . . CODE    [MULUIX32]:  STM8S_KLINE, STM8S_UART1 
+	?C?mv4_bc2isa . . . CODE    [MV4_BC2ISA]:  STM8S_KLINE, STM8S_FLASH, STM8S_CLK, STM8S_CAN, STM8S_UART1 
+	?C?mv4_bc2ix  . . . CODE    [MV4_BC2IX]:  STM8S_CAN 
+	?C?mv4_bc2sk  . . . CODE    [MV4_BC2SK]:  STM8S_KLINE, STM8S_FLASH, STM8S_CLK, STM8S_CAN, STM8S_UART1 
+	?C?mv4_isa2bc . . . CODE    [MV4_ISA2BC]:  STM8S_KLINE, STM8S_FLASH, STM8S_CLK, STM8S_CAN, STM8S_UART1 
+	?C?mv4_ix2bc  . . . CODE    [MV4_IX2BC]:  STM8S_KLINE, STM8S_CAN 
+	?C?mv4_ix2sk  . . . CODE    [MV4_IX2SK]:  MAIN 
+	?C?mv4_null2bc  . . CODE    [MV4_NULL2BC]:  STM8S_KLINE, STM8S_FLASH, STM8S_UART1 
+	?C?mv4_pg2bc  . . . CODE    [MV4_PG2BC]:  STM8S_KLINE, STM8S_FLASH, STM8S_CLK, STM8S_CAN 
+	?C?mv4_pg2ix  . . . CODE    [MV4_PG2IX]:  MAIN 
+	?C?mv4_pg2sk1 . . . CODE    [MV4_PG2SK1]:  STM8S_TIM4, STM8S_KLINE, STM8S_GPIO, STM8S_FLASH, STM8S_EXTI, STM8S_CLK, STM8S_CAN, STM8S_UART1 
+	?C?or3232 . . . . . CODE    [OR3232]:  STM8S_CAN 
+	?C?sll168 . . . . . CODE    [SLL168]:  STM8S_CLK, STM8S_CAN, STM8S_UART1 
+	?C?sll328 . . . . . CODE    [SLL328]:  STM8S_KLINE, STM8S_CAN, STM8S_UART1 
+	?C?srl328 . . . . . CODE    [SRL328]:  STM8S_KLINE, STM8S_CAN, STM8S_UART1 
+	?C?sub3232  . . . . CODE    [SUB3232]:  STM8S_KLINE, STM8S_UART1 
+	?C?uchartol . . . . CODE    [CHARTOL]:  STM8S_FLASH, STM8S_CLK, STM8S_CAN 
+	?CAN_CancelTransmit CODE    [STM8S_CAN]: 
+	?CAN_ClearFlag  . . CODE    [STM8S_CAN]: 
+	?CAN_ClearITPendingBCODE    [STM8S_CAN]: 
+	?CAN_Config . . . . CODE    [MAIN]:  MAIN 
+	?CAN_DeInit . . . . CODE    [STM8S_CAN]:  MAIN 
+	?CAN_FIFORelease  . CODE    [STM8S_CAN]: 
+	?CAN_FilterInit . . CODE    [STM8S_CAN]:  MAIN 
+	?CAN_GetFlagStatus  CODE    [STM8S_CAN]: 
+	?CAN_GetITStatus  . CODE    [STM8S_CAN]: 
+	?CAN_GetLastErrorCodCODE    [STM8S_CAN]: 
+	?CAN_GetMessageTimeSCODE    [STM8S_CAN]: 
+	?CAN_GetReceivedDLC CODE    [STM8S_CAN]: 
+	?CAN_GetReceivedData CAN_Get[STM8S_CAN]: 
+	?CAN_GetReceivedFMI CODE    [STM8S_CAN]: 
+	?CAN_GetReceivedIDE CODE    [STM8S_CAN]: 
+	?CAN_GetReceivedId  CODE    [STM8S_CAN]: 
+	?CAN_GetReceivedRTR CODE    [STM8S_CAN]: 
+	?CAN_GetSelectedPage CAN_Fil[STM8S_CAN]:  STM8S_CAN 
+	?CAN_ITConfig . . . CODE    [STM8S_CAN]:  MAIN 
+	?CAN_Init . . . . . CODE    [STM8S_CAN]:  MAIN 
+	?CAN_MessagePending CODE    [STM8S_CAN]: 
+	?CAN_OperatingModeReCODE    [STM8S_CAN]:  STM8S_CAN 
+	?CAN_RX_IRQHandler  CODE    [STM8S_IT]: 
+	?CAN_Receive  . . . CODE    [STM8S_CAN]:  STM8S_IT 
+	?CAN_ST7CompatibilitCODE    [STM8S_CAN]: 
+	?CAN_SelectPage . . CODE    [STM8S_CAN]:  STM8S_CAN 
+	?CAN_Sleep  . . . . CODE    [STM8S_CAN]: 
+	?CAN_TTComModeCmd . CODE    [STM8S_CAN]: 
+	?CAN_TX_IRQHandler  CODE    [STM8S_IT]: 
+	?CAN_Transmit . . . CODE    [STM8S_CAN]:  STM8S_EOL, MAIN 
+	?CAN_TransmitStatus CODE    [STM8S_CAN]:  STM8S_CAN 
+	?CAN_WakeUp . . . . CODE    [STM8S_CAN]: 
+	?CH . . . . . . . . DATA    [REGISTERS]:  STARTUP_V_Z, CPU3232IX, SRL328, SUB3232, SLL328, OR3232, MV4_PG2BC, MV4_NULL2BC, MV4_IX2BC, MV4_ISA2BC, MV4_BC2SK, MV4_BC2IX, MV4_BC2ISA, MULU3232, IX32, DIVU3232, AND3232, ADD3232, INTTOL, CHARTOL, STM8S_TIM4, STM8S_KLINE, STM8S_IT, STM8S_GPIO, STM8S_FLASH, STM8S_CLK, STM8S_CAN, STM8S_UART1 
+	?CL . . . . . . . . DATA    [REGISTERS]:  OR3232, MV4_NULL2BC, MULU3232, DIVU3232, AND3232, CHARTOL, STM8S_TIM4, STM8S_KLINE, STM8S_GPIO, STM8S_FLASH, STM8S_CLK, STM8S_CAN, STM8S_UART1 
+	?CLK_AdjustHSICalibrCODE    [STM8S_CLK]: 
+	?CLK_CCOCmd . . . . CODE    [STM8S_CLK]: 
+	?CLK_CCOConfig  . . CODE    [STM8S_CLK]: 
+	?CLK_ClearITPendingBCODE    [STM8S_CLK]: 
+	?CLK_ClockSecuritySyCODE    [STM8S_CLK]: 
+	?CLK_ClockSwitchCmd CODE    [STM8S_CLK]: 
+	?CLK_ClockSwitchConfCODE    [STM8S_CLK]: 
+	?CLK_Config . . . . CODE    [MAIN]:  MAIN 
+	?CLK_DeInit . . . . CODE    [STM8S_CLK]: 
+	?CLK_FastHaltWakeUpCCODE    [STM8S_CLK]: 
+	?CLK_GetClockFreq . CODE    [STM8S_CLK]:  STM8S_UART1 
+	?CLK_GetFlagStatus  CODE    [STM8S_CLK]: 
+	?CLK_GetITStatus  . CODE    [STM8S_CLK]: 
+	?CLK_GetSYSCLKSource ODECODE[STM8S_CLK]: 
+	?CLK_HSECmd . . . . CODE    [STM8S_CLK]: 
+	?CLK_HSICmd . . . . CODE    [STM8S_CLK]: 
+	?CLK_HSIPrescalerConCODE    [STM8S_CLK]:  MAIN 
+	?CLK_IRQHandler . . CODE    [STM8S_IT]: 
+	?CLK_ITConfig . . . CODE    [STM8S_CLK]: 
+	?CLK_LSICmd . . . . CODE    [STM8S_CLK]: 
+	?CLK_PeripheralClockCODE    [STM8S_CLK]: 
+	?CLK_SWIMConfig . . CODE    [STM8S_CLK]: 
+	?CLK_SYSCLKConfig . CODE    [STM8S_CLK]: 
+	?CLK_SYSCLKEmergencyCODE    [STM8S_CLK]: 
+	?CLK_SlowActiveHaltWCODE    [STM8S_CLK]: 
+	?C_INITSEGSTART . . CODE    [?STATINIT]:  STARTUP_V_Z 
+	?C_ZEROSIZE . . . . NUMBER  [STM8S_KLINE]:  STARTUP_V_Z 
+	?C_ZEROSTART  . . . DATA    [STM8S_KLINE]:  STARTUP_V_Z 
+	?CheckITStatus?STM8SCODE    [STM8S_CAN]:  STM8S_CAN 
+	?Delay  . . . . . . CODE    [MAIN]: 
+	?EEPROM_EEC_IRQHandlCODE    [STM8S_IT]: 
+	?EOL_tester_function Delay  [STM8S_EOL]:  STM8S_IT 
+	?EXTI_DeInit  . . . CODE    [STM8S_EXTI]: 
+	?EXTI_GetExtIntSensiCODE    [STM8S_EXTI]: 
+	?EXTI_GetTLISensitivCODE    [STM8S_EXTI]: 
+	?EXTI_PORTA_IRQHandlCODE    [STM8S_IT]: 
+	?EXTI_PORTB_IRQHandlCODE    [STM8S_IT]: 
+	?EXTI_PORTC_IRQHandlCODE    [STM8S_IT]: 
+	?EXTI_PORTD_IRQHandlCODE    [STM8S_IT]: 
+	?EXTI_PORTE_IRQHandlCODE    [STM8S_IT]: 
+	?EXTI_SetExtIntSensiCODE    [STM8S_EXTI]: 
+	?EXTI_SetTLISensitivCODE    [STM8S_EXTI]: 
+	?FLASH_DeInit . . . CODE    [STM8S_FLASH]: 
+	?FLASH_EraseBlock . CODE    [STM8S_FLASH]: 
+	?FLASH_EraseByte  . CODE    [STM8S_FLASH]:  STM8S_EOL 
+	?FLASH_EraseOptionByCODE    [STM8S_FLASH]: 
+	?FLASH_GetBootSize  CODE    [STM8S_FLASH]: 
+	?FLASH_GetFlagStatus FLASH_E[STM8S_FLASH]: 
+	?FLASH_GetLowPowerMoCODE    [STM8S_FLASH]: 
+	?FLASH_GetProgramminCODE    [STM8S_FLASH]: 
+	?FLASH_ITConfig . . CODE    [STM8S_FLASH]: 
+	?FLASH_Lock . . . . CODE    [STM8S_FLASH]: 
+	?FLASH_ProgramBlock CODE    [STM8S_FLASH]: 
+	?FLASH_ProgramByte  CODE    [STM8S_FLASH]:  MAIN 
+	?FLASH_ProgramOptionCODE    [STM8S_FLASH]: 
+	?FLASH_ProgramWord  CODE    [STM8S_FLASH]: 
+	?FLASH_ReadByte . . CODE    [STM8S_FLASH]:  STM8S_EOL, MAIN 
+	?FLASH_ReadOptionBytCODE    [STM8S_FLASH]: 
+	?FLASH_SetLowPowerMoCODE    [STM8S_FLASH]: 
+	?FLASH_SetProgramminCODE    [STM8S_FLASH]:  MAIN 
+	?FLASH_Unlock . . . CODE    [STM8S_FLASH]:  MAIN 
+	?FLASH_WaitForLastOpCODE    [STM8S_FLASH]:  STM8S_FLASH 
+	?GPIO_Config  . . . CODE    [MAIN]:  MAIN 
+	?GPIO_DeInit  . . . CODE    [STM8S_GPIO]: 
+	?GPIO_ExternalPullUpCODE    [STM8S_GPIO]: 
+	?GPIO_Init  . . . . CODE    [STM8S_GPIO]: 
+	?GPIO_ReadInputData CODE    [STM8S_GPIO]: 
+	?GPIO_ReadInputPin  CODE    [STM8S_GPIO]: 
+	?GPIO_ReadOutputData ODECODE[STM8S_GPIO]: 
+	?GPIO_Write . . . . CODE    [STM8S_GPIO]: 
+	?GPIO_WriteHigh . . CODE    [STM8S_GPIO]: 
+	?GPIO_WriteLow  . . CODE    [STM8S_GPIO]: 
+	?GPIO_WriteReverse  CODE    [STM8S_GPIO]: 
+	?I2C_IRQHandler . . CODE    [STM8S_IT]: 
+	?Program_Sequence?MACODE    [MAIN]:  MAIN 
+	?SPI_IRQHandler . . CODE    [STM8S_IT]: 
+	?TIM1_CAP_COM_IRQHanCODE    [STM8S_IT]: 
+	?TIM1_UPD_OVF_TRG_BRCODE    [STM8S_IT]: 
+	?TIM2_CAP_COM_IRQHanCODE    [STM8S_IT]: 
+	?TIM2_UPD_OVF_BRK_IRCODE    [STM8S_IT]: 
+	?TIM3_CAP_COM_IRQHanCODE    [STM8S_IT]: 
+	?TIM3_UPD_OVF_BRK_IRCODE    [STM8S_IT]: 
+	?TIM4_ARRPreloadConfCODE    [STM8S_TIM4]: 
+	?TIM4_ClearFlag . . CODE    [STM8S_TIM4]: 
+	?TIM4_ClearITPendingCODE    [STM8S_TIM4]: 
+	?TIM4_Cmd . . . . . CODE    [STM8S_TIM4]: 
+	?TIM4_DeInit  . . . CODE    [STM8S_TIM4]: 
+	?TIM4_GenerateEvent CODE    [STM8S_TIM4]: 
+	?TIM4_GetCounter  . CODE    [STM8S_TIM4]: 
+	?TIM4_GetFlagStatus CODE    [STM8S_TIM4]: 
+	?TIM4_GetITStatus . CODE    [STM8S_TIM4]: 
+	?TIM4_GetPrescaler  CODE    [STM8S_TIM4]: 
+	?TIM4_ITConfig  . . CODE    [STM8S_TIM4]: 
+	?TIM4_PrescalerConfiCODE    [STM8S_TIM4]: 
+	?TIM4_SelectOnePulseCODE    [STM8S_TIM4]: 
+	?TIM4_SetAutoreload CODE    [STM8S_TIM4]: 
+	?TIM4_SetCounter  . CODE    [STM8S_TIM4]: 
+	?TIM4_TimeBaseInit  CODE    [STM8S_TIM4]: 
+	?TIM4_UPD_OVF_IRQHanCODE    [STM8S_IT]: 
+	?TIM4_UpdateDisableCCODE    [STM8S_TIM4]: 
+	?TIM4_UpdateRequestCCODE    [STM8S_TIM4]: 
+	?TLI_IRQHandler . . CODE    [STM8S_IT]: 
+	?TRAP_IRQHandler  . CODE    [STM8S_IT]: 
+	?UART1_ClearFlag  . CODE    [STM8S_UART1]: 
+	?UART1_ClearITPendinCODE    [STM8S_UART1]: 
+	?UART1_Cmd  . . . . CODE    [STM8S_UART1]: 
+	?UART1_DeInit . . . CODE    [STM8S_UART1]: 
+	?UART1_GetFlagStatus UART1_C[STM8S_UART1]:  STM8S_KLINE 
+	?UART1_GetITStatus  CODE    [STM8S_UART1]: 
+	?UART1_HalfDuplexCmd ÿÿÿÿÿÿÿ[STM8S_UART1]: 
+	?UART1_ITConfig . . CODE    [STM8S_UART1]: 
+	?UART1_Init . . . . CODE    [STM8S_UART1]: 
+	?UART1_IrDACmd  . . CODE    [STM8S_UART1]: 
+	?UART1_IrDAConfig . CODE    [STM8S_UART1]: 
+	?UART1_LINBreakDetecCODE    [STM8S_UART1]: 
+	?UART1_LINCmd . . . CODE    [STM8S_UART1]: 
+	?UART1_RX_IRQHandler ODECODE[STM8S_KLINE]: 
+	?UART1_ReceiveData8 CODE    [STM8S_UART1]: 
+	?UART1_ReceiveData9 CODE    [STM8S_UART1]: 
+	?UART1_ReceiverWakeUCODE    [STM8S_UART1]: 
+	?UART1_SendBreak  . CODE    [STM8S_UART1]: 
+	?UART1_SendData8  . CODE    [STM8S_UART1]: 
+	?UART1_SendData9  . CODE    [STM8S_UART1]: 
+	?UART1_SetAddress . CODE    [STM8S_UART1]: 
+	?UART1_SetGuardTime CODE    [STM8S_UART1]: 
+	?UART1_SetPrescaler CODE    [STM8S_UART1]: 
+	?UART1_SmartCardCmd CODE    [STM8S_UART1]: 
+	?UART1_SmartCardNACKCODE    [STM8S_UART1]: 
+	?UART1_TX_IRQHandler ODECODE[STM8S_KLINE]: 
+	?UART1_WakeUpConfig CODE    [STM8S_UART1]: 
+	?UART3_RX_IRQHandler $„CODE [STM8S_IT]: 
+	?UART3_TX_IRQHandler $„CODEC[STM8S_IT]: 
+	?UART_Config  . . . CODE    [STM8S_KLINE]:  MAIN 
+	?assert_failed  . . CODE    [MAIN]:  STM8S_TIM4, STM8S_GPIO, STM8S_FLASH, STM8S_EXTI, STM8S_CLK, STM8S_CAN 
+	?check_dorman_rightsCODE    [MAIN]:  MAIN 
+	?flash_process?MAIN?CODE    [MAIN]:  MAIN 
+	?kline_checksum . . CODE    [STM8S_KLINE]:  STM8S_KLINE, STM8S_EOL 
+	?kline_receive_validCODE    [STM8S_EOL]:  STM8S_KLINE 
+	?kline_transmit . . CODE    [STM8S_KLINE]:  STM8S_EOL 
+	?uart_process_data  CODE    [STM8S_KLINE]: 
+	?uart_process_data_2 ODECODE[STM8S_EOL]: 
+	?wait_time  . . . . CODE    [MAIN]:  STM8S_IT 
+	BaudRate  . . . . . DATA    [STM8S_KLINE]: 
+	CAN_cofig_baud  . . DATA    [MAIN]: 
+	CLKPrescTable . . . CODE    [STM8S_CLK]: 
+	CST7_START_V_Z  . . CODE    [STARTUP_V_Z]:  MAIN 
+	EEPROM_address_of_doDATA    [MAIN]: 
+	HSIDivFactor  . . . CODE    [STM8S_CLK]: 
+	Tester_Present  . . DATA    [STM8S_EOL]:  STM8S_KLINE, STM8S_IT, STM8S_CAN, MAIN 
+	Timeout_EOL . . . . DATA    [STM8S_IT]: 
+	Timeout_EOL_Flag  . DATA    [STM8S_EOL]:  STM8S_IT, STM8S_CAN 
+	Tx_DLC  . . . . . . DATA    [MAIN]: 
+	Tx_Data . . . . . . DATA    [MAIN]: 
+	Tx_IDE  . . . . . . DATA    [MAIN]: 
+	Tx_Id . . . . . . . DATA    [MAIN]: 
+	Tx_RTR  . . . . . . DATA    [MAIN]: 
+	_?divu3216? . . . . CODE    [DIVU3232]: 
+	_?lix_entry?  . . . CODE    [IX32]:  ADDIX32, MULUIX32 
+	_DLC  . . . . . . . DATA    [STM8S_CAN]: 
+	_Data . . . . . . . DATA    [STM8S_CAN]:  STM8S_EOL 
+	_FMI  . . . . . . . DATA    [STM8S_CAN]: 
+	_IDE  . . . . . . . DATA    [STM8S_CAN]: 
+	_Id . . . . . . . . DATA    [STM8S_CAN]: 
+	_RTR  . . . . . . . DATA    [STM8S_CAN]: 
+	buf . . . . . . . . DATA    [STM8S_EOL]: 
+	date  . . . . . . . CODE    [STM8S_EOL]: 
+	dorman  . . . . . . CODE    [MAIN]: 
+	dorman_flag . . . . DATA    [MAIN]: 
+	dorman_ver  . . . . CODE    [MAIN]: 
+	gEOL_State  . . . . DATA    [STM8S_EOL]:  STM8S_IT 
+	keys_learned  . . . DATA    [MAIN]: 
+	kline_buf . . . . . DATA    [STM8S_EOL]: 
+	kline_receive_compleDATA    [STM8S_KLINE]: 
+	kline_rx_data . . . DATA    [STM8S_KLINE]: 
+	kline_total_rcv_cnt DATA    [STM8S_KLINE]:  STM8S_EOL 
+	kline_tx_data . . . DATA    [STM8S_KLINE]: 
+	kline_tx_length . . DATA    [STM8S_KLINE]: 
+	l_can_data  . . . . DATA    [STM8S_CAN]:  MAIN 
+	l_can_receive_flag  DATA    [STM8S_CAN]:  STM8S_EOL, MAIN 
+	main  . . . . . . . CODE    [MAIN]:  STARTUP_V_Z 
+	nose  . . . . . . . CODE    [MAIN]: 
+	number_of_dongle_useDATA    [MAIN]: 
+	number_of_remotes_prDATA    [MAIN]: 
+	programming_step  . DATA    [MAIN]: 
+	rcv_data  . . . . . DATA    [STM8S_KLINE]:  STM8S_EOL 
+	receive_len . . . . DATA    [STM8S_KLINE]:  STM8S_EOL 
+	rx_count  . . . . . DATA    [STM8S_KLINE]:  STM8S_EOL 
+	sku_1 . . . . . . . CODE    [STM8S_EOL]: 
+	sku_2 . . . . . . . CODE    [STM8S_EOL]: 
+	sku_3 . . . . . . . CODE    [STM8S_EOL]: 
+	sku_4 . . . . . . . CODE    [STM8S_EOL]: 
+	sku_5 . . . . . . . CODE    [STM8S_EOL]: 
+	sku_6 . . . . . . . CODE    [STM8S_EOL]: 
+	sku_7 . . . . . . . CODE    [STM8S_EOL]: 
+	test_char_t1  . . . DATA    [MAIN]: 
+	timer_10ms_counts . DATA    [STM8S_IT]: 
+	timer_counts  . . . DATA    [STM8S_IT]: 
+	uart_master_data  . DATA    [STM8S_EOL]: 
+	uart_recv_data  . . DATA    [STM8S_KLINE]: 
+	version . . . . . . CODE    [STM8S_EOL]: 

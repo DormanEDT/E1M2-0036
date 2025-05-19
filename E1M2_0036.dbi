@@ -1,0 +1,17 @@
+[Application]
+ApplicationPath=C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\bin\E1M2_0036.aof
+Format=AOF
+CodeOffset=0x0
+LoaderTool=ST7
+Target=ST7
+DebugTool=RLINK_STM8
+ApplicationComponents=
+[Device]
+Name=STM8S208RB
+[Debug]
+Explore=No
+Startup=1
+StartupSymb=main
+ToolName=RLINK_STM8
+[SimFile]
+path=C:\Raisonance\Ride\sim\ST7\STM8S208xB.sim

@@ -1,0 +1,1805 @@
+RCSTM8 COMPILER V2.42.12.083,  STM8S_FLASH        05/19/25  15:34:40
+
+QCW(0x00963FA0)
+
+RCSTM8 COMPILER V2.42.12.083, COMPILATION OF MODULE STM8S_FLASH
+OBJECT MODULE PLACED IN C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\bin\stm8s_flash.obj
+COMPILER INVOKED BY: QUIET GENERATEDEPFILE CODE DB OJ(C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\bin\stm8s_flash.obj) PR(C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\lst\stm8s_flash.lst) PIN(C:\Raisonance\Ride\Inc;C:\Raisonance\Ride\Inc\ST7;C:\Raisonance\Ride\Inc\STM8;C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\inc) STM8(SMALL) O(3,SIZE) NOINITSTATICVAR SMALLOBJECT ET(INT) 
+
+stmt level    source
+   1          #include "stm8s_flash.h"
+   2          
+   3          #define FLASH_CLEAR_BYTE ((uint8_t)0x00)
+   4          #define FLASH_SET_BYTE  ((uint8_t)0xFF)
+   5          #define  OPERATION_TIMEOUT  ((uint32_t)0xFFFFF)
+   6          
+   7          
+   8          /**
+   9            * @brief   Unlocks the program or data EEPROM memory
+  10            * @param  FLASH_MemType : Memory type to unlock
+  11            *         This parameter can be a value of @ref FLASH_MemType_TypeDef
+  12            * @retval None
+  13            */
+  14          void FLASH_Unlock(FLASH_MemType_TypeDef FLASH_MemType)
+  15          {
+  16   1          /* Check parameter */
+  17   1          assert_param(IS_MEMORY_TYPE_OK(FLASH_MemType));
+  18   1      
+  19   1          /* Unlock program memory */
+  20   1          if (FLASH_MemType == FLASH_MEMTYPE_PROG)
+  21   1          {
+  22   2              FLASH->PUKR = FLASH_RASS_KEY1;
+  23   2              FLASH->PUKR = FLASH_RASS_KEY2;
+  24   2          }
+  25   1          /* Unlock data memory */
+  26   1          else
+  27   1          {
+  28   2              FLASH->DUKR = FLASH_RASS_KEY2; /* Warning: keys are reversed on data memory !!! */
+  29   2              FLASH->DUKR = FLASH_RASS_KEY1;
+  30   2          }
+  31   1      }
+  32          
+  33          /**
+  34            * @brief   Locks the program or data EEPROM memory
+  35            * @param  FLASH_MemType : Memory type
+  36            *         This parameter can be a value of @ref FLASH_MemType_TypeDef
+  37            * @retval None
+  38            */
+  39          void FLASH_Lock(FLASH_MemType_TypeDef FLASH_MemType)
+  40          {
+  41   1          /* Check parameter */
+  42   1          assert_param(IS_MEMORY_TYPE_OK(FLASH_MemType));
+  43   1      
+  44   1        /* Lock memory */
+  45   1        FLASH->IAPSR &= (uint8_t)FLASH_MemType;
+  46   1      }
+  47          
+  48          /**
+  49            * @brief   Deinitializes the FLASH registers to their default reset values.
+  50            * @param  None
+  51            * @retval None
+  52            */
+  53          void FLASH_DeInit(void)
+  54          {
+  55   1          FLASH->CR1 = FLASH_CR1_RESET_VALUE;
+  56   1          FLASH->CR2 = FLASH_CR2_RESET_VALUE;
+  57   1          FLASH->NCR2 = FLASH_NCR2_RESET_VALUE;
+  58   1          FLASH->IAPSR &= (uint8_t)(~FLASH_IAPSR_DUL);
+  59   1          FLASH->IAPSR &= (uint8_t)(~FLASH_IAPSR_PUL);
+  60   1          (void) FLASH->IAPSR; /* Reading of this register causes the clearing of status flags */
+  61   1      }
+  62          
+  63          /**
+  64            * @brief   Enables or Disables the Flash interrupt mode
+  65            * @param  NewState : The new state of the flash interrupt mode
+  66            *         This parameter can be a value of @ref FunctionalState enumeration.
+  67            * @retval None
+  68            */
+  69          void FLASH_ITConfig(FunctionalState NewState)
+  70          {
+  71   1            /* Check parameter */
+  72   1        assert_param(IS_FUNCTIONALSTATE_OK(NewState));
+  73   1        
+  74   1          if (NewState != DISABLE)
+  75   1          {
+  76   2              FLASH->CR1 |= FLASH_CR1_IE; /* Enables the interrupt sources */
+  77   2          }
+  78   1          else
+  79   1          {
+  80   2              FLASH->CR1 &= (uint8_t)(~FLASH_CR1_IE); /* Disables the interrupt sources */
+  81   2          }
+  82   1      }
+  83          
+  84          /**
+  85            * @brief   Erases one byte in the program or data EEPROM memory
+  86            * @note   PointerAttr define is declared in the stm8s.h file to select if 
+  87            *         the pointer will be declared as near (2 bytes) or far (3 bytes).
+  88            * @param  Address : Address of the byte to erase
+  89            * @retval None
+  90            */
+  91          void FLASH_EraseByte(uint32_t Address)
+  92          {
+  93   1          /* Check parameter */
+  94   1          assert_param(IS_FLASH_ADDRESS_OK(Address));
+  95   1          
+  96   1          /* Erase byte */
+  97   1         *(PointerAttr uint8_t*) (uint16_t)Address = FLASH_CLEAR_BYTE; 
+  98   1      
+  99   1      }
+ 100          
+ 101          /**
+ 102            * @brief   Programs one byte in program or data EEPROM memory
+ 103            * @note   PointerAttr define is declared in the stm8s.h file to select if 
+ 104            *         the pointer will be declared as near (2 bytes) or far (3 bytes).
+ 105            * @param  Address : Address where the byte will be programmed
+ 106            * @param  Data : Value to be programmed
+ 107            * @retval None
+ 108            */
+ 109          void FLASH_ProgramByte(uint32_t Address, uint8_t Data)
+ 110          {
+ 111   1          /* Check parameters */
+ 112   1          assert_param(IS_FLASH_ADDRESS_OK(Address));
+ 113   1          *(PointerAttr uint8_t*) (uint16_t)Address = Data;
+ 114   1      }
+ 115          
+ 116          /**
+ 117            * @brief   Reads any byte from flash memory
+ 118            * @note   PointerAttr define is declared in the stm8s.h file to select if 
+ 119            *         the pointer will be declared as near (2 bytes) or far (3 bytes).
+ 120            * @param  Address : Address to read
+ 121            * @retval Value of the byte
+ 122            */
+ 123          uint8_t FLASH_ReadByte(uint32_t Address)
+ 124          {
+ 125   1          /* Check parameter */
+ 126   1          assert_param(IS_FLASH_ADDRESS_OK(Address));
+ 127   1          
+ 128   1          /* Read byte */
+ 129   1          return(*(PointerAttr uint8_t *) (uint16_t)Address); 
+ 130   1      
+ 131   1      }
+ 132          /**
+ 133            * @brief   Programs one word (4 bytes) in program or data EEPROM memory
+ 134            * @note   PointerAttr define is declared in the stm8s.h file to select if 
+ 135            *         the pointer will be declared as near (2 bytes) or far (3 bytes).
+ 136            * @param  Address : The address where the data will be programmed
+ 137            * @param  Data : Value to be programmed
+ 138            * @retval None
+ 139            */
+ 140          void FLASH_ProgramWord(uint32_t Address, uint32_t Data)
+ 141          {
+ 142   1          /* Check parameters */
+ 143   1          assert_param(IS_FLASH_ADDRESS_OK(Address));
+ 144   1      
+ 145   1          /* Enable Word Write Once */
+ 146   1          FLASH->CR2 |= FLASH_CR2_WPRG;
+ 147   1          FLASH->NCR2 &= (uint8_t)(~FLASH_NCR2_NWPRG);
+ 148   1      
+ 149   1          /* Write one byte - from lowest address*/
+ 150   1          *((PointerAttr uint8_t*)(uint16_t)Address)       = *((uint8_t*)(&Data));
+ 151   1          /* Write one byte*/
+ 152   1          *(((PointerAttr uint8_t*)(uint16_t)Address) + 1) = *((uint8_t*)(&Data)+1); 
+ 153   1          /* Write one byte*/    
+ 154   1          *(((PointerAttr uint8_t*)(uint16_t)Address) + 2) = *((uint8_t*)(&Data)+2); 
+ 155   1          /* Write one byte - from higher address*/
+ 156   1          *(((PointerAttr uint8_t*)(uint16_t)Address) + 3) = *((uint8_t*)(&Data)+3); 
+ 157   1      }
+ 158          
+ 159          /**
+ 160            * @brief   Programs option byte
+ 161            * @param  Address : option byte address to program
+ 162            * @param  Data : Value to write
+ 163            * @retval None
+ 164            */
+ 165          void FLASH_ProgramOptionByte(uint16_t Address, uint8_t Data)
+ 166          {
+ 167   1          /* Check parameter */
+ 168   1          assert_param(IS_OPTION_BYTE_ADDRESS_OK(Address));
+ 169   1      
+ 170   1          /* Enable write access to option bytes */
+ 171   1          FLASH->CR2 |= FLASH_CR2_OPT;
+ 172   1          FLASH->NCR2 &= (uint8_t)(~FLASH_NCR2_NOPT);
+ 173   1      
+ 174   1          /* check if the option byte to program is ROP*/
+ 175   1          if (Address == 0x4800)
+ 176   1          {
+ 177   2             /* Program option byte*/
+ 178   2             *((NEAR uint8_t*)Address) = Data;
+ 179   2          }
+ 180   1          else
+ 181   1          {
+ 182   2             /* Program option byte and his complement */
+ 183   2             *((NEAR uint8_t*)Address) = Data;
+ 184   2             *((NEAR uint8_t*)((uint16_t)(Address + 1))) = (uint8_t)(~Data);
+ 185   2          }
+ 186   1          FLASH_WaitForLastOperation(FLASH_MEMTYPE_PROG);
+ 187   1      
+ 188   1          /* Disable write access to option bytes */
+ 189   1          FLASH->CR2 &= (uint8_t)(~FLASH_CR2_OPT);
+ 190   1          FLASH->NCR2 |= FLASH_NCR2_NOPT;
+ 191   1      }
+ 192          
+ 193          /**
+ 194            * @brief   Erases option byte
+ 195            * @param  Address : Option byte address to erase
+ 196            * @retval None
+ 197            */
+ 198          void FLASH_EraseOptionByte(uint16_t Address)
+ 199          {
+ 200   1          /* Check parameter */
+ 201   1          assert_param(IS_OPTION_BYTE_ADDRESS_OK(Address));
+ 202   1      
+ 203   1          /* Enable write access to option bytes */
+ 204   1          FLASH->CR2 |= FLASH_CR2_OPT;
+ 205   1          FLASH->NCR2 &= (uint8_t)(~FLASH_NCR2_NOPT);
+ 206   1      
+ 207   1           /* check if the option byte to erase is ROP */
+ 208   1           if (Address == 0x4800)
+ 209   1          {
+ 210   2             /* Erase option byte */
+ 211   2             *((NEAR uint8_t*)Address) = FLASH_CLEAR_BYTE;
+ 212   2          }
+ 213   1          else
+ 214   1          {
+ 215   2             /* Erase option byte and his complement */
+ 216   2             *((NEAR uint8_t*)Address) = FLASH_CLEAR_BYTE;
+ 217   2             *((NEAR uint8_t*)((uint16_t)(Address + (uint16_t)1 ))) = FLASH_SET_BYTE;
+ 218   2          }
+ 219   1          FLASH_WaitForLastOperation(FLASH_MEMTYPE_PROG);
+ 220   1      
+ 221   1          /* Disable write access to option bytes */
+ 222   1          FLASH->CR2 &= (uint8_t)(~FLASH_CR2_OPT);
+ 223   1          FLASH->NCR2 |= FLASH_NCR2_NOPT;
+ 224   1      }
+ 225          /**
+ 226            * @brief   Reads one option byte
+ 227            * @param  Address  option byte address to read.
+ 228            * @retval Option byte read value + its complement
+ 229            */
+ 230          uint16_t FLASH_ReadOptionByte(uint16_t Address)
+ 231          {
+ 232   1          uint8_t value_optbyte, value_optbyte_complement = 0;
+ 233   1          uint16_t res_value = 0;
+ 234   1      
+ 235   1          /* Check parameter */
+ 236   1          assert_param(IS_OPTION_BYTE_ADDRESS_OK(Address));
+ 237   1      
+ 238   1      
+ 239   1          value_optbyte = *((NEAR uint8_t*)Address); /* Read option byte */
+ 240   1          value_optbyte_complement = *(((NEAR uint8_t*)Address) + 1); /* Read option byte complement */
+ 241   1      
+ 242   1          /* Read-out protection option byte */
+ 243   1          if (Address == 0x4800)	 
+ 244   1          {
+ 245   2              res_value =	 value_optbyte;
+ 246   2          }
+ 247   1          else
+ 248   1          {
+ 249   2              if (value_optbyte == (uint8_t)(~value_optbyte_complement))
+ 250   2              {
+ 251   3                  res_value = (uint16_t)((uint16_t)value_optbyte << 8);
+ 252   3                  res_value = res_value | (uint16_t)value_optbyte_complement;
+ 253   3              }
+ 254   2              else
+ 255   2              {
+ 256   3                  res_value = FLASH_OPTIONBYTE_ERROR;
+ 257   3              }
+ 258   2          }
+ 259   1          return(res_value);
+ 260   1      }
+ 261          
+ 262          /**
+ 263            * @brief   Select the Flash behaviour in low power mode
+ 264            * @param  FLASH_LPMode Low power mode selection
+ 265            *         This parameter can be any of the @ref FLASH_LPMode_TypeDef values.
+ 266            * @retval None
+ 267            */
+ 268          void FLASH_SetLowPowerMode(FLASH_LPMode_TypeDef FLASH_LPMode)
+ 269          {
+ 270   1          /* Check parameter */
+ 271   1          assert_param(IS_FLASH_LOW_POWER_MODE_OK(FLASH_LPMode));
+ 272   1      
+ 273   1          /* Clears the two bits */
+ 274   1          FLASH->CR1 &= (uint8_t)(~(FLASH_CR1_HALT | FLASH_CR1_AHALT)); 
+ 275   1          
+ 276   1          /* Sets the new mode */
+ 277   1          FLASH->CR1 |= (uint8_t)FLASH_LPMode; 
+ 278   1      }
+ 279          
+ 280          /**
+ 281            * @brief   Sets the fixed programming time
+ 282            * @param  FLASH_ProgTime Indicates the programming time to be fixed
+ 283            *         This parameter can be any of the @ref FLASH_ProgramTime_TypeDef values.
+ 284            * @retval None
+ 285            */
+ 286          void FLASH_SetProgrammingTime(FLASH_ProgramTime_TypeDef FLASH_ProgTime)
+ 287          {
+ 288   1          /* Check parameter */
+ 289   1          assert_param(IS_FLASH_PROGRAM_TIME_OK(FLASH_ProgTime));
+ 290   1      
+ 291   1          FLASH->CR1 &= (uint8_t)(~FLASH_CR1_FIX);
+ 292   1          FLASH->CR1 |= (uint8_t)FLASH_ProgTime;
+ 293   1      }
+ 294          
+ 295          /**
+ 296            * @brief  Returns the Flash behaviour type in low power mode
+ 297            * @param  None
+ 298            * @retval FLASH_LPMode_TypeDef Flash behaviour type in low power mode
+ 299            */
+ 300          FLASH_LPMode_TypeDef FLASH_GetLowPowerMode(void)
+ 301          {
+ 302   1          return((FLASH_LPMode_TypeDef)(FLASH->CR1 & (uint8_t)(FLASH_CR1_HALT | FLASH_CR1_AHALT)));
+ 303   1      }
+ 304          
+ 305          /**
+ 306            * @brief  Returns the fixed programming time
+ 307            * @param  None
+ 308            * @retval FLASH_ProgramTime_TypeDef Fixed programming time value
+ 309            */
+ 310          FLASH_ProgramTime_TypeDef FLASH_GetProgrammingTime(void)
+ 311          {
+ 312   1          return((FLASH_ProgramTime_TypeDef)(FLASH->CR1 & FLASH_CR1_FIX));
+ 313   1      }
+ 314          
+ 315          /**
+ 316            * @brief  Returns the Boot memory size in bytes
+ 317            * @param  None
+ 318            * @retval Boot memory size in bytes
+ 319            */
+ 320          uint32_t FLASH_GetBootSize(void)
+ 321          {
+ 322   1          uint32_t temp = 0;
+ 323   1      
+ 324   1          /* Calculates the number of bytes */
+ 325   1          temp = (uint32_t)((uint32_t)FLASH->FPR * (uint32_t)512);
+ 326   1      
+ 327   1          /* Correction because size of 127.5 kb doesn't exist */
+ 328   1          if (FLASH->FPR == 0xFF)
+ 329   1          {
+ 330   2              temp += 512;
+ 331   2          }
+ 332   1      
+ 333   1          /* Return value */
+ 334   1          return(temp);
+ 335   1      }
+ 336          
+ 337          /**
+ 338            * @brief  Checks whether the specified SPI flag is set or not.
+ 339            * @param  FLASH_FLAG : Specifies the flag to check.
+ 340            *         This parameter can be any of the @ref FLASH_Flag_TypeDef enumeration.
+ 341            * @retval FlagStatus : Indicates the state of FLASH_FLAG.
+ 342            *         This parameter can be any of the @ref FlagStatus enumeration.
+ 343            * @note   This function can clear the EOP, WR_PG_DIS flags in the IAPSR register.
+ 344            */
+ 345          FlagStatus FLASH_GetFlagStatus(FLASH_Flag_TypeDef FLASH_FLAG)
+ 346          {
+ 347   1          FlagStatus status = RESET;
+ 348   1          /* Check parameters */
+ 349   1          assert_param(IS_FLASH_FLAGS_OK(FLASH_FLAG));
+ 350   1      
+ 351   1          /* Check the status of the specified FLASH flag */
+ 352   1          if ((FLASH->IAPSR & (uint8_t)FLASH_FLAG) != (uint8_t)RESET)
+ 353   1          {
+ 354   2              status = SET; /* FLASH_FLAG is set */
+ 355   2          }
+ 356   1          else
+ 357   1          {
+ 358   2              status = RESET; /* FLASH_FLAG is reset*/
+ 359   2          }
+ 360   1      
+ 361   1          /* Return the FLASH_FLAG status */
+ 362   1          return status;
+ 363   1      }
+ 364          
+ 365          /**
+ 366          @code
+ 367           All the functions defined below must be executed from RAM exclusively, except
+ 368           for the FLASH_WaitForLastOperation function which can be executed from Flash.
+ 369          
+ 370           Steps of the execution from RAM differs from one toolchain to another:
+ 371           - For Cosmic Compiler:
+ 372              1- Define a segment FLASH_CODE by the mean of " #pragma section (FLASH_CODE)".
+ 373              This segment is defined in the stm8s_flash.c file.
+ 374            2- Uncomment the "#define RAM_EXECUTION  (1)" line in the stm8s.h file,
+ 375              or define it in Cosmic compiler preprocessor to enable the FLASH_CODE segment
+ 376             definition.
+ 377            3- In STVD Select Project\Settings\Linker\Category "input" and in the RAM section
+ 378              add the FLASH_CODE segment with "-ic" options.
+ 379            4- In main.c file call the _fctcpy() function with first segment character as 
+ 380              parameter "_fctcpy('F');" to load the declared moveable code segment
+ 381              (FLASH_CODE) in RAM before execution.
+ 382            5- By default the _fctcpy function is packaged in the Cosmic machine library,
+ 383              so the function prototype "int _fctcopy(char name);" must be added in main.c
+ 384              file.
+ 385          
+ 386            - For Raisonance Compiler
+ 387             1- Use the inram keyword in the function declaration to specify that it can be
+ 388              executed from RAM.
+ 389              This is done within the stm8s_flash.c file, and it's conditioned by 
+ 390              RAM_EXECUTION definition.
+ 391             2- Uncomment the "#define RAM_EXECUTION  (1)" line in the stm8s.h file, or 
+ 392             define it in Raisonance compiler preprocessor to enable the access for the 
+ 393             inram functions.
+ 394             3- An inram function code is copied from Flash to RAM by the C startup code. 
+ 395             In some applications, the RAM area where the code was initially stored may be
+ 396             erased or corrupted, so it may be desirable to perform the copy again. 
+ 397             Depending on the application memory model, the memcpy() or fmemcpy() functions
+ 398             should be used to perform the copy.
+ 399                • In case your project uses the SMALL memory model (code smaller than 64K),
+ 400                 memcpy()function is recommended to perform the copy
+ 401                • In case your project uses the LARGE memory model, functions can be 
+ 402                everywhenre in the 24-bits address space (not limited to the first 64KB of
+ 403                code), In this case, the use of memcpy() function will not be appropriate,
+ 404                you need to use the specific fmemcpy() function (which copies objects with
+ 405                24-bit addresses).
+ 406                - The linker automatically defines 2 symbols for each inram function:
+ 407                     • __address__functionname is a symbol that holds the Flash address 
+ 408                     where the given function code is stored.
+ 409                     • __size__functionname is a symbol that holds the function size in bytes.
+ 410               And we already have the function address (which is itself a pointer)
+ 411            4- In main.c file these two steps should be performed for each inram function:
+ 412               • Import the "__address__functionname" and "__size__functionname" symbols
+ 413                 as global variables:
+ 414                   extern int __address__functionname; // Symbol holding the flash address
+ 415                   extern int __size__functionname;    // Symbol holding the function size
+ 416               • In case of SMALL memory model use, Call the memcpy() function to copy the
+ 417                inram function to the RAM destination address:
+ 418                          memcpy(functionname, // RAM destination address
+ 419                                (void*)&__address__functionname, // Flash source address
+ 420                                (int)&__size__functionname); // Code size of the function
+ 421               • In case of LARGE memory model use, call the fmemcpy() function to copy 
+ 422               the inram function to the RAM destination address:
+ 423                           memcpy(functionname, // RAM destination address
+ 424                                (void @far*)&__address__functionname, // Flash source address
+ 425                                (int)&__size__functionname); // Code size of the function
+ 426          
+ 427           - For IAR Compiler:
+ 428              1- Use the __ramfunc keyword in the function declaration to specify that it 
+ 429              can be executed from RAM..
+ 430              This is done within the stm8s_flash.c file, and it's conditioned by 
+ 431              RAM_EXECUTION definition.
+ 432              2- Uncomment the "#define RAM_EXECUTION  (1)" line in the stm8s.h file, or 
+ 433             define it in IAR compiler preprocessor to enable the access for the 
+ 434             __ramfunc functions.
+ 435           
+ 436           The FLASH examples given within the STM8S_StdPeriph_Lib package, details all 
+ 437           the steps described above.
+ 438          
+ 439          @endcode
+ 440          */
+ 441          
+ 442          /**
+ 443            * @brief
+ 444            *******************************************************************************
+ 445            *                         Execution from RAM enable
+ 446            *******************************************************************************
+ 447            *
+ 448            * To enable execution from RAM you can either uncomment the following define 
+ 449            * in the stm8s.h file or define it in your toolchain compiler preprocessor
+ 450            * - #define RAM_EXECUTION  (1) 
+ 451            */
+ 452            
+ 453          #if defined (_COSMIC_) && defined (RAM_EXECUTION)
+               #pragma section (FLASH_CODE)
+              #endif  /* _COSMIC_ && RAM_EXECUTION */
+ 456          /**
+ 457            * @brief  Wait for a Flash operation to complete.
+ 458            * @note   The call and execution of this function must be done from RAM in case
+ 459            *         of Block operation, otherwise it can be executed from Flash
+ 460            * @param  FLASH_MemType : Memory type
+ 461            *         This parameter can be a value of @ref FLASH_MemType_TypeDef
+ 462            * @retval FLASH status
+ 463            */
+ 464          IN_RAM(FLASH_Status_TypeDef FLASH_WaitForLastOperation(FLASH_MemType_TypeDef FLASH_MemType)) 
+ 465          {
+ 466   1          uint8_t flagstatus = 0x00;
+ 467   1          uint32_t timeout = OPERATION_TIMEOUT;
+ 468   1          
+ 469   1          /* Wait until operation completion or write protection page occurred */
+ 470   1      #if defined (STM8S208) || defined(STM8S207) || defined(STM8S105) || defined(STM8AF52Ax) ||\
+ 471   1          defined(STM8AF62Ax) || defined(STM8AF626x)  
+ 472   1          if (FLASH_MemType == FLASH_MEMTYPE_PROG)
+ 473   1          {
+ 474   2              while ((flagstatus == 0x00) && (timeout != 0x00))
+ 475   2              {
+ 476   3                  flagstatus = (uint8_t)(FLASH->IAPSR & (uint8_t)(FLASH_IAPSR_EOP |
+ 477   3                                                    FLASH_IAPSR_WR_PG_DIS));
+ 478   3                  timeout--;
+ 479   3              }
+ 480   2          }
+ 481   1          else
+ 482   1          {
+ 483   2              while ((flagstatus == 0x00) && (timeout != 0x00))
+ 484   2              {
+ 485   3                  flagstatus = (uint8_t)(FLASH->IAPSR & (uint8_t)(FLASH_IAPSR_HVOFF |
+ 486   3                                                    FLASH_IAPSR_WR_PG_DIS));
+ 487   3                  timeout--;
+ 488   3              }
+ 489   2          }
+ 490   1      #else /*STM8S103, STM8S903*/
+       1          while ((flagstatus == 0x00) && (timeout != 0x00))
+       1          {
+       1              flagstatus = (uint8_t)(FLASH->IAPSR & (FLASH_IAPSR_EOP | FLASH_IAPSR_WR_PG_DIS));
+       1              timeout--;
+       1          }
+       1      
+       1      #endif /* STM8S208, STM8S207, STM8S105, STM8AF52Ax, STM8AF62Ax, STM8AF262x */
+ 498   1          
+ 499   1          if (timeout == 0x00 )
+ 500   1          {
+ 501   2              flagstatus = FLASH_STATUS_TIMEOUT;
+ 502   2          }
+ 503   1      
+ 504   1          return((FLASH_Status_TypeDef)flagstatus);
+ 505   1      }
+ 506          
+ 507          /**
+ 508            * @brief  Erases a block in the program or data memory.
+ 509            * @note   This function should be called and executed from RAM.
+ 510            * @param  FLASH_MemType :  The type of memory to erase
+ 511            * @param  BlockNum : Indicates the block number to erase
+ 512            * @retval None.
+ 513            */
+ 514          IN_RAM(void FLASH_EraseBlock(uint16_t BlockNum, FLASH_MemType_TypeDef FLASH_MemType))
+ 515          {
+ 516   1        uint32_t startaddress = 0;
+ 517   1          
+ 518   1      #if defined (STM8S105) || defined (STM8S103) || defined (STM8S903) || defined (STM8AF626x)
+       1        uint32_t PointerAttr  *pwFlash;
+       1      #elif defined (STM8S208) || defined (STM8S207) || defined (STM8AF62Ax) || defined (STM8AF52Ax) 
+ 521   1        uint8_t PointerAttr  *pwFlash;
+ 522   1      #endif
+ 523   1      
+ 524   1        /* Check parameters */
+ 525   1        assert_param(IS_MEMORY_TYPE_OK(FLASH_MemType));
+ 526   1        if (FLASH_MemType == FLASH_MEMTYPE_PROG)
+ 527   1        {
+ 528   2            assert_param(IS_FLASH_PROG_BLOCK_NUMBER_OK(BlockNum));
+ 529   2            startaddress = FLASH_PROG_START_PHYSICAL_ADDRESS;
+ 530   2        }
+ 531   1        else
+ 532   1        {
+ 533   2            assert_param(IS_FLASH_DATA_BLOCK_NUMBER_OK(BlockNum));
+ 534   2            startaddress = FLASH_DATA_START_PHYSICAL_ADDRESS;
+ 535   2        }
+ 536   1      
+ 537   1          /* Point to the first block address */
+ 538   1      #if defined (STM8S208) || defined (STM8S207) || defined (STM8AF62Ax) || defined (STM8AF52Ax)
+ 539   1          pwFlash = (PointerAttr uint8_t *)(uint32_t)(startaddress + ((uint32_t)BlockNum * FLASH_BLOCK_SIZE));
+ 540   1      #elif defined (STM8S105) || defined (STM8S103) || defined (STM8S903) || defined (STM8AF626x)
+       1          pwFlash = (PointerAttr uint32_t *)(uint16_t)(startaddress + ((uint32_t)BlockNum * FLASH_BLOCK_SIZE));
+       1      #endif	/* STM8S208, STM8S207 */
+ 543   1      
+ 544   1          /* Enable erase block mode */
+ 545   1          FLASH->CR2 |= FLASH_CR2_ERASE;
+ 546   1          FLASH->NCR2 &= (uint8_t)(~FLASH_NCR2_NERASE);
+ 547   1      
+ 548   1      #if defined (STM8S105) || defined (STM8S103) || defined (STM8S903) || defined (STM8AF626x)
+       1          *pwFlash = (uint32_t)0;
+       1      #elif defined (STM8S208) || defined (STM8S207) || defined (STM8AF62Ax) || defined (STM8AF52Ax)
+ 551   1        *pwFlash = (uint8_t)0;
+ 552   1        *(pwFlash + 1) = (uint8_t)0;
+ 553   1        *(pwFlash + 2) = (uint8_t)0;
+ 554   1        *(pwFlash + 3) = (uint8_t)0;    
+ 555   1      #endif
+ 556   1      }
+ 557          
+ 558          /**
+ 559            * @brief  Programs a memory block
+ 560            * @note   This function should be called and executed from RAM.
+ 561            * @param  FLASH_MemType : The type of memory to program
+ 562            * @param  BlockNum : The block number
+ 563            * @param  FLASH_ProgMode : The programming mode.
+ 564            * @param  Buffer : Pointer to buffer containing source data.
+ 565            * @retval None.
+ 566            */
+ 567          IN_RAM(void FLASH_ProgramBlock(uint16_t BlockNum, FLASH_MemType_TypeDef FLASH_MemType, 
+ 568                                  FLASH_ProgramMode_TypeDef FLASH_ProgMode, uint8_t *Buffer))
+ 569          {
+ 570   1          uint16_t Count = 0;
+ 571   1          uint32_t startaddress = 0;
+ 572   1      
+ 573   1          /* Check parameters */
+ 574   1          assert_param(IS_MEMORY_TYPE_OK(FLASH_MemType));
+ 575   1          assert_param(IS_FLASH_PROGRAM_MODE_OK(FLASH_ProgMode));
+ 576   1          if (FLASH_MemType == FLASH_MEMTYPE_PROG)
+ 577   1          {
+ 578   2              assert_param(IS_FLASH_PROG_BLOCK_NUMBER_OK(BlockNum));
+ 579   2              startaddress = FLASH_PROG_START_PHYSICAL_ADDRESS;
+ 580   2          }
+ 581   1          else
+ 582   1          {
+ 583   2              assert_param(IS_FLASH_DATA_BLOCK_NUMBER_OK(BlockNum));
+ 584   2              startaddress = FLASH_DATA_START_PHYSICAL_ADDRESS;
+ 585   2          }
+ 586   1      
+ 587   1          /* Point to the first block address */
+ 588   1          startaddress = startaddress + ((uint32_t)BlockNum * FLASH_BLOCK_SIZE);
+ 589   1      
+ 590   1          /* Selection of Standard or Fast programming mode */
+ 591   1          if (FLASH_ProgMode == FLASH_PROGRAMMODE_STANDARD)
+ 592   1          {
+ 593   2              /* Standard programming mode */ /*No need in standard mode */
+ 594   2              FLASH->CR2 |= FLASH_CR2_PRG;
+ 595   2              FLASH->NCR2 &= (uint8_t)(~FLASH_NCR2_NPRG);
+ 596   2          }
+ 597   1          else
+ 598   1          {
+ 599   2              /* Fast programming mode */
+ 600   2              FLASH->CR2 |= FLASH_CR2_FPRG;
+ 601   2              FLASH->NCR2 &= (uint8_t)(~FLASH_NCR2_NFPRG);
+ 602   2          }
+ 603   1      
+ 604   1          /* Copy data bytes from RAM to FLASH memory */
+ 605   1          for (Count = 0; Count < FLASH_BLOCK_SIZE; Count++)
+ 606   1          {
+ 607   2      #if defined (STM8S208) || defined(STM8S207) || defined(STM8S105) || defined (STM8AF62Ax) ||\
+ 608   2          defined (STM8AF52Ax) || defined (STM8AF626x)
+ 609   2        *((PointerAttr uint8_t*) (uint16_t)startaddress + Count) = ((uint8_t)(Buffer[Count]));
+ 610   2      #elif defined (STM8S103) || defined (STM8S903)
+       2        *((PointerAttr uint8_t*) (uint16_t)startaddress + Count) = ((uint8_t)(Buffer[Count]));
+       2      #endif       
+ 613   2          }
+ 614   1      }
+ 615          
+ 616          #if defined (_COSMIC_) && defined (RAM_EXECUTION)
+               /* End of FLASH_CODE section */
+               #pragma section ()
+              #endif /* _COSMIC_ && RAM_EXECUTION */
+ 620          
+RCSTM8 COMPILER V2.42.12.083
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+              ; FUNCTION ?FLASH_Unlock (BEGIN)
+              ; Register-parameter FLASH_MemType (XW) is relocated (auto)
+              ; SOURCE LINE # 14 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 17 
+0001 A300FD                            CPW    X,#000FDH
+0004 2713                              JREQ   ?NXT_0002
+0006 AE00F7                            LDW    X,#000F7H
+0009 1301       F                      CPW    X,(001H,SP)   ; [ FLASH_MemType ]
+000B 270C                              JREQ   ?NXT_0002
+000D CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+0010         ?DATASTART_0001:
+0010 11                             M  DB     011H
+0011         ?DATAEND_0001:
+0011 AE0000     F                      LDW    X,#HIGH(?STR?STM8S_FLASH?BASE)
+0014 CD0000     F                      CALL   ?assert_failed
+0017 5B04                              ADD    SP,#004H
+0019         ?NXT_0002:
+              ; SOURCE LINE # 20 
+0019 AE00FD                            LDW    X,#000FDH
+001C 1301       F                      CPW    X,(001H,SP)   ; [ FLASH_MemType ]
+001E 260A                              JRNE   ?ELSE_0003
+              ; SOURCE LINE # 22 
+0020 35565062                          MOV    05062H,#056H
+              ; SOURCE LINE # 23 
+0024 35AE5062                          MOV    05062H,#0AEH
+0028 2008                              JRA    ?EPILOG_0000
+002A         ?ELSE_0003:
+              ; SOURCE LINE # 28 
+002A 35AE5064                          MOV    05064H,#0AEH
+              ; SOURCE LINE # 29 
+002E 35565064                          MOV    05064H,#056H
+0032         ?EPILOG_0000:
+              ; SOURCE LINE # 31 
+0032 85                                POPW   X
+0033 81                                RET    
+              ; FLASH_MemType (size=2).  parameter in AUTO
+
+              ; FUNCTION ?FLASH_Unlock (END)
+
+              ; FUNCTION ?FLASH_Lock (BEGIN)
+              ; Register-parameter FLASH_MemType (XW) is relocated (auto)
+              ; SOURCE LINE # 39 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 42 
+0001 A300FD                            CPW    X,#000FDH
+0004 2713                              JREQ   ?NXT_0005
+0006 AE00F7                            LDW    X,#000F7H
+0009 1301       F                      CPW    X,(001H,SP)   ; [ FLASH_MemType ]
+000B 270C                              JREQ   ?NXT_0005
+000D CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+0010         ?DATASTART_0003:
+0010 2A                             M  DB     02AH
+0011         ?DATAEND_0003:
+0011 AE0000     F                      LDW    X,#HIGH(?STR?STM8S_FLASH?BASE)
+0014 CD0000     F                      CALL   ?assert_failed
+0017 5B04                              ADD    SP,#004H
+0019         ?NXT_0005:
+              ; SOURCE LINE # 45 
+0019 C6505F                            LD     A,0505FH
+001C 1402       F                      AND    A,(002H,SP)   ; [ FLASH_MemType + 01H ]
+001E C7505F                            LD     0505FH,A
+              ; SOURCE LINE # 46 
+0021 85                                POPW   X
+0022 81                                RET    
+              ; FLASH_MemType (size=2).  parameter in AUTO
+
+              ; FUNCTION ?FLASH_Lock (END)
+
+              ; FUNCTION ?FLASH_DeInit (BEGIN)
+              ; SOURCE LINE # 55 
+0000 725F505A                          CLR    0505AH
+              ; SOURCE LINE # 56 
+0004 725F505B                          CLR    0505BH
+              ; SOURCE LINE # 57 
+0008 35FF505C                          MOV    0505CH,#0FFH
+              ; SOURCE LINE # 58 
+000C 7217505F                          BRES   0505FH,#003H
+              ; SOURCE LINE # 59 
+0010 7213505F                          BRES   0505FH,#001H
+              ; SOURCE LINE # 60 
+0014 C6505F                            LD     A,0505FH
+              ; SOURCE LINE # 61 
+0017 81                                RET    
+
+              ; FUNCTION ?FLASH_DeInit (END)
+
+              ; FUNCTION ?FLASH_ITConfig (BEGIN)
+              ; Register-parameter NewState (XW) is relocated (auto)
+              ; SOURCE LINE # 69 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 72 
+0001 5D                                TNZW   X
+0002 270F                              JREQ   ?NXT_0008
+0004 5A                                DECW   X
+0005 270C                              JREQ   ?NXT_0008
+0007 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+000A         ?DATASTART_0005:
+000A 48                             M  DB     048H
+000B         ?DATAEND_0005:
+000B AE0000     F                      LDW    X,#HIGH(?STR?STM8S_FLASH?BASE)
+000E CD0000     F                      CALL   ?assert_failed
+0011 5B04                              ADD    SP,#004H
+0013         ?NXT_0008:
+              ; SOURCE LINE # 74 
+0013 1E01       F                      LDW    X,(001H,SP)   ; [ NewState ]
+0015 2706                              JREQ   ?ELSE_0009
+              ; SOURCE LINE # 76 
+0017 7212505A                          BSET   0505AH,#001H
+001B 2004                              JRA    ?EPILOG_0003
+001D         ?ELSE_0009:
+              ; SOURCE LINE # 80 
+001D 7213505A                          BRES   0505AH,#001H
+0021         ?EPILOG_0003:
+              ; SOURCE LINE # 82 
+0021 85                                POPW   X
+0022 81                                RET    
+              ; NewState     (size=2).  parameter in AUTO
+
+              ; FUNCTION ?FLASH_ITConfig (END)
+
+              ; FUNCTION ?FLASH_EraseByte (BEGIN)
+              ; SOURCE LINE # 94 
+0000 CD0000     F DNF            M(07)  CALL  ?C?mv4_pg2bc
+0003         ?DATASTART_0011:
+0003 00                             M  DB     000H
+0004 00                             M  DB     000H
+0005 80                             M  DB     080H
+0006 00                             M  DB     000H
+0007         ?DATAEND_0011:
+0007 96           DNF                  LDW    X,SP
+0008 1C0003     F                      ADDW   X,#00003H
+000B CD0000     F                      CALL   ?C?cpu3232ix
+000E 2210                              JRUGT  ?LAB_0010
+0010 CD0000     F DNF            M(07)  CALL  ?C?mv4_pg2bc
+0013         ?DATASTART_0012:
+0013 00                             M  DB     000H
+0014 02                             M  DB     002H
+0015 7F                             M  DB     07FH
+0016 FF                             M  DB     0FFH
+0017         ?DATAEND_0012:
+0017 96           DNF                  LDW    X,SP
+0018 1C0003     F                      ADDW   X,#00003H
+001B CD0000     F                      CALL   ?C?cpu3232ix
+001E 242C                              JRUGE  ?NXT_0011
+0020         ?LAB_0010:
+0020 CD0000     F DNF            M(07)  CALL  ?C?mv4_pg2bc
+0023         ?DATASTART_0013:
+0023 00                             M  DB     000H
+0024 00                             M  DB     000H
+0025 40                             M  DB     040H
+0026 00                             M  DB     000H
+0027         ?DATAEND_0013:
+0027 96           DNF                  LDW    X,SP
+0028 1C0003     F                      ADDW   X,#00003H
+002B CD0000     F                      CALL   ?C?cpu3232ix
+002E 2210                              JRUGT  ?ELSE_0011
+0030 CD0000     F DNF            M(07)  CALL  ?C?mv4_pg2bc
+0033         ?DATASTART_0014:
+0033 00                             M  DB     000H
+0034 00                             M  DB     000H
+0035 47                             M  DB     047H
+0036 FF                             M  DB     0FFH
+0037         ?DATAEND_0014:
+0037 96           DNF                  LDW    X,SP
+0038 1C0003     F                      ADDW   X,#00003H
+003B CD0000     F                      CALL   ?C?cpu3232ix
+003E 240C                              JRUGE  ?NXT_0011
+0040         ?ELSE_0011:
+0040 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+0043         ?DATASTART_0015:
+0043 5E                             M  DB     05EH
+0044         ?DATAEND_0015:
+0044 AE0000     F                      LDW    X,#HIGH(?STR?STM8S_FLASH?BASE)
+0047 CD0000     F                      CALL   ?assert_failed
+004A 5B04                              ADD    SP,#004H
+004C         ?NXT_0011:
+              ; SOURCE LINE # 97 
+004C 1E05       F                      LDW    X,(005H,SP)   ; [ Address + 02H ]
+004E BF05       F                      LDW    ?CH,X
+0050 3F04       F                      CLR    ?BL
+0052 4F                                CLR    A
+0053 5F                                CLRW   X
+0054 92A70000   F                      LDF    ([?BL.e],X),A
+              ; SOURCE LINE # 99 
+0058 81                                RET    
+              ; Address      unsigned long  (size=4-Alg).  parameter in AUTO
+
+              ; FUNCTION ?FLASH_EraseByte (END)
+
+              ; FUNCTION ?FLASH_ProgramByte (BEGIN)
+              ; SOURCE LINE # 112 
+0000 CD0000     F DNF            M(07)  CALL  ?C?mv4_pg2bc
+0003         ?DATASTART_0021:
+0003 00                             M  DB     000H
+0004 00                             M  DB     000H
+0005 80                             M  DB     080H
+0006 00                             M  DB     000H
+0007         ?DATAEND_0021:
+0007 96           DNF                  LDW    X,SP
+0008 1C0003     F                      ADDW   X,#00003H
+000B CD0000     F                      CALL   ?C?cpu3232ix
+000E 2210                              JRUGT  ?LAB_0016
+0010 CD0000     F DNF            M(07)  CALL  ?C?mv4_pg2bc
+0013         ?DATASTART_0022:
+0013 00                             M  DB     000H
+0014 02                             M  DB     002H
+0015 7F                             M  DB     07FH
+0016 FF                             M  DB     0FFH
+0017         ?DATAEND_0022:
+0017 96           DNF                  LDW    X,SP
+0018 1C0003     F                      ADDW   X,#00003H
+001B CD0000     F                      CALL   ?C?cpu3232ix
+001E 242C                              JRUGE  ?NXT_0013
+0020         ?LAB_0016:
+0020 CD0000     F DNF            M(07)  CALL  ?C?mv4_pg2bc
+0023         ?DATASTART_0023:
+0023 00                             M  DB     000H
+0024 00                             M  DB     000H
+0025 40                             M  DB     040H
+0026 00                             M  DB     000H
+0027         ?DATAEND_0023:
+0027 96           DNF                  LDW    X,SP
+0028 1C0003     F                      ADDW   X,#00003H
+002B CD0000     F                      CALL   ?C?cpu3232ix
+002E 2210                              JRUGT  ?ELSE_0013
+0030 CD0000     F DNF            M(07)  CALL  ?C?mv4_pg2bc
+0033         ?DATASTART_0024:
+0033 00                             M  DB     000H
+0034 00                             M  DB     000H
+0035 47                             M  DB     047H
+0036 FF                             M  DB     0FFH
+0037         ?DATAEND_0024:
+0037 96           DNF                  LDW    X,SP
+0038 1C0003     F                      ADDW   X,#00003H
+003B CD0000     F                      CALL   ?C?cpu3232ix
+003E 240C                              JRUGE  ?NXT_0013
+0040         ?ELSE_0013:
+0040 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+0043         ?DATASTART_0025:
+0043 70                             M  DB     070H
+0044         ?DATAEND_0025:
+0044 AE0000     F                      LDW    X,#HIGH(?STR?STM8S_FLASH?BASE)
+0047 CD0000     F                      CALL   ?assert_failed
+004A 5B04                              ADD    SP,#004H
+004C         ?NXT_0013:
+              ; SOURCE LINE # 113 
+004C 1E05       F                      LDW    X,(005H,SP)   ; [ Address + 02H ]
+004E BF05       F                      LDW    ?CH,X
+0050 3F04       F                      CLR    ?BL
+0052 7B07       F                      LD     A,(007H,SP)   ; [ Data ]
+0054 5F                                CLRW   X
+0055 92A70000   F                      LDF    ([?BL.e],X),A
+              ; SOURCE LINE # 114 
+0059 81                                RET    
+              ; Address      unsigned long  (size=4-Alg).  parameter in AUTO
+              ; Data         unsigned char  (size=1).  parameter in AUTO
+
+              ; FUNCTION ?FLASH_ProgramByte (END)
+
+              ; FUNCTION ?FLASH_ReadByte (BEGIN)
+              ; SOURCE LINE # 126 
+0000 CD0000     F DNF            M(07)  CALL  ?C?mv4_pg2bc
+0003         ?DATASTART_0031:
+0003 00                             M  DB     000H
+0004 00                             M  DB     000H
+0005 80                             M  DB     080H
+0006 00                             M  DB     000H
+0007         ?DATAEND_0031:
+0007 96           DNF                  LDW    X,SP
+0008 1C0003     F                      ADDW   X,#00003H
+000B CD0000     F                      CALL   ?C?cpu3232ix
+000E 2210                              JRUGT  ?LAB_0022
+0010 CD0000     F DNF            M(07)  CALL  ?C?mv4_pg2bc
+0013         ?DATASTART_0032:
+0013 00                             M  DB     000H
+0014 02                             M  DB     002H
+0015 7F                             M  DB     07FH
+0016 FF                             M  DB     0FFH
+0017         ?DATAEND_0032:
+0017 96           DNF                  LDW    X,SP
+0018 1C0003     F                      ADDW   X,#00003H
+001B CD0000     F                      CALL   ?C?cpu3232ix
+001E 242C                              JRUGE  ?NXT_0015
+0020         ?LAB_0022:
+0020 CD0000     F DNF            M(07)  CALL  ?C?mv4_pg2bc
+0023         ?DATASTART_0033:
+0023 00                             M  DB     000H
+0024 00                             M  DB     000H
+0025 40                             M  DB     040H
+0026 00                             M  DB     000H
+0027         ?DATAEND_0033:
+0027 96           DNF                  LDW    X,SP
+0028 1C0003     F                      ADDW   X,#00003H
+002B CD0000     F                      CALL   ?C?cpu3232ix
+002E 2210                              JRUGT  ?ELSE_0015
+0030 CD0000     F DNF            M(07)  CALL  ?C?mv4_pg2bc
+0033         ?DATASTART_0034:
+0033 00                             M  DB     000H
+0034 00                             M  DB     000H
+0035 47                             M  DB     047H
+0036 FF                             M  DB     0FFH
+0037         ?DATAEND_0034:
+0037 96           DNF                  LDW    X,SP
+0038 1C0003     F                      ADDW   X,#00003H
+003B CD0000     F                      CALL   ?C?cpu3232ix
+003E 240C                              JRUGE  ?NXT_0015
+0040         ?ELSE_0015:
+0040 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+0043         ?DATASTART_0035:
+0043 7E                             M  DB     07EH
+0044         ?DATAEND_0035:
+0044 AE0000     F                      LDW    X,#HIGH(?STR?STM8S_FLASH?BASE)
+0047 CD0000     F                      CALL   ?assert_failed
+004A 5B04                              ADD    SP,#004H
+004C         ?NXT_0015:
+              ; SOURCE LINE # 129 
+004C 1E05       F                      LDW    X,(005H,SP)   ; [ Address + 02H ]
+004E BF05       F                      LDW    ?CH,X
+0050 3F04       F                      CLR    ?BL
+0052 5F                                CLRW   X
+0053 92AF0000   F                      LDF    A,([?BL.e],X)
+              ; SOURCE LINE # 131 
+0057 81                                RET    
+              ; Address      unsigned long  (size=4-Alg).  parameter in AUTO
+
+              ; FUNCTION ?FLASH_ReadByte (END)
+
+              ; FUNCTION ?FLASH_ProgramWord (BEGIN)
+              ; SOURCE LINE # 143 
+0000 CD0000     F DNF            M(07)  CALL  ?C?mv4_pg2bc
+0003         ?DATASTART_0041:
+0003 00                             M  DB     000H
+0004 00                             M  DB     000H
+0005 80                             M  DB     080H
+0006 00                             M  DB     000H
+0007         ?DATAEND_0041:
+0007 96           DNF                  LDW    X,SP
+0008 1C0003     F                      ADDW   X,#00003H
+000B CD0000     F                      CALL   ?C?cpu3232ix
+000E 2210                              JRUGT  ?LAB_0028
+0010 CD0000     F DNF            M(07)  CALL  ?C?mv4_pg2bc
+0013         ?DATASTART_0042:
+0013 00                             M  DB     000H
+0014 02                             M  DB     002H
+0015 7F                             M  DB     07FH
+0016 FF                             M  DB     0FFH
+0017         ?DATAEND_0042:
+0017 96           DNF                  LDW    X,SP
+0018 1C0003     F                      ADDW   X,#00003H
+001B CD0000     F                      CALL   ?C?cpu3232ix
+001E 242C                              JRUGE  ?NXT_0017
+0020         ?LAB_0028:
+0020 CD0000     F DNF            M(07)  CALL  ?C?mv4_pg2bc
+0023         ?DATASTART_0043:
+0023 00                             M  DB     000H
+0024 00                             M  DB     000H
+0025 40                             M  DB     040H
+0026 00                             M  DB     000H
+0027         ?DATAEND_0043:
+0027 96           DNF                  LDW    X,SP
+0028 1C0003     F                      ADDW   X,#00003H
+002B CD0000     F                      CALL   ?C?cpu3232ix
+002E 2210                              JRUGT  ?ELSE_0017
+0030 CD0000     F DNF            M(07)  CALL  ?C?mv4_pg2bc
+0033         ?DATASTART_0044:
+0033 00                             M  DB     000H
+0034 00                             M  DB     000H
+0035 47                             M  DB     047H
+0036 FF                             M  DB     0FFH
+0037         ?DATAEND_0044:
+0037 96           DNF                  LDW    X,SP
+0038 1C0003     F                      ADDW   X,#00003H
+003B CD0000     F                      CALL   ?C?cpu3232ix
+003E 240C                              JRUGE  ?NXT_0017
+0040         ?ELSE_0017:
+0040 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+0043         ?DATASTART_0045:
+0043 8F                             M  DB     08FH
+0044         ?DATAEND_0045:
+0044 AE0000     F                      LDW    X,#HIGH(?STR?STM8S_FLASH?BASE)
+0047 CD0000     F                      CALL   ?assert_failed
+004A 5B04                              ADD    SP,#004H
+004C         ?NXT_0017:
+              ; SOURCE LINE # 146 
+004C 721C505B                          BSET   0505BH,#006H
+              ; SOURCE LINE # 147 
+0050 721D505C                          BRES   0505CH,#006H
+              ; SOURCE LINE # 150 
+0054 7B07       F                      LD     A,(007H,SP)   ; [ Data ]
+0056 1E05       F                      LDW    X,(005H,SP)   ; [ Address + 02H ]
+0058 BF05       F                      LDW    ?CH,X
+005A 3F04       F                      CLR    ?BL
+005C 5F                                CLRW   X
+005D 92A70000   F                      LDF    ([?BL.e],X),A
+              ; SOURCE LINE # 152 
+0061 7B08       F                      LD     A,(008H,SP)   ; [ Data + 01H ]
+0063 5C                                INCW   X
+0064 89                                PUSHW  X
+0065 1E07       F                      LDW    X,(007H,SP)   ; [ Address + 02H ]
+0067 BF05       F                      LDW    ?CH,X
+0069 85                                POPW   X
+006A 72BB0003   F                      ADDW   X,?CH.w
+006E BF03       F                      LDW    ?CH.w,X
+0070 5F                                CLRW   X
+0071 92A70000   F                      LDF    ([?BL.e],X),A
+              ; SOURCE LINE # 154 
+0075 7B09       F                      LD     A,(009H,SP)   ; [ Data + 02H ]
+0077 5C                                INCW   X
+0078 5C                                INCW   X
+0079 89                                PUSHW  X
+007A 1E07       F                      LDW    X,(007H,SP)   ; [ Address + 02H ]
+007C BF05       F                      LDW    ?CH,X
+007E 85                                POPW   X
+007F 72BB0003   F                      ADDW   X,?CH.w
+0083 BF03       F                      LDW    ?CH.w,X
+0085 5F                                CLRW   X
+0086 92A70000   F                      LDF    ([?BL.e],X),A
+              ; SOURCE LINE # 156 
+008A 7B0A       F                      LD     A,(00AH,SP)   ; [ Data + 03H ]
+008C AE0003                            LDW    X,#00003H
+008F 72FB05     F                      ADDW   X,(005H,SP)   ; [ Address + 02H ]
+0092 BF03       F                      LDW    ?CH.w,X
+0094 5F                                CLRW   X
+0095 92A70000   F                      LDF    ([?BL.e],X),A
+              ; SOURCE LINE # 157 
+0099 81                                RET    
+              ; Address      unsigned long  (size=4-Alg).  parameter in AUTO
+              ; Data         unsigned long  (size=4-Alg).  parameter in AUTO
+
+              ; FUNCTION ?FLASH_ProgramWord (END)
+
+              ; FUNCTION ?FLASH_ProgramOptionByte (BEGIN)
+              ; Register-parameter Address (XW) is relocated (auto)
+              ; Register-parameter Data (A) is relocated (auto)
+              ; SOURCE LINE # 165 
+0000 89                                PUSHW  X
+0001 88                                PUSH   A
+              ; SOURCE LINE # 168 
+0002 AE4800                            LDW    X,#04800H
+0005 1302       F                      CPW    X,(002H,SP)   ; [ Address ]
+0007 2207                              JRUGT  ?ELSE_0020
+0009 AE487F                            LDW    X,#0487FH
+000C 1302       F                      CPW    X,(002H,SP)   ; [ Address ]
+000E 240C                              JRUGE  ?NXT_0020
+0010         ?ELSE_0020:
+0010 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+0013         ?DATASTART_0047:
+0013 A8                             M  DB     0A8H
+0014         ?DATAEND_0047:
+0014 AE0000     F                      LDW    X,#HIGH(?STR?STM8S_FLASH?BASE)
+0017 CD0000     F                      CALL   ?assert_failed
+001A 5B04                              ADD    SP,#004H
+001C         ?NXT_0020:
+              ; SOURCE LINE # 171 
+001C 721E505B                          BSET   0505BH,#007H
+              ; SOURCE LINE # 172 
+0020 721F505C                          BRES   0505CH,#007H
+              ; SOURCE LINE # 175 
+0024 AE4800                            LDW    X,#04800H
+0027 1302       F                      CPW    X,(002H,SP)   ; [ Address ]
+0029 2606                              JRNE   ?ELSE_0021
+              ; SOURCE LINE # 178 
+002B 1E02       F                      LDW    X,(002H,SP)   ; [ Address ]
+002D 7B01       F                      LD     A,(001H,SP)   ; [ Data ]
+002F 2009                              JRA    ?NXT_0021
+0031         ?ELSE_0021:
+              ; SOURCE LINE # 183 
+0031 1E02       F                      LDW    X,(002H,SP)   ; [ Address ]
+0033 7B01       F                      LD     A,(001H,SP)   ; [ Data ]
+0035 F7                                LD     (X),A
+              ; SOURCE LINE # 184 
+0036 43                                CPL    A
+0037 1E02       F                      LDW    X,(002H,SP)   ; [ Address ]
+0039 5C                                INCW   X
+003A         ?NXT_0021:
+003A F7                                LD     (X),A
+              ; SOURCE LINE # 186 
+003B AE00FD                            LDW    X,#000FDH
+003E CD0000     F                      CALL   ?FLASH_WaitForLastOperation
+              ; SOURCE LINE # 189 
+0041 721F505B                          BRES   0505BH,#007H
+              ; SOURCE LINE # 190 
+0045 721E505C                          BSET   0505CH,#007H
+              ; SOURCE LINE # 191 
+0049 5B03                              ADD    SP,#003H
+004B 81                                RET    
+              ; Address      unsigned short  (size=2-Alg).  parameter in AUTO
+              ; Data         unsigned char  (size=1).  parameter in AUTO
+
+              ; FUNCTION ?FLASH_ProgramOptionByte (END)
+
+              ; FUNCTION ?FLASH_EraseOptionByte (BEGIN)
+              ; Register-parameter Address (XW) is relocated (auto)
+              ; SOURCE LINE # 198 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 201 
+0001 A34800                            CPW    X,#04800H
+0004 2507                              JRULT  ?ELSE_0024
+0006 AE487F                            LDW    X,#0487FH
+0009 1301       F                      CPW    X,(001H,SP)   ; [ Address ]
+000B 240C                              JRUGE  ?NXT_0024
+000D         ?ELSE_0024:
+000D CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+0010         ?DATASTART_0049:
+0010 C9                             M  DB     0C9H
+0011         ?DATAEND_0049:
+0011 AE0000     F                      LDW    X,#HIGH(?STR?STM8S_FLASH?BASE)
+0014 CD0000     F                      CALL   ?assert_failed
+0017 5B04                              ADD    SP,#004H
+0019         ?NXT_0024:
+              ; SOURCE LINE # 204 
+0019 721E505B                          BSET   0505BH,#007H
+              ; SOURCE LINE # 205 
+001D 721F505C                          BRES   0505CH,#007H
+              ; SOURCE LINE # 208 
+0021 AE4800                            LDW    X,#04800H
+0024 1301       F                      CPW    X,(001H,SP)   ; [ Address ]
+0026 2605                              JRNE   ?ELSE_0025
+              ; SOURCE LINE # 211 
+0028 1E01       F                      LDW    X,(001H,SP)   ; [ Address ]
+002A 7F                                CLR    (X)
+002B 2009                              JRA    ?NXT_0025
+002D         ?ELSE_0025:
+              ; SOURCE LINE # 216 
+002D 1E01       F                      LDW    X,(001H,SP)   ; [ Address ]
+002F 7F                                CLR    (X)
+              ; SOURCE LINE # 217 
+0030 1E01       F                      LDW    X,(001H,SP)   ; [ Address ]
+0032 A6FF                              LD     A,#0FFH
+0034 E701                              LD     (001H,X),A
+0036         ?NXT_0025:
+              ; SOURCE LINE # 219 
+0036 AE00FD                            LDW    X,#000FDH
+0039 CD0000     F                      CALL   ?FLASH_WaitForLastOperation
+              ; SOURCE LINE # 222 
+003C 721F505B                          BRES   0505BH,#007H
+              ; SOURCE LINE # 223 
+0040 721E505C                          BSET   0505CH,#007H
+              ; SOURCE LINE # 224 
+0044 85                                POPW   X
+0045 81                                RET    
+              ; Address      unsigned short  (size=2-Alg).  parameter in AUTO
+
+              ; FUNCTION ?FLASH_EraseOptionByte (END)
+
+              ; FUNCTION ?FLASH_ReadOptionByte (BEGIN)
+              ; Register-parameter Address (XW) is relocated (auto)
+              ; SOURCE LINE # 230 
+0000 89                                PUSHW  X
+0001 5204                              SUB    SP,#004H
+              ; SOURCE LINE # 236 
+0003 AE4800                            LDW    X,#04800H
+0006 1305       F                      CPW    X,(005H,SP)   ; [ Address ]
+0008 2207                              JRUGT  ?ELSE_0029
+000A AE487F                            LDW    X,#0487FH
+000D 1305       F                      CPW    X,(005H,SP)   ; [ Address ]
+000F 240C                              JRUGE  ?NXT_0029
+0011         ?ELSE_0029:
+0011 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+0014         ?DATASTART_0051:
+0014 EC                             M  DB     0ECH
+0015         ?DATAEND_0051:
+0015 AE0000     F                      LDW    X,#HIGH(?STR?STM8S_FLASH?BASE)
+0018 CD0000     F                      CALL   ?assert_failed
+001B 5B04                              ADD    SP,#004H
+001D         ?NXT_0029:
+              ; SOURCE LINE # 239 
+001D 1E05       F                      LDW    X,(005H,SP)   ; [ Address ]
+001F F6                                LD     A,(X)
+0020 6B01       F                      LD     (001H,SP),A   ; [ value_optbyte ]
+              ; SOURCE LINE # 240 
+0022 1E05       F                      LDW    X,(005H,SP)   ; [ Address ]
+0024 E601                              LD     A,(001H,X)
+0026 6B02       F                      LD     (002H,SP),A   ; [ value_optbyte_complement ]
+              ; SOURCE LINE # 243 
+0028 AE4800                            LDW    X,#04800H
+002B 7B01       F                      LD     A,(001H,SP)   ; [ value_optbyte ]
+002D 1305       F                      CPW    X,(005H,SP)   ; [ Address ]
+002F 2606                              JRNE   ?ELSE_0030
+              ; SOURCE LINE # 245 
+0031 5F                                CLRW   X
+0032 97                                LD     XL,A
+0033 1F03       F                      LDW    (003H,SP),X   ; [ res_value ]
+0035 2024                              JRA    ?NXT_0030
+0037         ?ELSE_0030:
+              ; SOURCE LINE # 249 
+0037 5F                                CLRW   X
+0038 97                                LD     XL,A
+0039 BF02       F                      LDW    ?BH.w,X
+003B 7B02       F                      LD     A,(002H,SP)   ; [ value_optbyte_complement ]
+003D 43                                CPL    A
+003E 97                                LD     XL,A
+003F B302       F                      CPW    X,?BH.w
+0041 2613                              JRNE   ?ELSE_0031
+              ; SOURCE LINE # 251 
+0043 7B01       F                      LD     A,(001H,SP)   ; [ value_optbyte ]
+0045 97                                LD     XL,A
+0046 4F                                CLR    A
+0047 02                                RLWA   X,A
+0048 1F03       F                      LDW    (003H,SP),X   ; [ res_value ]
+              ; SOURCE LINE # 252 
+004A 7B02       F                      LD     A,(002H,SP)   ; [ value_optbyte_complement ]
+004C 1A04       F                      OR     A,(004H,SP)   ; [ res_value + 01H ]
+004E 97                                LD     XL,A
+004F 7B03       F                      LD     A,(003H,SP)   ; [ res_value ]
+0051 95                                LD     XH,A
+0052 1F03       F                      LDW    (003H,SP),X   ; [ res_value ]
+0054 2005                              JRA    ?NXT_0030
+0056         ?ELSE_0031:
+              ; SOURCE LINE # 256 
+0056 AE5555                            LDW    X,#05555H
+0059 1F03       F                      LDW    (003H,SP),X   ; [ res_value ]
+005B         ?NXT_0030:
+              ; SOURCE LINE # 259 
+005B 1E03       F                      LDW    X,(003H,SP)   ; [ res_value ]
+              ; SOURCE LINE # 260 
+005D 5B06                              ADD    SP,#006H
+005F 81                                RET    
+              ; Address      unsigned short  (size=2-Alg).  parameter in AUTO
+              ; value_optbyte unsigned char  (size=1). Automatic variable  in AUTO
+              ; value_optbyte_complement unsigned char  (size=1). Automatic variable  in AUTO
+              ; res_value    unsigned short  (size=2-Alg). Automatic variable  in AUTO
+
+              ; FUNCTION ?FLASH_ReadOptionByte (END)
+
+              ; FUNCTION ?FLASH_SetLowPowerMode (BEGIN)
+              ; Register-parameter FLASH_LPMode (XW) is relocated (auto)
+              ; SOURCE LINE # 268 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 271 
+0001 A30004                            CPW    X,#00004H
+0004 271E                              JREQ   ?NXT_0033
+0006 AE0008                            LDW    X,#00008H
+0009 1301       F                      CPW    X,(001H,SP)   ; [ FLASH_LPMode ]
+000B 2717                              JREQ   ?NXT_0033
+000D 1E01       F                      LDW    X,(001H,SP)   ; [ FLASH_LPMode ]
+000F 2713                              JREQ   ?NXT_0033
+0011 A3000C                            CPW    X,#0000CH
+0014 270E                              JREQ   ?NXT_0033
+0016 AE010F                            LDW    X,#0010FH
+0019 89                                PUSHW  X
+001A 5F                                CLRW   X
+001B 89                                PUSHW  X
+001C AE0000     F                      LDW    X,#HIGH(?STR?STM8S_FLASH?BASE)
+001F CD0000     F                      CALL   ?assert_failed
+0022 5B04                              ADD    SP,#004H
+0024         ?NXT_0033:
+              ; SOURCE LINE # 274 
+0024 A6F3                              LD     A,#0F3H
+0026 C4505A                            AND    A,0505AH
+0029 C7505A                            LD     0505AH,A
+              ; SOURCE LINE # 277 
+002C C6505A                            LD     A,0505AH
+002F 1A02       F                      OR     A,(002H,SP)   ; [ FLASH_LPMode + 01H ]
+0031 C7505A                            LD     0505AH,A
+              ; SOURCE LINE # 278 
+0034 85                                POPW   X
+0035 81                                RET    
+              ; FLASH_LPMode (size=2).  parameter in AUTO
+
+              ; FUNCTION ?FLASH_SetLowPowerMode (END)
+
+              ; FUNCTION ?FLASH_SetProgrammingTime (BEGIN)
+              ; Register-parameter FLASH_ProgTime (XW) is relocated (auto)
+              ; SOURCE LINE # 286 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 289 
+0001 5D                                TNZW   X
+0002 2711                              JREQ   ?NXT_0035
+0004 5A                                DECW   X
+0005 270E                              JREQ   ?NXT_0035
+0007 AE0121                            LDW    X,#00121H
+000A 89                                PUSHW  X
+000B 5F                                CLRW   X
+000C 89                                PUSHW  X
+000D AE0000     F                      LDW    X,#HIGH(?STR?STM8S_FLASH?BASE)
+0010 CD0000     F                      CALL   ?assert_failed
+0013 5B04                              ADD    SP,#004H
+0015         ?NXT_0035:
+              ; SOURCE LINE # 291 
+0015 7211505A                          BRES   0505AH,#000H
+              ; SOURCE LINE # 292 
+0019 C6505A                            LD     A,0505AH
+001C 1A02       F                      OR     A,(002H,SP)   ; [ FLASH_ProgTime + 01H ]
+001E C7505A                            LD     0505AH,A
+              ; SOURCE LINE # 293 
+0021 85                                POPW   X
+0022 81                                RET    
+              ; FLASH_ProgTime (size=2).  parameter in AUTO
+
+              ; FUNCTION ?FLASH_SetProgrammingTime (END)
+
+              ; FUNCTION ?FLASH_GetLowPowerMode (BEGIN)
+              ; SOURCE LINE # 302 
+0000 C6505A                            LD     A,0505AH
+0003 A40C                              AND    A,#00CH
+0005 5F                                CLRW   X
+0006 97                                LD     XL,A
+              ; SOURCE LINE # 303 
+0007 81                                RET    
+
+              ; FUNCTION ?FLASH_GetLowPowerMode (END)
+
+              ; FUNCTION ?FLASH_GetProgrammingTime (BEGIN)
+              ; SOURCE LINE # 312 
+0000 C6505A                            LD     A,0505AH
+0003 A401                              AND    A,#001H
+0005 5F                                CLRW   X
+0006 97                                LD     XL,A
+              ; SOURCE LINE # 313 
+0007 81                                RET    
+
+              ; FUNCTION ?FLASH_GetProgrammingTime (END)
+
+              ; FUNCTION ?FLASH_GetBootSize (BEGIN)
+              ; SOURCE LINE # 320 
+0000 5204                              SUB    SP,#004H
+              ; BX_CX is assigned to temp
+              ; SOURCE LINE # 322 
+0002 CD0000     F                      CALL   ?C?mv4_null2bc
+              ; SOURCE LINE # 325 
+0005 AE0200                            LDW    X,#00200H
+0008 89                                PUSHW  X
+0009 5F                                CLRW   X
+000A 89                                PUSHW  X
+000B C6505D                            LD     A,0505DH
+000E CD0000     F                      CALL   ?C?uchartol
+0011 CD0000     F DNF                  CALL   ?C?mulu3232
+0014 4F                                CLR    A
+0015 CD0000     F                      CALL   ?C?mv4_bc2isa
+              ; SOURCE LINE # 328 
+0018 C6505D                            LD     A,0505DH
+001B A1FF                              CP     A,#0FFH
+001D 2614                              JRNE   ?NXT_0037
+              ; SOURCE LINE # 330 
+001F 1E03       F                      LDW    X,(003H,SP)   ; [ temp + 02H ]
+0021 89                                PUSHW  X
+0022 1E03       F                      LDW    X,(003H,SP)   ; [ temp ]
+0024 89                                PUSHW  X
+0025 CD0000     F DNF            M(07)  CALL  ?C?mv4_pg2bc
+0028         ?DATASTART_0053:
+0028 00                             M  DB     000H
+0029 00                             M  DB     000H
+002A 02                             M  DB     002H
+002B 00                             M  DB     000H
+002C         ?DATAEND_0053:
+002C CD0000     F DNF                  CALL   ?C?add3232
+002F 4F                                CLR    A
+0030 CD0000     F                      CALL   ?C?mv4_bc2isa
+0033         ?NXT_0037:
+              ; SOURCE LINE # 334 
+0033 4F                                CLR    A
+0034 CD0000     F DNF                  CALL   ?C?mv4_isa2bc
+              ; SOURCE LINE # 335 
+0037 5B04                              ADD    SP,#004H
+0039 81                                RET    
+              ; temp         unsigned long  (size=4-Alg). Automatic variable  in AUTO
+
+              ; FUNCTION ?FLASH_GetBootSize (END)
+
+              ; FUNCTION ?FLASH_GetFlagStatus (BEGIN)
+              ; Register-parameter FLASH_FLAG (XW) is relocated (auto)
+              ; SOURCE LINE # 345 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 347 
+0001 5F                                CLRW   X
+0002 89                                PUSHW  X
+              ; SOURCE LINE # 349 
+0003 AE0040                            LDW    X,#00040H
+0006 1303       F                      CPW    X,(003H,SP)   ; [ FLASH_FLAG ]
+0008 2729                              JREQ   ?NXT_0041
+000A AE0008                            LDW    X,#00008H
+000D 1303       F                      CPW    X,(003H,SP)   ; [ FLASH_FLAG ]
+000F 2722                              JREQ   ?NXT_0041
+0011 AE0004                            LDW    X,#00004H
+0014 1303       F                      CPW    X,(003H,SP)   ; [ FLASH_FLAG ]
+0016 271B                              JREQ   ?NXT_0041
+0018 AE0002                            LDW    X,#00002H
+001B 1303       F                      CPW    X,(003H,SP)   ; [ FLASH_FLAG ]
+001D 2714                              JREQ   ?NXT_0041
+001F 5F                                CLRW   X
+0020 5C                                INCW   X
+0021 1303       F                      CPW    X,(003H,SP)   ; [ FLASH_FLAG ]
+0023 270E                              JREQ   ?NXT_0041
+0025 AE015D                            LDW    X,#0015DH
+0028 89                                PUSHW  X
+0029 5F                                CLRW   X
+002A 89                                PUSHW  X
+002B AE0000     F                      LDW    X,#HIGH(?STR?STM8S_FLASH?BASE)
+002E CD0000     F                      CALL   ?assert_failed
+0031 5B04                              ADD    SP,#004H
+0033         ?NXT_0041:
+              ; SOURCE LINE # 352 
+0033 7B04       F                      LD     A,(004H,SP)   ; [ FLASH_FLAG + 01H ]
+0035 5F                                CLRW   X
+0036 C5505F                            BCP    A,0505FH
+0039 2701                              JREQ   ?ELSE_0041
+              ; SOURCE LINE # 354 
+003B 5C                                INCW   X
+003C         ?ELSE_0041:
+              ; SOURCE LINE # 363 
+003C 5B04                              ADD    SP,#004H
+003E 81                                RET    
+              ; FLASH_FLAG   (size=2).  parameter in AUTO
+              ; status       (size=2). Automatic variable  in AUTO
+
+              ; FUNCTION ?FLASH_GetFlagStatus (END)
+
+              ; FUNCTION ?FLASH_WaitForLastOperation (BEGIN)
+              ; Register-parameter FLASH_MemType (XW) is relocated (auto)
+              ; SOURCE LINE # 464 
+0000 89                                PUSHW  X
+0001 5205                              SUB    SP,#005H
+              ; SOURCE LINE # 466 
+0003 0F01       F                      CLR    (001H,SP)   ; [ flagstatus ]
+              ; SOURCE LINE # 467 
+0005 AE000F                            LDW    X,#0000FH
+0008 1F02       F                      LDW    (002H,SP),X   ; [ timeout ]
+000A 5F                                CLRW   X
+000B 5A                                DECW   X
+000C 1F04       F                      LDW    (004H,SP),X   ; [ timeout + 02H ]
+              ; SOURCE LINE # 472 
+000E AE00FD                            LDW    X,#000FDH
+0011 1306       F                      CPW    X,(006H,SP)   ; [ FLASH_MemType ]
+0013 2623                              JRNE   ?WHILE_0003
+0015         ?WHILE_0002:
+              ; SOURCE LINE # 474 
+0015 4F                                CLR    A
+0016 1101       F                      CP     A,(001H,SP)   ; [ flagstatus ]
+0018 2641                              JRNE   ?NXT_0048
+001A CD0000     F                      CALL   ?C?mv4_null2bc
+001D 96           DNF                  LDW    X,SP
+001E 1C0002     F                      ADDW   X,#00002H
+0021 CD0000     F                      CALL   ?C?cpu3232ix
+0024 2735                              JREQ   ?NXT_0048
+              ; SOURCE LINE # 477 
+0026 C6505F                            LD     A,0505FH
+0029 A405                              AND    A,#005H
+002B 6B01       F                      LD     (001H,SP),A   ; [ flagstatus ]
+              ; SOURCE LINE # 478 
+002D 96           DNF                  LDW    X,SP
+002E 1C0002     F                      ADDW   X,#00002H
+0031 A6FF                              LD     A,#0FFH
+0033 CD0000     F                      CALL   ?C?accix328
+0036 20DD                              JRA    ?WHILE_0002
+0038         ?WHILE_0003:
+              ; SOURCE LINE # 483 
+0038 4F                                CLR    A
+0039 1101       F                      CP     A,(001H,SP)   ; [ flagstatus ]
+003B 261E                              JRNE   ?NXT_0048
+003D CD0000     F                      CALL   ?C?mv4_null2bc
+0040 96           DNF                  LDW    X,SP
+0041 1C0002     F                      ADDW   X,#00002H
+0044 CD0000     F                      CALL   ?C?cpu3232ix
+0047 2712                              JREQ   ?NXT_0048
+              ; SOURCE LINE # 486 
+0049 C6505F                            LD     A,0505FH
+004C A441                              AND    A,#041H
+004E 6B01       F                      LD     (001H,SP),A   ; [ flagstatus ]
+              ; SOURCE LINE # 487 
+0050 96           DNF                  LDW    X,SP
+0051 1C0002     F                      ADDW   X,#00002H
+0054 A6FF                              LD     A,#0FFH
+0056 CD0000     F                      CALL   ?C?accix328
+0059 20DD                              JRA    ?WHILE_0003
+005B         ?NXT_0048:
+              ; SOURCE LINE # 499 
+005B 1E04       F                      LDW    X,(004H,SP)   ; [ timeout + 02H ]
+005D 2608                              JRNE   ?NXT_0051
+005F 1E02       F                      LDW    X,(002H,SP)   ; [ timeout ]
+0061 2604                              JRNE   ?NXT_0051
+              ; SOURCE LINE # 501 
+0063 A602                              LD     A,#002H
+0065 6B01       F                      LD     (001H,SP),A   ; [ flagstatus ]
+0067         ?NXT_0051:
+              ; SOURCE LINE # 504 
+0067 7B01       F                      LD     A,(001H,SP)   ; [ flagstatus ]
+0069 5F                                CLRW   X
+006A 97                                LD     XL,A
+              ; SOURCE LINE # 505 
+006B 5B07                              ADD    SP,#007H
+006D 81                                RET    
+              ; FLASH_MemType (size=2).  parameter in AUTO
+              ; flagstatus   unsigned char  (size=1). Automatic variable  in AUTO
+              ; timeout      unsigned long  (size=4-Alg). Automatic variable  in AUTO
+
+              ; FUNCTION ?FLASH_WaitForLastOperation (END)
+
+              ; FUNCTION ?FLASH_EraseBlock (BEGIN)
+              ; Register-parameter BlockNum (XW) is relocated (auto)
+              ; SOURCE LINE # 514 
+0000 89                                PUSHW  X
+0001 5207                              SUB    SP,#007H
+              ; SOURCE LINE # 525 
+0003 AE00FD                            LDW    X,#000FDH
+0006 130C       F                      CPW    X,(00CH,SP)   ; [ FLASH_MemType ]
+0008 2715                              JREQ   ?NXT_0056
+000A AE00F7                            LDW    X,#000F7H
+000D 130C       F                      CPW    X,(00CH,SP)   ; [ FLASH_MemType ]
+000F 270E                              JREQ   ?NXT_0056
+0011 AE020D                            LDW    X,#0020DH
+0014 89                                PUSHW  X
+0015 5F                                CLRW   X
+0016 89                                PUSHW  X
+0017 AE0000     F                      LDW    X,#HIGH(?STR?STM8S_FLASH?BASE)
+001A CD0000     F                      CALL   ?assert_failed
+001D 5B04                              ADD    SP,#004H
+001F         ?NXT_0056:
+              ; SOURCE LINE # 526 
+001F AE00FD                            LDW    X,#000FDH
+0022 130C       F                      CPW    X,(00CH,SP)   ; [ FLASH_MemType ]
+0024 261D                              JRNE   ?ELSE_0051
+              ; SOURCE LINE # 528 
+0026 AE0400                            LDW    X,#00400H
+0029 1308       F                      CPW    X,(008H,SP)   ; [ BlockNum ]
+002B 220E                              JRUGT  ?NXT_0058
+002D AE0210                            LDW    X,#00210H
+0030 89                                PUSHW  X
+0031 5F                                CLRW   X
+0032 89                                PUSHW  X
+0033 AE0000     F                      LDW    X,#HIGH(?STR?STM8S_FLASH?BASE)
+0036 CD0000     F                      CALL   ?assert_failed
+0039 5B04                              ADD    SP,#004H
+003B         ?NXT_0058:
+              ; SOURCE LINE # 529 
+003B 5F                                CLRW   X
+003C 1F01       F                      LDW    (001H,SP),X   ; [ startaddress ]
+003E AE8000                            LDW    X,#08000H
+0041 201B                              JRA    ?NXT_0057
+0043         ?ELSE_0051:
+              ; SOURCE LINE # 533 
+0043 AE0010                            LDW    X,#00010H
+0046 1308       F                      CPW    X,(008H,SP)   ; [ BlockNum ]
+0048 220E                              JRUGT  ?NXT_0059
+004A AE0215                            LDW    X,#00215H
+004D 89                                PUSHW  X
+004E 5F                                CLRW   X
+004F 89                                PUSHW  X
+0050 AE0000     F                      LDW    X,#HIGH(?STR?STM8S_FLASH?BASE)
+0053 CD0000     F                      CALL   ?assert_failed
+0056 5B04                              ADD    SP,#004H
+0058         ?NXT_0059:
+              ; SOURCE LINE # 534 
+0058 5F                                CLRW   X
+0059 1F01       F                      LDW    (001H,SP),X   ; [ startaddress ]
+005B AE4000                            LDW    X,#04000H
+005E         ?NXT_0057:
+005E 1F03       F                      LDW    (003H,SP),X   ; [ startaddress + 02H ]
+              ; SOURCE LINE # 539 
+0060 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+0063         ?DATASTART_0055:
+0063 80                             M  DB     080H
+0064         ?DATAEND_0055:
+0064 1E0C       F                      LDW    X,(00CH,SP)   ; [ BlockNum ]
+0066 BF03       F                      LDW    ?CH,X
+0068 5F                                CLRW   X
+0069 BF03       F                      LDW    ?BH,X
+006B CD0000     F DNF                  CALL   ?C?mulu3232
+006E CD0000     F DNF                  CALL   ?C?mv4_bc2sk
+0071 96           DNF                  LDW    X,SP
+0072 1C0005     F                      ADDW   X,#00005H
+0075 CD0000     F DNF                  CALL   ?C?addix32
+0078 B604       F                      LD     A,?BL
+007A 6B05       F                      LD     (005H,SP),A   ; [ pwFlash ]
+007C BE03       F                      LDW    X,?CH
+007E 1F06       F                      LDW    (006H,SP),X   ; [ pwFlash + 01H ]
+              ; SOURCE LINE # 545 
+0080 721A505B                          BSET   0505BH,#005H
+              ; SOURCE LINE # 546 
+0084 721B505C                          BRES   0505CH,#005H
+              ; SOURCE LINE # 551 
+0088 B704       F                      LD     ?BL,A
+008A BF05       F                      LDW    ?CH,X
+008C 4F                                CLR    A
+008D 5F                                CLRW   X
+008E 92A70000   F                      LDF    ([?BL.e],X),A
+              ; SOURCE LINE # 552 
+0092 5C                                INCW   X
+0093 89                                PUSHW  X
+0094 7B07       F                      LD     A,(007H,SP)   ; [ pwFlash ]
+0096 B704       F                      LD     ?BL,A
+0098 1E08       F                      LDW    X,(008H,SP)   ; [ pwFlash + 01H ]
+009A BF05       F                      LDW    ?CH,X
+009C 85                                POPW   X
+009D 72BB0003   F                      ADDW   X,?CH.w
+00A1 BF03       F                      LDW    ?CH.w,X
+00A3 4F                                CLR    A
+00A4 5F                                CLRW   X
+00A5 92A70000   F                      LDF    ([?BL.e],X),A
+              ; SOURCE LINE # 553 
+00A9 5C                                INCW   X
+00AA 5C                                INCW   X
+00AB 89                                PUSHW  X
+00AC 7B07       F                      LD     A,(007H,SP)   ; [ pwFlash ]
+00AE B704       F                      LD     ?BL,A
+00B0 1E08       F                      LDW    X,(008H,SP)   ; [ pwFlash + 01H ]
+00B2 BF05       F                      LDW    ?CH,X
+00B4 85                                POPW   X
+00B5 72BB0003   F                      ADDW   X,?CH.w
+00B9 BF03       F                      LDW    ?CH.w,X
+00BB 4F                                CLR    A
+00BC 5F                                CLRW   X
+00BD 92A70000   F                      LDF    ([?BL.e],X),A
+              ; SOURCE LINE # 554 
+00C1 7B05       F                      LD     A,(005H,SP)   ; [ pwFlash ]
+00C3 B704       F                      LD     ?BL,A
+00C5 AE0003                            LDW    X,#00003H
+00C8 72FB06     F                      ADDW   X,(006H,SP)   ; [ pwFlash + 01H ]
+00CB BF03       F                      LDW    ?CH.w,X
+00CD 4F                                CLR    A
+00CE 5F                                CLRW   X
+00CF 92A70000   F                      LDF    ([?BL.e],X),A
+              ; SOURCE LINE # 556 
+00D3 5B09                              ADD    SP,#009H
+00D5 81                                RET    
+              ; BlockNum     unsigned short  (size=2-Alg).  parameter in AUTO
+              ; FLASH_MemType (size=2).  parameter in AUTO
+              ; startaddress unsigned long  (size=4-Alg). Automatic variable  in AUTO
+              ; pwFlash      pointer to (unsigned char   in )(size=3). Automatic variable  in AUTO
+
+              ; FUNCTION ?FLASH_EraseBlock (END)
+
+              ; FUNCTION ?FLASH_ProgramBlock (BEGIN)
+              ; Register-parameter BlockNum (XW) is relocated (auto)
+              ; SOURCE LINE # 568 
+0000 89                                PUSHW  X
+0001 5206                              SUB    SP,#006H
+              ; SOURCE LINE # 570 
+0003 5F                                CLRW   X
+0004 1F01       F                      LDW    (001H,SP),X   ; [ Count ]
+              ; SOURCE LINE # 574 
+0006 AE00FD                            LDW    X,#000FDH
+0009 130B       F                      CPW    X,(00BH,SP)   ; [ FLASH_MemType ]
+000B 2715                              JREQ   ?NXT_0068
+000D AE00F7                            LDW    X,#000F7H
+0010 130B       F                      CPW    X,(00BH,SP)   ; [ FLASH_MemType ]
+0012 270E                              JREQ   ?NXT_0068
+0014 AE023E                            LDW    X,#0023EH
+0017 89                                PUSHW  X
+0018 5F                                CLRW   X
+0019 89                                PUSHW  X
+001A AE0000     F                      LDW    X,#HIGH(?STR?STM8S_FLASH?BASE)
+001D CD0000     F                      CALL   ?assert_failed
+0020 5B04                              ADD    SP,#004H
+0022         ?NXT_0068:
+              ; SOURCE LINE # 575 
+0022 1E0D       F                      LDW    X,(00DH,SP)   ; [ FLASH_ProgMode ]
+0024 2713                              JREQ   ?NXT_0069
+0026 A30010                            CPW    X,#00010H
+0029 270E                              JREQ   ?NXT_0069
+002B AE023F                            LDW    X,#0023FH
+002E 89                                PUSHW  X
+002F 5F                                CLRW   X
+0030 89                                PUSHW  X
+0031 AE0000     F                      LDW    X,#HIGH(?STR?STM8S_FLASH?BASE)
+0034 CD0000     F                      CALL   ?assert_failed
+0037 5B04                              ADD    SP,#004H
+0039         ?NXT_0069:
+              ; SOURCE LINE # 576 
+0039 AE00FD                            LDW    X,#000FDH
+003C 130B       F                      CPW    X,(00BH,SP)   ; [ FLASH_MemType ]
+003E 261D                              JRNE   ?ELSE_0062
+              ; SOURCE LINE # 578 
+0040 AE0400                            LDW    X,#00400H
+0043 1307       F                      CPW    X,(007H,SP)   ; [ BlockNum ]
+0045 220E                              JRUGT  ?NXT_0071
+0047 AE0242                            LDW    X,#00242H
+004A 89                                PUSHW  X
+004B 5F                                CLRW   X
+004C 89                                PUSHW  X
+004D AE0000     F                      LDW    X,#HIGH(?STR?STM8S_FLASH?BASE)
+0050 CD0000     F                      CALL   ?assert_failed
+0053 5B04                              ADD    SP,#004H
+0055         ?NXT_0071:
+              ; SOURCE LINE # 579 
+0055 5F                                CLRW   X
+0056 1F03       F                      LDW    (003H,SP),X   ; [ startaddress ]
+0058 AE8000                            LDW    X,#08000H
+005B 201B                              JRA    ?NXT_0070
+005D         ?ELSE_0062:
+              ; SOURCE LINE # 583 
+005D AE0010                            LDW    X,#00010H
+0060 1307       F                      CPW    X,(007H,SP)   ; [ BlockNum ]
+0062 220E                              JRUGT  ?NXT_0072
+0064 AE0247                            LDW    X,#00247H
+0067 89                                PUSHW  X
+0068 5F                                CLRW   X
+0069 89                                PUSHW  X
+006A AE0000     F                      LDW    X,#HIGH(?STR?STM8S_FLASH?BASE)
+006D CD0000     F                      CALL   ?assert_failed
+0070 5B04                              ADD    SP,#004H
+0072         ?NXT_0072:
+              ; SOURCE LINE # 584 
+0072 5F                                CLRW   X
+0073 1F03       F                      LDW    (003H,SP),X   ; [ startaddress ]
+0075 AE4000                            LDW    X,#04000H
+0078         ?NXT_0070:
+0078 1F05       F                      LDW    (005H,SP),X   ; [ startaddress + 02H ]
+              ; SOURCE LINE # 588 
+007A 89                                PUSHW  X
+007B 1E05       F                      LDW    X,(005H,SP)   ; [ startaddress ]
+007D 89                                PUSHW  X
+007E CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+0081         ?DATASTART_0057:
+0081 80                             M  DB     080H
+0082         ?DATAEND_0057:
+0082 1E0F       F                      LDW    X,(00FH,SP)   ; [ BlockNum ]
+0084 BF03       F                      LDW    ?CH,X
+0086 5F                                CLRW   X
+0087 BF03       F                      LDW    ?BH,X
+0089 CD0000     F DNF                  CALL   ?C?mulu3232
+008C CD0000     F DNF                  CALL   ?C?add3232
+008F A602       F                      LD     A,#002H
+0091 CD0000     F                      CALL   ?C?mv4_bc2isa
+              ; SOURCE LINE # 591 
+0094 1E0D       F                      LDW    X,(00DH,SP)   ; [ FLASH_ProgMode ]
+0096 260A                              JRNE   ?ELSE_0065
+              ; SOURCE LINE # 594 
+0098 7210505B                          BSET   0505BH,#000H
+              ; SOURCE LINE # 595 
+009C 7211505C                          BRES   0505CH,#000H
+00A0 2008                              JRA    ?NXT_0073
+00A2         ?ELSE_0065:
+              ; SOURCE LINE # 600 
+00A2 7218505B                          BSET   0505BH,#004H
+              ; SOURCE LINE # 601 
+00A6 7219505C                          BRES   0505CH,#004H
+00AA         ?NXT_0073:
+              ; SOURCE LINE # 605 
+00AA 5F                                CLRW   X
+00AB 1F01       F                      LDW    (001H,SP),X   ; [ Count ]
+00AD         ?FOR_0001:
+              ; SOURCE LINE # 609 
+00AD 1E0F       F                      LDW    X,(00FH,SP)   ; [ Buffer ]
+00AF BF02       F                      LDW    ?BH.w,X
+00B1 1E01       F                      LDW    X,(001H,SP)   ; [ Count ]
+00B3 92D600     F                      LD     A,([?BH.w],X)
+00B6 3F04       F                      CLR    ?BL
+00B8 72FB05     F                      ADDW   X,(005H,SP)   ; [ startaddress + 02H ]
+00BB BF03       F                      LDW    ?CH.w,X
+00BD 5F                                CLRW   X
+00BE 92A70000   F                      LDF    ([?BL.e],X),A
+              ; SOURCE LINE # 605 
+00C2 85                                POPW   X
+00C3 5C                                INCW   X
+00C4 89                                PUSHW  X
+00C5 A30080                            CPW    X,#00080H
+00C8 25E3                              JRULT  ?FOR_0001
+              ; SOURCE LINE # 614 
+00CA 5B08                              ADD    SP,#008H
+00CC 81                                RET    
+              ; BlockNum     unsigned short  (size=2-Alg).  parameter in AUTO
+              ; FLASH_MemType (size=2).  parameter in AUTO
+              ; FLASH_ProgMode (size=2).  parameter in AUTO
+              ; Buffer       pointer to (unsigned char   in )(size=2).  parameter in AUTO
+              ; Count        unsigned short  (size=2-Alg). Automatic variable  in AUTO
+              ; startaddress unsigned long  (size=4-Alg). Automatic variable  in AUTO
+
+              ; FUNCTION ?FLASH_ProgramBlock (END)
+
+RCSTM8 COMPILER V2.42.12.083
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1564    ----
+   CONSTANT SIZE    =     72    ----
+   DATA SIZE        =   ----    ----
+   PAGE0 SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+RCSTM8 COMPILATION COMPLETE.  0 WARNING,  0 ERROR

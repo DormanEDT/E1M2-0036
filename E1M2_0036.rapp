@@ -1,0 +1,65 @@
+
+<ApplicationBuild Header="E1M2_0036" Extern=".\E1M2_0036.rapp" Path=".\E1M2_0036.rapp" OutputFile=".\main_app\bin\E1M2_0036.aof" sate="98" >
+	<Group Header="main_app" Marker="-1" OutputFile="" sate="96" >
+		<Group Header="inc" Marker="-1" OutputFile="" sate="96" >
+			<NodeH Path=".\main_app\inc\stm8s_clk.h" Header="stm8s_clk.h" Marker="-1" OutputFile="" sate="0" />
+			<NodeH Path=".\main_app\inc\stm8s_conf.h" Header="stm8s_conf.h" Marker="-1" OutputFile="" sate="0" />
+			<NodeH Path=".\main_app\inc\stm8s_eol.h" Header="stm8s_eol.h" Marker="-1" OutputFile="" sate="0" />
+			<NodeH Path=".\main_app\inc\stm8s_exti.h" Header="stm8s_exti.h" Marker="-1" OutputFile="" sate="0" />
+			<NodeH Path=".\main_app\inc\stm8s_flash.h" Header="stm8s_flash.h" Marker="-1" OutputFile="" sate="0" />
+			<NodeH Path=".\main_app\inc\stm8s_gpio.h" Header="stm8s_gpio.h" Marker="-1" OutputFile="" sate="0" />
+			<NodeH Path=".\main_app\inc\stm8s_it.h" Header="stm8s_it.h" Marker="-1" OutputFile="" sate="0" />
+			<NodeH Path=".\main_app\inc\stm8s_itc.h" Header="stm8s_itc.h" Marker="-1" OutputFile="" sate="0" />
+			<NodeH Path=".\main_app\inc\stm8s_iwdg.h" Header="stm8s_iwdg.h" Marker="-1" OutputFile="" sate="0" />
+			<NodeH Path=".\main_app\inc\stm8s_kline.h" Header="stm8s_kline.h" Marker="-1" OutputFile="" sate="0" />
+			<NodeH Path=".\main_app\inc\stm8s_rst.h" Header="stm8s_rst.h" Marker="-1" OutputFile="" sate="0" />
+			<NodeH Path=".\main_app\inc\stm8s_tim4.h" Header="stm8s_tim4.h" Marker="-1" OutputFile="" sate="0" />
+			<NodeH Path=".\main_app\inc\stm8s_uart1.h" Header="stm8s_uart1.h" Marker="-1" OutputFile="" sate="0" />
+			<NodeH Path=".\main_app\inc\main.h" Header="main.h" Marker="-1" OutputFile="" sate="0" />
+			<NodeH Path=".\main_app\inc\stm8s.h" Header="stm8s.h" Marker="-1" OutputFile="" sate="0" />
+			<NodeH Path=".\main_app\inc\stm8s_can.h" Header="stm8s_can.h" Marker="-1" OutputFile="" sate="0" />
+		</Group>
+		<Group Header="src" Marker="-1" OutputFile="" sate="96" >
+			<NodeC Path=".\main_app\src\stm8s_uart1.c" Header="stm8s_uart1.c" Marker="-1" OutputFile=".\main_app\bin\stm8s_uart1.obj" sate="0" />
+			<NodeC Path=".\main_app\src\main.c" Header="main.c" Marker="-1" OutputFile=".\main_app\bin\main.obj" sate="0" />
+			<NodeC Path=".\main_app\src\stm8s_can.c" Header="stm8s_can.c" Marker="-1" OutputFile=".\main_app\bin\stm8s_can.obj" sate="0" />
+			<NodeC Path=".\main_app\src\stm8s_clk.c" Header="stm8s_clk.c" Marker="-1" OutputFile=".\main_app\bin\stm8s_clk.obj" sate="0" />
+			<NodeC Path=".\main_app\src\stm8s_eol.C" Header="stm8s_eol.C" Marker="-1" OutputFile=".\main_app\bin\stm8s_eol.obj" sate="0" />
+			<NodeC Path=".\main_app\src\stm8s_exti.c" Header="stm8s_exti.c" Marker="-1" OutputFile=".\main_app\bin\stm8s_exti.obj" sate="0" />
+			<NodeC Path=".\main_app\src\stm8s_flash.c" Header="stm8s_flash.c" Marker="-1" OutputFile=".\main_app\bin\stm8s_flash.obj" sate="0" />
+			<NodeC Path=".\main_app\src\stm8s_gpio.c" Header="stm8s_gpio.c" Marker="-1" OutputFile=".\main_app\bin\stm8s_gpio.obj" sate="0" />
+			<NodeC Path=".\main_app\src\stm8s_it.c" Header="stm8s_it.c" Marker="-1" OutputFile=".\main_app\bin\stm8s_it.obj" sate="0" />
+			<NodeC Path=".\main_app\src\stm8s_kline.c" Header="stm8s_kline.c" Marker="-1" OutputFile=".\main_app\bin\stm8s_kline.obj" sate="0" />
+			<NodeC Path=".\main_app\src\stm8s_tim4.c" Header="stm8s_tim4.c" Marker="-1" OutputFile=".\main_app\bin\stm8s_tim4.obj" sate="0" />
+		</Group>
+	</Group>
+	<Options>
+		<Config Header="Standard" >
+			<Set Header="ApplicationBuild" >
+				<Section Header="General" >
+					<Property Header="TargetFamily" Value="ST7" />
+																
+				</Section>
+				<Section Header="Directories" >
+					<Property Header="IncDir" Value="$(RkitInc);$(RkitInc)\ST7;$(RkitInc)\STM8;$(ApplicationDir)\main_app\inc" Removable="1" />
+					<Property Header="OutDir" Value="$(ApplicationDir)\main_app\bin" Removable="1" />
+					<Property Header="ListDir" Value="$(ApplicationDir)\main_app\lst" Removable="1" />
+							
+				</Section>
+					
+			</Set>
+			<Set Header="Target" >
+				<Section Header="ProcessorST7" >
+					<Property Header="Processor" Value="STM8S208RB" Removable="1" />
+																
+				</Section>
+				<Section Header="ToolSetST7" >
+					<Property Header="BuildToolSetST7" Value="ST7\RaisonanceTools.config" Removable="1" />
+					<Property Header="ArelocInfo" Value="" Removable="1" />
+							
+				</Section>
+					
+			</Set>
+		</Config>
+	</Options>
+</ApplicationBuild>

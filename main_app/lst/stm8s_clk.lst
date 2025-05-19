@@ -1,0 +1,1993 @@
+RCSTM8 COMPILER V2.42.12.083,  STM8S_CLK          05/19/25  15:34:39
+
+QCW(0x00963FA0)
+
+RCSTM8 COMPILER V2.42.12.083, COMPILATION OF MODULE STM8S_CLK 
+OBJECT MODULE PLACED IN C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\bin\stm8s_clk.obj
+COMPILER INVOKED BY: QUIET GENERATEDEPFILE CODE DB OJ(C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\bin\stm8s_clk.obj) PR(C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\lst\stm8s_clk.lst) PIN(C:\Raisonance\Ride\Inc;C:\Raisonance\Ride\Inc\ST7;C:\Raisonance\Ride\Inc\STM8;C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\inc) STM8(SMALL) O(3,SIZE) NOINITSTATICVAR SMALLOBJECT ET(INT) 
+
+stmt level    source
+   1          /* Includes ------------------------------------------------------------------*/
+   2          
+   3          #include "stm8s_clk.h"
+   4          
+   5          /** @addtogroup STM8S_StdPeriph_Driver
+   6            * @{
+   7            */
+   8          /* Private typedef -----------------------------------------------------------*/
+   9          /* Private define ------------------------------------------------------------*/
+  10          /* Private macro -------------------------------------------------------------*/
+  11          /* Private variables ---------------------------------------------------------*/
+  12          /* Private function prototypes -----------------------------------------------*/
+  13          
+  14          /* Private Constants ---------------------------------------------------------*/
+  15          
+  16          /**
+  17            * @addtogroup CLK_Private_Constants
+  18            * @{
+  19            */
+  20          
+  21          CONST uint8_t HSIDivFactor[4] = {1, 2, 4, 8}; /*!< Holds the different HSI Divider factors */
+  22          CONST uint8_t CLKPrescTable[8] = {1, 2, 4, 8, 10, 16, 20, 40}; /*!< Holds the different CLK prescaler values */
+  23          
+  24          /**
+  25            * @}
+  26            */
+  27          
+  28          /* Public functions ----------------------------------------------------------*/
+  29          /**
+  30            * @addtogroup CLK_Public_Functions
+  31            * @{
+  32            */
+  33          
+  34          /**
+  35            * @brief  Deinitializes the CLK peripheral registers to their default reset
+  36            * values.
+  37            * @param  None
+  38            * @retval None
+  39            * @par Warning:
+  40            * Resetting the CCOR register: \n
+  41            * When the CCOEN bit is set, the reset of the CCOR register require
+  42            * two consecutive write instructions in order to reset first the CCOEN bit
+  43            * and the second one is to reset the CCOSEL bits.
+  44            */
+  45          void CLK_DeInit(void)
+  46          {
+  47   1      
+  48   1          CLK->ICKR = CLK_ICKR_RESET_VALUE;
+  49   1          CLK->ECKR = CLK_ECKR_RESET_VALUE;
+  50   1          CLK->SWR  = CLK_SWR_RESET_VALUE;
+  51   1          CLK->SWCR = CLK_SWCR_RESET_VALUE;
+  52   1          CLK->CKDIVR = CLK_CKDIVR_RESET_VALUE;
+  53   1          CLK->PCKENR1 = CLK_PCKENR1_RESET_VALUE;
+  54   1          CLK->PCKENR2 = CLK_PCKENR2_RESET_VALUE;
+  55   1          CLK->CSSR = CLK_CSSR_RESET_VALUE;
+  56   1          CLK->CCOR = CLK_CCOR_RESET_VALUE;
+  57   1          while ((CLK->CCOR & CLK_CCOR_CCOEN)!= 0)
+  58   1          {}
+  59   1          CLK->CCOR = CLK_CCOR_RESET_VALUE;
+  60   1          CLK->HSITRIMR = CLK_HSITRIMR_RESET_VALUE;
+  61   1          CLK->SWIMCCR = CLK_SWIMCCR_RESET_VALUE;
+  62   1      
+  63   1      }
+  64          
+  65          /**
+  66            * @brief   Configures the High Speed Internal oscillator (HSI).
+  67            * @par Full description:
+  68            * If CLK_FastHaltWakeup is enabled, HSI oscillator is automatically
+  69            * switched-on (HSIEN=1) and selected as next clock master
+  70            * (CKM=SWI=HSI) when resuming from HALT/ActiveHalt modes.\n
+  71            * @param   NewState this parameter is the Wake-up Mode state.
+  72            * @retval None
+  73            */
+  74          void CLK_FastHaltWakeUpCmd(FunctionalState NewState)
+  75          {
+  76   1      
+  77   1          /* check the parameters */
+  78   1          assert_param(IS_FUNCTIONALSTATE_OK(NewState));
+  79   1      
+  80   1          if (NewState != DISABLE)
+  81   1          {
+  82   2              /* Set FHWU bit (HSI oscillator is automatically switched-on) */
+  83   2              CLK->ICKR |= CLK_ICKR_FHWU;
+  84   2          }
+  85   1          else  /* FastHaltWakeup = DISABLE */
+  86   1          {
+  87   2              /* Reset FHWU bit */
+  88   2              CLK->ICKR &= (uint8_t)(~CLK_ICKR_FHWU);
+  89   2          }
+  90   1      
+  91   1      }
+  92          
+  93          /**
+  94            * @brief  Enable or Disable the External High Speed oscillator (HSE).
+  95            * @param   NewState new state of HSEEN, value accepted ENABLE, DISABLE.
+  96            * @retval None
+  97            */
+  98          void CLK_HSECmd(FunctionalState NewState)
+  99          {
+ 100   1      
+ 101   1          /* Check the parameters */
+ 102   1          assert_param(IS_FUNCTIONALSTATE_OK(NewState));
+ 103   1      
+ 104   1          if (NewState != DISABLE)
+ 105   1          {
+ 106   2              /* Set HSEEN bit */
+ 107   2              CLK->ECKR |= CLK_ECKR_HSEEN;
+ 108   2          }
+ 109   1          else
+ 110   1          {
+ 111   2              /* Reset HSEEN bit */
+ 112   2              CLK->ECKR &= (uint8_t)(~CLK_ECKR_HSEEN);
+ 113   2          }
+ 114   1      
+ 115   1      }
+ 116          
+ 117          /**
+ 118            * @brief  Enables or disables the Internal High Speed oscillator (HSI).
+ 119            * @param   NewState new state of HSIEN, value accepted ENABLE, DISABLE.
+ 120            * @retval None
+ 121            */
+ 122          void CLK_HSICmd(FunctionalState NewState)
+ 123          {
+ 124   1      
+ 125   1          /* Check the parameters */
+ 126   1          assert_param(IS_FUNCTIONALSTATE_OK(NewState));
+ 127   1      
+ 128   1          if (NewState != DISABLE)
+ 129   1          {
+ 130   2              /* Set HSIEN bit */
+ 131   2              CLK->ICKR |= CLK_ICKR_HSIEN;
+ 132   2          }
+ 133   1          else
+ 134   1          {
+ 135   2              /* Reset HSIEN bit */
+ 136   2              CLK->ICKR &= (uint8_t)(~CLK_ICKR_HSIEN);
+ 137   2          }
+ 138   1      
+ 139   1      }
+ 140          
+ 141          /**
+ 142            * @brief  Enables or disables the Internal Low Speed oscillator (LSI).
+ 143            * @param    NewState new state of LSIEN, value accepted ENABLE, DISABLE.
+ 144            * @retval None
+ 145            */
+ 146          void CLK_LSICmd(FunctionalState NewState)
+ 147          {
+ 148   1      
+ 149   1          /* Check the parameters */
+ 150   1          assert_param(IS_FUNCTIONALSTATE_OK(NewState));
+ 151   1      
+ 152   1          if (NewState != DISABLE)
+ 153   1          {
+ 154   2              /* Set LSIEN bit */
+ 155   2              CLK->ICKR |= CLK_ICKR_LSIEN;
+ 156   2          }
+ 157   1          else
+ 158   1          {
+ 159   2              /* Reset LSIEN bit */
+ 160   2              CLK->ICKR &= (uint8_t)(~CLK_ICKR_LSIEN);
+ 161   2          }
+ 162   1      
+ 163   1      }
+ 164          
+ 165          /**
+ 166            * @brief  Enables or disablle the Configurable Clock Output (CCO).
+ 167            * @param   NewState : New state of CCEN bit (CCO register).
+ 168            * This parameter can be any of the @ref FunctionalState enumeration.
+ 169            * @retval None
+ 170            */
+ 171          void CLK_CCOCmd(FunctionalState NewState)
+ 172          {
+ 173   1      
+ 174   1          /* Check the parameters */
+ 175   1          assert_param(IS_FUNCTIONALSTATE_OK(NewState));
+ 176   1      
+ 177   1          if (NewState != DISABLE)
+ 178   1          {
+ 179   2              /* Set CCOEN bit */
+ 180   2              CLK->CCOR |= CLK_CCOR_CCOEN;
+ 181   2          }
+ 182   1          else
+ 183   1          {
+ 184   2              /* Reset CCOEN bit */
+ 185   2              CLK->CCOR &= (uint8_t)(~CLK_CCOR_CCOEN);
+ 186   2          }
+ 187   1      
+ 188   1      }
+ 189          
+ 190          /**
+ 191            * @brief  Starts or Stops manually the clock switch execution.
+ 192            * @par Full description:
+ 193            * NewState parameter set the SWEN.
+ 194            * @param   NewState new state of SWEN, value accepted ENABLE, DISABLE.
+ 195            * @retval None
+ 196            */
+ 197          void CLK_ClockSwitchCmd(FunctionalState NewState)
+ 198          {
+ 199   1      
+ 200   1          /* Check the parameters */
+ 201   1          assert_param(IS_FUNCTIONALSTATE_OK(NewState));
+ 202   1      
+ 203   1          if (NewState != DISABLE )
+ 204   1          {
+ 205   2              /* Enable the Clock Switch */
+ 206   2              CLK->SWCR |= CLK_SWCR_SWEN;
+ 207   2          }
+ 208   1          else
+ 209   1          {
+ 210   2              /* Disable the Clock Switch */
+ 211   2              CLK->SWCR &= (uint8_t)(~CLK_SWCR_SWEN);
+ 212   2          }
+ 213   1      
+ 214   1      }
+ 215          
+ 216          /**
+ 217            * @brief  Configures the slow active halt wake up
+ 218            * @param   NewState: specifies the Slow Active Halt wake up state.
+ 219            * can be set of the following values:
+ 220            * - DISABLE: Slow Active Halt mode disabled;
+ 221            * - ENABLE:  Slow Active Halt mode enabled.
+ 222            * @retval None
+ 223            */
+ 224          void CLK_SlowActiveHaltWakeUpCmd(FunctionalState NewState)
+ 225          {
+ 226   1      
+ 227   1          /* check the parameters */
+ 228   1          assert_param(IS_FUNCTIONALSTATE_OK(NewState));
+ 229   1      
+ 230   1          if (NewState != DISABLE)
+ 231   1          {
+ 232   2              /* Set S_ACTHALT bit */
+ 233   2              CLK->ICKR |= CLK_ICKR_SWUAH;
+ 234   2          }
+ 235   1          else
+ 236   1          {
+ 237   2              /* Reset S_ACTHALT bit */
+ 238   2              CLK->ICKR &= (uint8_t)(~CLK_ICKR_SWUAH);
+ 239   2          }
+ 240   1      
+ 241   1      }
+ 242          
+ 243          /**
+ 244            * @brief   Enables or disables the specified peripheral CLK.
+ 245            * @param   CLK_Peripheral : This parameter specifies the peripheral clock to gate.
+ 246            * This parameter can be any of the  @ref CLK_Peripheral_TypeDef enumeration.
+ 247            * @param   NewState : New state of specified peripheral clock.
+ 248            * This parameter can be any of the @ref FunctionalState enumeration.
+ 249            * @retval None
+ 250            */
+ 251          void CLK_PeripheralClockConfig(CLK_Peripheral_TypeDef CLK_Peripheral, FunctionalState NewState)
+ 252          {
+ 253   1      
+ 254   1          /* Check the parameters */
+ 255   1          assert_param(IS_FUNCTIONALSTATE_OK(NewState));
+ 256   1          assert_param(IS_CLK_PERIPHERAL_OK(CLK_Peripheral));
+ 257   1      
+ 258   1          if (((uint8_t)CLK_Peripheral & (uint8_t)0x10) == 0x00)
+ 259   1          {
+ 260   2              if (NewState != DISABLE)
+ 261   2              {
+ 262   3                  /* Enable the peripheral Clock */
+ 263   3                  CLK->PCKENR1 |= (uint8_t)((uint8_t)1 << ((uint8_t)CLK_Peripheral & (uint8_t)0x0F));
+ 264   3              }
+ 265   2              else
+ 266   2              {
+ 267   3                  /* Disable the peripheral Clock */
+ 268   3                  CLK->PCKENR1 &= (uint8_t)(~(uint8_t)(((uint8_t)1 << ((uint8_t)CLK_Peripheral & (uint8_t)0x0F))));
+ 269   3              }
+ 270   2          }
+ 271   1          else
+ 272   1          {
+ 273   2              if (NewState != DISABLE)
+ 274   2              {
+ 275   3                  /* Enable the peripheral Clock */
+ 276   3                  CLK->PCKENR2 |= (uint8_t)((uint8_t)1 << ((uint8_t)CLK_Peripheral & (uint8_t)0x0F));
+ 277   3              }
+ 278   2              else
+ 279   2              {
+ 280   3                  /* Disable the peripheral Clock */
+ 281   3                  CLK->PCKENR2 &= (uint8_t)(~(uint8_t)(((uint8_t)1 << ((uint8_t)CLK_Peripheral & (uint8_t)0x0F))));
+ 282   3              }
+ 283   2          }
+ 284   1      
+ 285   1      }
+ 286          
+ 287          /**
+ 288            * @brief  configures the Switch from one clock to another
+ 289            * @param   CLK_SwitchMode select the clock switch mode.
+ 290            * It can be set of the values of @ref CLK_SwitchMode_TypeDef
+ 291            * @param   CLK_NewClock choice of the future clock.
+ 292            * It can be set of the values of @ref CLK_Source_TypeDef
+ 293            * @param   NewState Enable or Disable the Clock Switch interrupt.
+ 294            * @param   CLK_CurrentClockState current clock to switch OFF or to keep ON.
+ 295            * It can be set of the values of @ref CLK_CurrentClockState_TypeDef
+ 296            * @retval ErrorStatus this shows the clock switch status (ERROR/SUCCESS).
+ 297            */
+ 298          ErrorStatus CLK_ClockSwitchConfig(CLK_SwitchMode_TypeDef CLK_SwitchMode, CLK_Source_TypeDef CLK_NewClock, FunctionalState ITState, CLK_CurrentClockState_TypeDef CLK_CurrentClockState)
+ 299          {
+ 300   1      
+ 301   1          CLK_Source_TypeDef clock_master;
+ 302   1          uint16_t DownCounter = CLK_TIMEOUT;
+ 303   1          ErrorStatus Swif = ERROR;
+ 304   1      
+ 305   1          /* Check the parameters */
+ 306   1          assert_param(IS_CLK_SOURCE_OK(CLK_NewClock));
+ 307   1          assert_param(IS_CLK_SWITCHMODE_OK(CLK_SwitchMode));
+ 308   1          assert_param(IS_FUNCTIONALSTATE_OK(ITState));
+ 309   1          assert_param(IS_CLK_CURRENTCLOCKSTATE_OK(CLK_CurrentClockState));
+ 310   1      
+ 311   1          /* Current clock master saving */
+ 312   1          clock_master = (CLK_Source_TypeDef)CLK->CMSR;
+ 313   1      
+ 314   1          /* Automatic switch mode management */
+ 315   1          if (CLK_SwitchMode == CLK_SWITCHMODE_AUTO)
+ 316   1          {
+ 317   2      
+ 318   2              /* Enables Clock switch */
+ 319   2              CLK->SWCR |= CLK_SWCR_SWEN;
+ 320   2      
+ 321   2              /* Enables or Disables Switch interrupt */
+ 322   2              if (ITState != DISABLE)
+ 323   2              {
+ 324   3                  CLK->SWCR |= CLK_SWCR_SWIEN;
+ 325   3              }
+ 326   2              else
+ 327   2              {
+ 328   3                  CLK->SWCR &= (uint8_t)(~CLK_SWCR_SWIEN);
+ 329   3              }
+ 330   2      
+ 331   2              /* Selection of the target clock source */
+ 332   2              CLK->SWR = (uint8_t)CLK_NewClock;
+ 333   2      
+ 334   2              while ((((CLK->SWCR & CLK_SWCR_SWBSY) != 0 )&& (DownCounter != 0)))
+ 335   2              {
+ 336   3                  DownCounter--;
+ 337   3              }
+ 338   2      
+ 339   2              if (DownCounter != 0)
+ 340   2              {
+ 341   3                  Swif = SUCCESS;
+ 342   3              }
+ 343   2              else
+ 344   2              {
+ 345   3                  Swif = ERROR;
+ 346   3              }
+ 347   2      
+ 348   2          }
+ 349   1          else /* CLK_SwitchMode == CLK_SWITCHMODE_MANUAL */
+ 350   1          {
+ 351   2      
+ 352   2              /* Enables or Disables Switch interrupt  if required  */
+ 353   2              if (ITState != DISABLE)
+ 354   2              {
+ 355   3                  CLK->SWCR |= CLK_SWCR_SWIEN;
+ 356   3              }
+ 357   2              else
+ 358   2              {
+ 359   3                  CLK->SWCR &= (uint8_t)(~CLK_SWCR_SWIEN);
+ 360   3              }
+ 361   2      
+ 362   2              /* Selection of the target clock source */
+ 363   2              CLK->SWR = (uint8_t)CLK_NewClock;
+ 364   2      
+ 365   2              /* In manual mode, there is no risk to be stuck in a loop, value returned
+ 366   2                is then always SUCCESS */
+ 367   2              Swif = SUCCESS;
+ 368   2      
+ 369   2          }
+ 370   1      
+ 371   1          /* Switch OFF current clock if required */
+ 372   1          if ((CLK_CurrentClockState == CLK_CURRENTCLOCKSTATE_DISABLE) && ( clock_master == CLK_SOURCE_HSI))
+ 373   1          {
+ 374   2              CLK->ICKR &= (uint8_t)(~CLK_ICKR_HSIEN);
+ 375   2          }
+ 376   1          else if ((CLK_CurrentClockState == CLK_CURRENTCLOCKSTATE_DISABLE) && ( clock_master == CLK_SOURCE_LSI))
+ 377   1          {
+ 378   2              CLK->ICKR &= (uint8_t)(~CLK_ICKR_LSIEN);
+ 379   2          }
+ 380   1          else if ((CLK_CurrentClockState == CLK_CURRENTCLOCKSTATE_DISABLE) && ( clock_master == CLK_SOURCE_HSE))
+ 381   1          {
+ 382   2              CLK->ECKR &= (uint8_t)(~CLK_ECKR_HSEEN);
+ 383   2          }
+ 384   1      
+ 385   1          return(Swif);
+ 386   1      
+ 387   1      }
+ 388          
+ 389          /**
+ 390            * @brief  Configures the HSI clock dividers.
+ 391            * @param   HSIPrescaler : Specifies the HSI clock divider to apply.
+ 392            * This parameter can be any of the @ref CLK_Prescaler_TypeDef enumeration.
+ 393            * @retval None
+ 394            */
+ 395          void CLK_HSIPrescalerConfig(CLK_Prescaler_TypeDef HSIPrescaler)
+ 396          {
+ 397   1      
+ 398   1          /* check the parameters */
+ 399   1          assert_param(IS_CLK_HSIPRESCALER_OK(HSIPrescaler));
+ 400   1      
+ 401   1          /* Clear High speed internal clock prescaler */
+ 402   1          CLK->CKDIVR &= (uint8_t)(~CLK_CKDIVR_HSIDIV);
+ 403   1      
+ 404   1          /* Set High speed internal clock prescaler */
+ 405   1          CLK->CKDIVR |= (uint8_t)HSIPrescaler;
+ 406   1      
+ 407   1      }
+ 408          
+ 409          /**
+ 410            * @brief  Output the selected clock on a dedicated I/O pin.
+ 411            * @param   CLK_CCO : Specifies the clock source.
+ 412            * This parameter can be any of the  @ref CLK_Output_TypeDef enumeration.
+ 413            * @retval None
+ 414            * @par Required preconditions:
+ 415            * The dedicated I/O pin must be set at 1 in the corresponding Px_CR1 register \n
+ 416            * to be set as input with pull-up or push-pull output.
+ 417            */
+ 418          void CLK_CCOConfig(CLK_Output_TypeDef CLK_CCO)
+ 419          {
+ 420   1      
+ 421   1          /* check the parameters */
+ 422   1          assert_param(IS_CLK_OUTPUT_OK(CLK_CCO));
+ 423   1      
+ 424   1          /* Clears of the CCO type bits part */
+ 425   1          CLK->CCOR &= (uint8_t)(~CLK_CCOR_CCOSEL);
+ 426   1      
+ 427   1          /* Selects the source provided on cco_ck output */
+ 428   1          CLK->CCOR |= (uint8_t)CLK_CCO;
+ 429   1      
+ 430   1          /* Enable the clock output */
+ 431   1          CLK->CCOR |= CLK_CCOR_CCOEN;
+ 432   1      
+ 433   1      }
+ 434          
+ 435          /**
+ 436            * @brief   Enables or disables the specified CLK interrupts.
+ 437            * @param   CLK_IT This parameter specifies the interrupt sources.
+ 438            * It can be one of the values of @ref CLK_IT_TypeDef.
+ 439            * @param   NewState New state of the Interrupt.
+ 440            * Value accepted ENABLE, DISABLE.
+ 441            * @retval None
+ 442            */
+ 443          void CLK_ITConfig(CLK_IT_TypeDef CLK_IT, FunctionalState NewState)
+ 444          {
+ 445   1      
+ 446   1          /* check the parameters */
+ 447   1          assert_param(IS_FUNCTIONALSTATE_OK(NewState));
+ 448   1          assert_param(IS_CLK_IT_OK(CLK_IT));
+ 449   1      
+ 450   1          if (NewState != DISABLE)
+ 451   1          {
+ 452   2              switch (CLK_IT)
+ 453   2              {
+ 454   3              case CLK_IT_SWIF: /* Enable the clock switch interrupt */
+ 455   3                  CLK->SWCR |= CLK_SWCR_SWIEN;
+ 456   3                  break;
+ 457   3              case CLK_IT_CSSD: /* Enable the clock security system detection interrupt */
+ 458   3                  CLK->CSSR |= CLK_CSSR_CSSDIE;
+ 459   3                  break;
+ 460   3              default:
+ 461   3                  break;
+ 462   3              }
+ 463   2          }
+ 464   1          else  /*(NewState == DISABLE)*/
+ 465   1          {
+ 466   2              switch (CLK_IT)
+ 467   2              {
+ 468   3              case CLK_IT_SWIF: /* Disable the clock switch interrupt */
+ 469   3                  CLK->SWCR  &= (uint8_t)(~CLK_SWCR_SWIEN);
+ 470   3                  break;
+ 471   3              case CLK_IT_CSSD: /* Disable the clock security system detection interrupt */
+ 472   3                  CLK->CSSR &= (uint8_t)(~CLK_CSSR_CSSDIE);
+ 473   3                  break;
+ 474   3              default:
+ 475   3                  break;
+ 476   3              }
+ 477   2          }
+ 478   1      
+ 479   1      }
+ 480          
+ 481          /**
+ 482            * @brief  Configures the HSI and CPU clock dividers.
+ 483            * @param   ClockPrescaler Specifies the HSI or CPU clock divider to apply.
+ 484            * @retval None
+ 485            */
+ 486          void CLK_SYSCLKConfig(CLK_Prescaler_TypeDef CLK_Prescaler)
+ 487          {
+ 488   1      
+ 489   1          /* check the parameters */
+ 490   1          assert_param(IS_CLK_PRESCALER_OK(CLK_Prescaler));
+ 491   1      
+ 492   1          if (((uint8_t)CLK_Prescaler & (uint8_t)0x80) == 0x00) /* Bit7 = 0 means HSI divider */
+ 493   1          {
+ 494   2              CLK->CKDIVR &= (uint8_t)(~CLK_CKDIVR_HSIDIV);
+ 495   2              CLK->CKDIVR |= (uint8_t)((uint8_t)CLK_Prescaler & (uint8_t)CLK_CKDIVR_HSIDIV);
+ 496   2          }
+ 497   1          else /* Bit7 = 1 means CPU divider */
+ 498   1          {
+ 499   2              CLK->CKDIVR &= (uint8_t)(~CLK_CKDIVR_CPUDIV);
+ 500   2              CLK->CKDIVR |= (uint8_t)((uint8_t)CLK_Prescaler & (uint8_t)CLK_CKDIVR_CPUDIV);
+ 501   2          }
+ 502   1      
+ 503   1      }
+ 504          /**
+ 505            * @brief  Configures the SWIM clock frequency on the fly.
+ 506            * @param   CLK_SWIMDivider Specifies the SWIM clock divider to apply.
+ 507            * can be one of the value of @ref CLK_SWIMDivider_TypeDef
+ 508            * @retval None
+ 509            */
+ 510          void CLK_SWIMConfig(CLK_SWIMDivider_TypeDef CLK_SWIMDivider)
+ 511          {
+ 512   1      
+ 513   1          /* check the parameters */
+ 514   1          assert_param(IS_CLK_SWIMDIVIDER_OK(CLK_SWIMDivider));
+ 515   1      
+ 516   1          if (CLK_SWIMDivider != CLK_SWIMDIVIDER_2)
+ 517   1          {
+ 518   2              /* SWIM clock is not divided by 2 */
+ 519   2              CLK->SWIMCCR |= CLK_SWIMCCR_SWIMDIV;
+ 520   2          }
+ 521   1          else /* CLK_SWIMDivider == CLK_SWIMDIVIDER_2 */
+ 522   1          {
+ 523   2              /* SWIM clock is divided by 2 */
+ 524   2              CLK->SWIMCCR &= (uint8_t)(~CLK_SWIMCCR_SWIMDIV);
+ 525   2          }
+ 526   1      
+ 527   1      }
+ 528          
+ 529          /**
+ 530            * @brief  Enables the Clock Security System.
+ 531            * @par Full description:
+ 532            * once CSS is enabled it cannot be disabled until the next reset.
+ 533            * @param  None
+ 534            * @retval None
+ 535            */
+ 536          void CLK_ClockSecuritySystemEnable(void)
+ 537          {
+ 538   1          /* Set CSSEN bit */
+ 539   1          CLK->CSSR |= CLK_CSSR_CSSEN;
+ 540   1      }
+ 541          
+ 542          /**
+ 543            * @brief  Returns the clock source used as system clock.
+ 544            * @param  None
+ 545            * @retval  Clock source used.
+ 546            * can be one of the values of @ref CLK_Source_TypeDef
+ 547            */
+ 548          CLK_Source_TypeDef CLK_GetSYSCLKSource(void)
+ 549          {
+ 550   1          return((CLK_Source_TypeDef)CLK->CMSR);
+ 551   1      }
+ 552          
+ 553          /**
+ 554            * @brief  This function returns the frequencies of different on chip clocks.
+ 555            * @param  None
+ 556            * @retval the master clock frequency
+ 557            */
+ 558          uint32_t CLK_GetClockFreq(void)
+ 559          {
+ 560   1      
+ 561   1          uint32_t clockfrequency = 0;
+ 562   1          CLK_Source_TypeDef clocksource = CLK_SOURCE_HSI;
+ 563   1          uint8_t tmp = 0, presc = 0;
+ 564   1      
+ 565   1          /* Get CLK source. */
+ 566   1          clocksource = (CLK_Source_TypeDef)CLK->CMSR;
+ 567   1      
+ 568   1          if (clocksource == CLK_SOURCE_HSI)
+ 569   1          {
+ 570   2              tmp = (uint8_t)(CLK->CKDIVR & CLK_CKDIVR_HSIDIV);
+ 571   2              tmp = (uint8_t)(tmp >> 3);
+ 572   2              presc = HSIDivFactor[tmp];
+ 573   2              clockfrequency = HSI_VALUE / presc;
+ 574   2          }
+ 575   1          else if ( clocksource == CLK_SOURCE_LSI)
+ 576   1          {
+ 577   2              clockfrequency = LSI_VALUE;
+ 578   2          }
+ 579   1          else
+ 580   1          {
+ 581   2              clockfrequency = HSE_VALUE;
+ 582   2          }
+ 583   1      
+ 584   1          return((uint32_t)clockfrequency);
+ 585   1      
+ 586   1      }
+ 587          
+ 588          /**
+ 589            * @brief  Adjusts the Internal High Speed oscillator (HSI) calibration value.
+ 590            * @par Full description:
+ 591            * @param   CLK_HSICalibrationValue calibration trimming value.
+ 592            * can be one of the values of @ref CLK_HSITrimValue_TypeDef
+ 593            * @retval None
+ 594            */
+ 595          void CLK_AdjustHSICalibrationValue(CLK_HSITrimValue_TypeDef CLK_HSICalibrationValue)
+ 596          {
+ 597   1      
+ 598   1          /* check the parameters */
+ 599   1          assert_param(IS_CLK_HSITRIMVALUE_OK(CLK_HSICalibrationValue));
+ 600   1      
+ 601   1          /* Store the new value */
+ 602   1          CLK->HSITRIMR = (uint8_t)( (uint8_t)(CLK->HSITRIMR & (uint8_t)(~CLK_HSITRIMR_HSITRIM))|((uint8_t)CLK_HSICalibrationValue));
+ 603   1      
+ 604   1      }
+ 605          
+ 606          /**
+ 607            * @brief  Reset the SWBSY flag (SWICR Reister)
+ 608            * @par Full description:
+ 609            * This function reset SWBSY flag in order to reset clock switch operations (target
+ 610            * oscillator is broken, stabilization is longing too much, etc.).  If at the same time \n
+ 611            * software attempts to set SWEN and clear SWBSY, SWBSY action takes precedence.
+ 612            * @param  None
+ 613            * @retval None
+ 614            */
+ 615          void CLK_SYSCLKEmergencyClear(void)
+ 616          {
+ 617   1          CLK->SWCR &= (uint8_t)(~CLK_SWCR_SWBSY);
+ 618   1      }
+ 619          
+ 620          /**
+ 621            * @brief  Checks whether the specified CLK flag is set or not.
+ 622            * @par Full description:
+ 623            * @param   CLK_FLAG Flag to check.
+ 624            * can be one of the values of @ref CLK_Flag_TypeDef
+ 625            * @retval FlagStatus, status of the checked flag
+ 626            */
+ 627          FlagStatus CLK_GetFlagStatus(CLK_Flag_TypeDef CLK_FLAG)
+ 628          {
+ 629   1      
+ 630   1          uint16_t statusreg = 0;
+ 631   1          uint8_t tmpreg = 0;
+ 632   1          FlagStatus bitstatus = RESET;
+ 633   1      
+ 634   1          /* check the parameters */
+ 635   1          assert_param(IS_CLK_FLAG_OK(CLK_FLAG));
+ 636   1      
+ 637   1          /* Get the CLK register index */
+ 638   1          statusreg = (uint16_t)((uint16_t)CLK_FLAG & (uint16_t)0xFF00);
+ 639   1      
+ 640   1      
+ 641   1          if (statusreg == 0x0100) /* The flag to check is in ICKRregister */
+ 642   1          {
+ 643   2              tmpreg = CLK->ICKR;
+ 644   2          }
+ 645   1          else if (statusreg == 0x0200) /* The flag to check is in ECKRregister */
+ 646   1          {
+ 647   2              tmpreg = CLK->ECKR;
+ 648   2          }
+ 649   1          else if (statusreg == 0x0300) /* The flag to check is in SWIC register */
+ 650   1          {
+ 651   2              tmpreg = CLK->SWCR;
+ 652   2          }
+ 653   1          else if (statusreg == 0x0400) /* The flag to check is in CSS register */
+ 654   1          {
+ 655   2              tmpreg = CLK->CSSR;
+ 656   2          }
+ 657   1          else /* The flag to check is in CCO register */
+ 658   1          {
+ 659   2              tmpreg = CLK->CCOR;
+ 660   2          }
+ 661   1      
+ 662   1          if ((tmpreg & (uint8_t)CLK_FLAG) != (uint8_t)RESET)
+ 663   1          {
+ 664   2              bitstatus = SET;
+ 665   2          }
+ 666   1          else
+ 667   1          {
+ 668   2              bitstatus = RESET;
+ 669   2          }
+ 670   1      
+ 671   1          /* Return the flag status */
+ 672   1          return((FlagStatus)bitstatus);
+ 673   1      
+ 674   1      }
+ 675          
+ 676          /**
+ 677            * @brief  Checks whether the specified CLK interrupt has is enabled or not.
+ 678            * @param   CLK_IT specifies the CLK interrupt.
+ 679            * can be one of the values of @ref CLK_IT_TypeDef
+ 680            * @retval ITStatus, new state of CLK_IT (SET or RESET).
+ 681            */
+ 682          ITStatus CLK_GetITStatus(CLK_IT_TypeDef CLK_IT)
+ 683          {
+ 684   1      
+ 685   1          ITStatus bitstatus = RESET;
+ 686   1      
+ 687   1          /* check the parameters */
+ 688   1          assert_param(IS_CLK_IT_OK(CLK_IT));
+ 689   1      
+ 690   1          if (CLK_IT == CLK_IT_SWIF)
+ 691   1          {
+ 692   2              /* Check the status of the clock switch interrupt */
+ 693   2              if ((CLK->SWCR & (uint8_t)CLK_IT) == (uint8_t)0x0C)
+ 694   2              {
+ 695   3                  bitstatus = SET;
+ 696   3              }
+ 697   2              else
+ 698   2              {
+ 699   3                  bitstatus = RESET;
+ 700   3              }
+ 701   2          }
+ 702   1          else /* CLK_IT == CLK_IT_CSSDIE */
+ 703   1          {
+ 704   2              /* Check the status of the security system detection interrupt */
+ 705   2              if ((CLK->CSSR & (uint8_t)CLK_IT) == (uint8_t)0x0C)
+ 706   2              {
+ 707   3                  bitstatus = SET;
+ 708   3              }
+ 709   2              else
+ 710   2              {
+ 711   3                  bitstatus = RESET;
+ 712   3              }
+ 713   2          }
+ 714   1      
+ 715   1          /* Return the CLK_IT status */
+ 716   1          return bitstatus;
+ 717   1      
+ 718   1      }
+ 719          
+ 720          /**
+ 721            * @brief  Clears the CLK’s interrupt pending bits.
+ 722            * @param   CLK_IT specifies the interrupt pending bits.
+ 723            * can be one of the values of @ref CLK_IT_TypeDef
+ 724            * @retval None
+ 725            */
+ 726          void CLK_ClearITPendingBit(CLK_IT_TypeDef CLK_IT)
+ 727          {
+ 728   1      
+ 729   1          /* check the parameters */
+ 730   1          assert_param(IS_CLK_IT_OK(CLK_IT));
+ 731   1      
+ 732   1          if (CLK_IT == (uint8_t)CLK_IT_CSSD)
+ 733   1          {
+ 734   2              /* Clear the status of the security system detection interrupt */
+ 735   2              CLK->CSSR &= (uint8_t)(~CLK_CSSR_CSSD);
+ 736   2          }
+ 737   1          else /* CLK_PendingBit == (uint8_t)CLK_IT_SWIF */
+ 738   1          {
+ 739   2              /* Clear the status of the clock switch interrupt */
+ 740   2              CLK->SWCR &= (uint8_t)(~CLK_SWCR_SWIF);
+ 741   2          }
+ 742   1      
+ 743   1      }
+ 744          
+RCSTM8 COMPILER V2.42.12.083
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+              ; FUNCTION ?CLK_DeInit (BEGIN)
+              ; SOURCE LINE # 48 
+0000 350150C0                          MOV    050C0H,#001H
+              ; SOURCE LINE # 49 
+0004 725F50C1                          CLR    050C1H
+              ; SOURCE LINE # 50 
+0008 35E150C4                          MOV    050C4H,#0E1H
+              ; SOURCE LINE # 51 
+000C 725F50C5                          CLR    050C5H
+              ; SOURCE LINE # 52 
+0010 351850C6                          MOV    050C6H,#018H
+              ; SOURCE LINE # 53 
+0014 35FF50C7                          MOV    050C7H,#0FFH
+              ; SOURCE LINE # 54 
+0018 35FF50CA                          MOV    050CAH,#0FFH
+              ; SOURCE LINE # 55 
+001C 725F50C8                          CLR    050C8H
+              ; SOURCE LINE # 56 
+0020 725F50C9                          CLR    050C9H
+0024         ?WHILE_0001:
+              ; SOURCE LINE # 57 
+0024 720150C902                        BTJF   050C9H,#000H,?NXT_0001
+              ; SOURCE LINE # 58 
+0029 20F9                              JRA    ?WHILE_0001
+002B         ?NXT_0001:
+              ; SOURCE LINE # 59 
+002B 725F50C9                          CLR    050C9H
+              ; SOURCE LINE # 60 
+002F 725F50CC                          CLR    050CCH
+              ; SOURCE LINE # 61 
+0033 725F50CD                          CLR    050CDH
+              ; SOURCE LINE # 63 
+0037 81                                RET    
+
+              ; FUNCTION ?CLK_DeInit (END)
+
+              ; FUNCTION ?CLK_FastHaltWakeUpCmd (BEGIN)
+              ; Register-parameter NewState (XW) is relocated (auto)
+              ; SOURCE LINE # 74 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 78 
+0001 5D                                TNZW   X
+0002 270F                              JREQ   ?NXT_0004
+0004 5A                                DECW   X
+0005 270C                              JREQ   ?NXT_0004
+0007 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+000A         ?DATASTART_0001:
+000A 4E                             M  DB     04EH
+000B         ?DATAEND_0001:
+000B AE0000     F                      LDW    X,#HIGH(?STR?STM8S_CLK?BASE)
+000E CD0000     F                      CALL   ?assert_failed
+0011 5B04                              ADD    SP,#004H
+0013         ?NXT_0004:
+              ; SOURCE LINE # 80 
+0013 1E01       F                      LDW    X,(001H,SP)   ; [ NewState ]
+0015 2706                              JREQ   ?ELSE_0003
+              ; SOURCE LINE # 83 
+0017 721450C0                          BSET   050C0H,#002H
+001B 2004                              JRA    ?EPILOG_0001
+001D         ?ELSE_0003:
+              ; SOURCE LINE # 88 
+001D 721550C0                          BRES   050C0H,#002H
+0021         ?EPILOG_0001:
+              ; SOURCE LINE # 91 
+0021 85                                POPW   X
+0022 81                                RET    
+              ; NewState     (size=2).  parameter in AUTO
+
+              ; FUNCTION ?CLK_FastHaltWakeUpCmd (END)
+
+              ; FUNCTION ?CLK_HSECmd (BEGIN)
+              ; Register-parameter NewState (XW) is relocated (auto)
+              ; SOURCE LINE # 98 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 102 
+0001 5D                                TNZW   X
+0002 270F                              JREQ   ?NXT_0008
+0004 5A                                DECW   X
+0005 270C                              JREQ   ?NXT_0008
+0007 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+000A         ?DATASTART_0003:
+000A 66                             M  DB     066H
+000B         ?DATAEND_0003:
+000B AE0000     F                      LDW    X,#HIGH(?STR?STM8S_CLK?BASE)
+000E CD0000     F                      CALL   ?assert_failed
+0011 5B04                              ADD    SP,#004H
+0013         ?NXT_0008:
+              ; SOURCE LINE # 104 
+0013 1E01       F                      LDW    X,(001H,SP)   ; [ NewState ]
+0015 2706                              JREQ   ?ELSE_0007
+              ; SOURCE LINE # 107 
+0017 721050C1                          BSET   050C1H,#000H
+001B 2004                              JRA    ?EPILOG_0002
+001D         ?ELSE_0007:
+              ; SOURCE LINE # 112 
+001D 721150C1                          BRES   050C1H,#000H
+0021         ?EPILOG_0002:
+              ; SOURCE LINE # 115 
+0021 85                                POPW   X
+0022 81                                RET    
+              ; NewState     (size=2).  parameter in AUTO
+
+              ; FUNCTION ?CLK_HSECmd (END)
+
+              ; FUNCTION ?CLK_HSICmd (BEGIN)
+              ; Register-parameter NewState (XW) is relocated (auto)
+              ; SOURCE LINE # 122 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 126 
+0001 5D                                TNZW   X
+0002 270F                              JREQ   ?NXT_0012
+0004 5A                                DECW   X
+0005 270C                              JREQ   ?NXT_0012
+0007 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+000A         ?DATASTART_0005:
+000A 7E                             M  DB     07EH
+000B         ?DATAEND_0005:
+000B AE0000     F                      LDW    X,#HIGH(?STR?STM8S_CLK?BASE)
+000E CD0000     F                      CALL   ?assert_failed
+0011 5B04                              ADD    SP,#004H
+0013         ?NXT_0012:
+              ; SOURCE LINE # 128 
+0013 1E01       F                      LDW    X,(001H,SP)   ; [ NewState ]
+0015 2706                              JREQ   ?ELSE_0011
+              ; SOURCE LINE # 131 
+0017 721050C0                          BSET   050C0H,#000H
+001B 2004                              JRA    ?EPILOG_0003
+001D         ?ELSE_0011:
+              ; SOURCE LINE # 136 
+001D 721150C0                          BRES   050C0H,#000H
+0021         ?EPILOG_0003:
+              ; SOURCE LINE # 139 
+0021 85                                POPW   X
+0022 81                                RET    
+              ; NewState     (size=2).  parameter in AUTO
+
+              ; FUNCTION ?CLK_HSICmd (END)
+
+              ; FUNCTION ?CLK_LSICmd (BEGIN)
+              ; Register-parameter NewState (XW) is relocated (auto)
+              ; SOURCE LINE # 146 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 150 
+0001 5D                                TNZW   X
+0002 270F                              JREQ   ?NXT_0016
+0004 5A                                DECW   X
+0005 270C                              JREQ   ?NXT_0016
+0007 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+000A         ?DATASTART_0007:
+000A 96                             M  DB     096H
+000B         ?DATAEND_0007:
+000B AE0000     F                      LDW    X,#HIGH(?STR?STM8S_CLK?BASE)
+000E CD0000     F                      CALL   ?assert_failed
+0011 5B04                              ADD    SP,#004H
+0013         ?NXT_0016:
+              ; SOURCE LINE # 152 
+0013 1E01       F                      LDW    X,(001H,SP)   ; [ NewState ]
+0015 2706                              JREQ   ?ELSE_0015
+              ; SOURCE LINE # 155 
+0017 721650C0                          BSET   050C0H,#003H
+001B 2004                              JRA    ?EPILOG_0004
+001D         ?ELSE_0015:
+              ; SOURCE LINE # 160 
+001D 721750C0                          BRES   050C0H,#003H
+0021         ?EPILOG_0004:
+              ; SOURCE LINE # 163 
+0021 85                                POPW   X
+0022 81                                RET    
+              ; NewState     (size=2).  parameter in AUTO
+
+              ; FUNCTION ?CLK_LSICmd (END)
+
+              ; FUNCTION ?CLK_CCOCmd (BEGIN)
+              ; Register-parameter NewState (XW) is relocated (auto)
+              ; SOURCE LINE # 171 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 175 
+0001 5D                                TNZW   X
+0002 270F                              JREQ   ?NXT_0020
+0004 5A                                DECW   X
+0005 270C                              JREQ   ?NXT_0020
+0007 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+000A         ?DATASTART_0009:
+000A AF                             M  DB     0AFH
+000B         ?DATAEND_0009:
+000B AE0000     F                      LDW    X,#HIGH(?STR?STM8S_CLK?BASE)
+000E CD0000     F                      CALL   ?assert_failed
+0011 5B04                              ADD    SP,#004H
+0013         ?NXT_0020:
+              ; SOURCE LINE # 177 
+0013 1E01       F                      LDW    X,(001H,SP)   ; [ NewState ]
+0015 2706                              JREQ   ?ELSE_0019
+              ; SOURCE LINE # 180 
+0017 721050C9                          BSET   050C9H,#000H
+001B 2004                              JRA    ?EPILOG_0005
+001D         ?ELSE_0019:
+              ; SOURCE LINE # 185 
+001D 721150C9                          BRES   050C9H,#000H
+0021         ?EPILOG_0005:
+              ; SOURCE LINE # 188 
+0021 85                                POPW   X
+0022 81                                RET    
+              ; NewState     (size=2).  parameter in AUTO
+
+              ; FUNCTION ?CLK_CCOCmd (END)
+
+              ; FUNCTION ?CLK_ClockSwitchCmd (BEGIN)
+              ; Register-parameter NewState (XW) is relocated (auto)
+              ; SOURCE LINE # 197 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 201 
+0001 5D                                TNZW   X
+0002 270F                              JREQ   ?NXT_0024
+0004 5A                                DECW   X
+0005 270C                              JREQ   ?NXT_0024
+0007 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+000A         ?DATASTART_0011:
+000A C9                             M  DB     0C9H
+000B         ?DATAEND_0011:
+000B AE0000     F                      LDW    X,#HIGH(?STR?STM8S_CLK?BASE)
+000E CD0000     F                      CALL   ?assert_failed
+0011 5B04                              ADD    SP,#004H
+0013         ?NXT_0024:
+              ; SOURCE LINE # 203 
+0013 1E01       F                      LDW    X,(001H,SP)   ; [ NewState ]
+0015 2706                              JREQ   ?ELSE_0023
+              ; SOURCE LINE # 206 
+0017 721250C5                          BSET   050C5H,#001H
+001B 2004                              JRA    ?EPILOG_0006
+001D         ?ELSE_0023:
+              ; SOURCE LINE # 211 
+001D 721350C5                          BRES   050C5H,#001H
+0021         ?EPILOG_0006:
+              ; SOURCE LINE # 214 
+0021 85                                POPW   X
+0022 81                                RET    
+              ; NewState     (size=2).  parameter in AUTO
+
+              ; FUNCTION ?CLK_ClockSwitchCmd (END)
+
+              ; FUNCTION ?CLK_SlowActiveHaltWakeUpCmd (BEGIN)
+              ; Register-parameter NewState (XW) is relocated (auto)
+              ; SOURCE LINE # 224 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 228 
+0001 5D                                TNZW   X
+0002 270F                              JREQ   ?NXT_0028
+0004 5A                                DECW   X
+0005 270C                              JREQ   ?NXT_0028
+0007 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+000A         ?DATASTART_0013:
+000A E4                             M  DB     0E4H
+000B         ?DATAEND_0013:
+000B AE0000     F                      LDW    X,#HIGH(?STR?STM8S_CLK?BASE)
+000E CD0000     F                      CALL   ?assert_failed
+0011 5B04                              ADD    SP,#004H
+0013         ?NXT_0028:
+              ; SOURCE LINE # 230 
+0013 1E01       F                      LDW    X,(001H,SP)   ; [ NewState ]
+0015 2706                              JREQ   ?ELSE_0027
+              ; SOURCE LINE # 233 
+0017 721A50C0                          BSET   050C0H,#005H
+001B 2004                              JRA    ?EPILOG_0007
+001D         ?ELSE_0027:
+              ; SOURCE LINE # 238 
+001D 721B50C0                          BRES   050C0H,#005H
+0021         ?EPILOG_0007:
+              ; SOURCE LINE # 241 
+0021 85                                POPW   X
+0022 81                                RET    
+              ; NewState     (size=2).  parameter in AUTO
+
+              ; FUNCTION ?CLK_SlowActiveHaltWakeUpCmd (END)
+
+              ; FUNCTION ?CLK_PeripheralClockConfig (BEGIN)
+              ; Register-parameter CLK_Peripheral (XW) is relocated (auto)
+              ; SOURCE LINE # 251 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 255 
+0001 1E05       F                      LDW    X,(005H,SP)   ; [ NewState ]
+0003 270F                              JREQ   ?NXT_0037
+0005 5A                                DECW   X
+0006 270C                              JREQ   ?NXT_0037
+0008 CD0000     F DNF            M(04)  CALL  ?C?mv4_pg2sk1
+000B         ?DATASTART_0015:
+000B FF                             M  DB     0FFH
+000C         ?DATAEND_0015:
+000C AE0000     F                      LDW    X,#HIGH(?STR?STM8S_CLK?BASE)
+000F CD0000     F                      CALL   ?assert_failed
+0012 5B04                              ADD    SP,#004H
+0014         ?NXT_0037:
+              ; SOURCE LINE # 256 
+0014 1E01       F                      LDW    X,(001H,SP)   ; [ CLK_Peripheral ]
+0016 2755                              JREQ   ?NXT_0038
+0018 5A                                DECW   X
+0019 2752                              JREQ   ?NXT_0038
+001B AE0003                            LDW    X,#00003H
+001E 1301       F                      CPW    X,(001H,SP)   ; [ CLK_Peripheral ]
+0020 274B                              JREQ   ?NXT_0038
+0022 1301       F                      CPW    X,(001H,SP)   ; [ CLK_Peripheral ]
+0024 2747                              JREQ   ?NXT_0038
+0026 5A                                DECW   X
+0027 1301       F                      CPW    X,(001H,SP)   ; [ CLK_Peripheral ]
+0029 2742                              JREQ   ?NXT_0038
+002B AE0004                            LDW    X,#00004H
+002E 1301       F                      CPW    X,(001H,SP)   ; [ CLK_Peripheral ]
+0030 273B                              JREQ   ?NXT_0038
+0032 5C                                INCW   X
+0033 1301       F                      CPW    X,(001H,SP)   ; [ CLK_Peripheral ]
+0035 2736                              JREQ   ?NXT_0038
+0037 1301       F                      CPW    X,(001H,SP)   ; [ CLK_Peripheral ]
+0039 2732                              JREQ   ?NXT_0038
+003B 5A                                DECW   X
+003C 1301       F                      CPW    X,(001H,SP)   ; [ CLK_Peripheral ]
+003E 272D                              JREQ   ?NXT_0038
+0040 AE0006                            LDW    X,#00006H
+0043 1301       F                      CPW    X,(001H,SP)   ; [ CLK_Peripheral ]
+0045 2726                              JREQ   ?NXT_0038
+0047 5C                                INCW   X
+0048 1301       F                      CPW    X,(001H,SP)   ; [ CLK_Peripheral ]
+004A 2721                              JREQ   ?NXT_0038
+004C AE0017                            LDW    X,#00017H
+004F 1301       F                      CPW    X,(001H,SP)   ; [ CLK_Peripheral ]
+0051 271A                              JREQ   ?NXT_0038
+0053 AE0013                            LDW    X,#00013H
+0056 1301       F                      CPW    X,(001H,SP)   ; [ CLK_Peripheral ]
+0058 2713                              JREQ   ?NXT_0038
+005A 5A                                DECW   X
+005B 1301       F                      CPW    X,(001H,SP)   ; [ CLK_Peripheral ]
+005D 270E                              JREQ   ?NXT_0038
+005F AE0100                            LDW    X,#00100H
+0062 89                                PUSHW  X
+0063 5F                                CLRW   X
+0064 89                                PUSHW  X
+0065 AE0000     F                      LDW    X,#HIGH(?STR?STM8S_CLK?BASE)
+0068 CD0000     F                      CALL   ?assert_failed
+006B 5B04                              ADD    SP,#004H
+006D         ?NXT_0038:
+              ; SOURCE LINE # 258 
+006D 7B02       F                      LD     A,(002H,SP)   ; [ CLK_Peripheral + 01H ]
+006F A510                              BCP    A,#010H
+0071 2627                              JRNE   ?ELSE_0035
+              ; SOURCE LINE # 260 
+0073 1E05       F                      LDW    X,(005H,SP)   ; [ NewState ]
+0075 2710                              JREQ   ?ELSE_0036
+              ; SOURCE LINE # 263 
+0077 5F                                CLRW   X
+0078 5C                                INCW   X
+0079 A40F                              AND    A,#00FH
+007B CD0000     F                      CALL   ?C?sll168
+007E 9F                                LD     A,XL
+007F CA50C7                            OR     A,050C7H
+0082 C750C7                            LD     050C7H,A
+0085 203A                              JRA    ?EPILOG_0008
+0087         ?ELSE_0036:
+              ; SOURCE LINE # 268 
+0087 5F                                CLRW   X
+0088 5C                                INCW   X
+0089 7B02       F                      LD     A,(002H,SP)   ; [ CLK_Peripheral + 01H ]
+008B A40F                              AND    A,#00FH
+008D CD0000     F                      CALL   ?C?sll168
+0090 9F                                LD     A,XL
+0091 43                                CPL    A
+0092 C450C7                            AND    A,050C7H
+0095 C750C7                            LD     050C7H,A
+0098 2027                              JRA    ?EPILOG_0008
+009A         ?ELSE_0035:
+              ; SOURCE LINE # 273 
+009A 1E05       F                      LDW    X,(005H,SP)   ; [ NewState ]
+009C 2712                              JREQ   ?ELSE_0037
+              ; SOURCE LINE # 276 
+009E 5F                                CLRW   X
+009F 5C                                INCW   X
+00A0 7B02       F                      LD     A,(002H,SP)   ; [ CLK_Peripheral + 01H ]
+00A2 A40F                              AND    A,#00FH
+00A4 CD0000     F                      CALL   ?C?sll168
+00A7 9F                                LD     A,XL
+00A8 CA50CA                            OR     A,050CAH
+00AB C750CA                            LD     050CAH,A
+00AE 2011                              JRA    ?EPILOG_0008
+00B0         ?ELSE_0037:
+              ; SOURCE LINE # 281 
+00B0 5F                                CLRW   X
+00B1 5C                                INCW   X
+00B2 7B02       F                      LD     A,(002H,SP)   ; [ CLK_Peripheral + 01H ]
+00B4 A40F                              AND    A,#00FH
+00B6 CD0000     F                      CALL   ?C?sll168
+00B9 9F                                LD     A,XL
+00BA 43                                CPL    A
+00BB C450CA                            AND    A,050CAH
+00BE C750CA                            LD     050CAH,A
+00C1         ?EPILOG_0008:
+              ; SOURCE LINE # 285 
+00C1 85                                POPW   X
+00C2 81                                RET    
+              ; CLK_Peripheral (size=2).  parameter in AUTO
+              ; NewState     (size=2).  parameter in AUTO
+
+              ; FUNCTION ?CLK_PeripheralClockConfig (END)
+
+              ; FUNCTION ?CLK_ClockSwitchConfig (BEGIN)
+              ; Register-parameter CLK_SwitchMode (XW) is relocated (auto)
+              ; SOURCE LINE # 298 
+0000 89                                PUSHW  X
+0001 5206                              SUB    SP,#006H
+              ; SOURCE LINE # 302 
+0003 AE0491                            LDW    X,#00491H
+0006 1F03       F                      LDW    (003H,SP),X   ; [ DownCounter ]
+              ; SOURCE LINE # 303 
+0008 5F                                CLRW   X
+0009 1F05       F                      LDW    (005H,SP),X   ; [ Swif ]
+              ; SOURCE LINE # 306 
+000B AE00E1                            LDW    X,#000E1H
+000E 130B       F                      CPW    X,(00BH,SP)   ; [ CLK_NewClock ]
+0010 271C                              JREQ   ?NXT_0056
+0012 AE00D2                            LDW    X,#000D2H
+0015 130B       F                      CPW    X,(00BH,SP)   ; [ CLK_NewClock ]
+0017 2715                              JREQ   ?NXT_0056
+0019 AE00B4                            LDW    X,#000B4H
+001C 130B       F                      CPW    X,(00BH,SP)   ; [ CLK_NewClock ]
+001E 270E                              JREQ   ?NXT_0056
+0020 AE0132                            LDW    X,#00132H
+0023 89                                PUSHW  X
+0024 5F                                CLRW   X
+0025 89                                PUSHW  X
+0026 AE0000     F                      LDW    X,#HIGH(?STR?STM8S_CLK?BASE)
+0029 CD0000     F                      CALL   ?assert_failed
+002C 5B04                              ADD    SP,#004H
+002E         ?NXT_0056:
+              ; SOURCE LINE # 307 
+002E 1E07       F                      LDW    X,(007H,SP)   ; [ CLK_SwitchMode ]
+0030 2711                              JREQ   ?NXT_0057
+0032 5A                                DECW   X
+0033 270E                              JREQ   ?NXT_0057
+0035 AE0133                            LDW    X,#00133H
+0038 89                                PUSHW  X
+0039 5F                                CLRW   X
+003A 89                                PUSHW  X
+003B AE0000     F                      LDW    X,#HIGH(?STR?STM8S_CLK?BASE)
+003E CD0000     F                      CALL   ?assert_failed
+0041 5B04                              ADD    SP,#004H
+0043         ?NXT_0057:
+              ; SOURCE LINE # 308 
+0043 1E0D       F                      LDW    X,(00DH,SP)   ; [ ITState ]
+0045 2711                              JREQ   ?NXT_0058
+0047 5A                                DECW   X
+0048 270E                              JREQ   ?NXT_0058
+004A AE0134                            LDW    X,#00134H
+004D 89                                PUSHW  X
+004E 5F                                CLRW   X
+004F 89                                PUSHW  X
+0050 AE0000     F                      LDW    X,#HIGH(?STR?STM8S_CLK?BASE)
+0053 CD0000     F                      CALL   ?assert_failed
+0056 5B04                              ADD    SP,#004H
+0058         ?NXT_0058:
+              ; SOURCE LINE # 309 
+0058 1E0F       F                      LDW    X,(00FH,SP)   ; [ CLK_CurrentClockState ]
+005A 2711                              JREQ   ?NXT_0059
+005C 5A                                DECW   X
+005D 270E                              JREQ   ?NXT_0059
+005F AE0135                            LDW    X,#00135H
+0062 89                                PUSHW  X
+0063 5F                                CLRW   X
+0064 89                                PUSHW  X
+0065 AE0000     F                      LDW    X,#HIGH(?STR?STM8S_CLK?BASE)
+0068 CD0000     F                      CALL   ?assert_failed
+006B 5B04                              ADD    SP,#004H
+006D         ?NXT_0059:
+              ; SOURCE LINE # 312 
+006D C650C3                            LD     A,050C3H
+0070 5F                                CLRW   X
+0071 97                                LD     XL,A
+0072 1F01       F                      LDW    (001H,SP),X   ; [ clock_master ]
+              ; SOURCE LINE # 315 
+0074 5F                                CLRW   X
+0075 5C                                INCW   X
+0076 1307       F                      CPW    X,(007H,SP)   ; [ CLK_SwitchMode ]
+0078 2634                              JRNE   ?ELSE_0053
+              ; SOURCE LINE # 319 
+007A 721250C5                          BSET   050C5H,#001H
+              ; SOURCE LINE # 322 
+007E 1E0D       F                      LDW    X,(00DH,SP)   ; [ ITState ]
+0080 2706                              JREQ   ?ELSE_0054
+              ; SOURCE LINE # 324 
+0082 721450C5                          BSET   050C5H,#002H
+0086 2004                              JRA    ?NXT_0061
+0088         ?ELSE_0054:
+              ; SOURCE LINE # 328 
+0088 721550C5                          BRES   050C5H,#002H
+008C         ?NXT_0061:
+              ; SOURCE LINE # 332 
+008C 7B0C       F                      LD     A,(00CH,SP)   ; [ CLK_NewClock + 01H ]
+008E C750C4                            LD     050C4H,A
+0091         ?WHILE_0003:
+              ; SOURCE LINE # 334 
+0091 720150C509                        BTJF   050C5H,#000H,?NXT_0062
+0096 1E03       F                      LDW    X,(003H,SP)   ; [ DownCounter ]
+0098 2705                              JREQ   ?NXT_0062
+              ; SOURCE LINE # 336 
+009A 5A                                DECW   X
+009B 1F03       F                      LDW    (003H,SP),X   ; [ DownCounter ]
+009D 20F2                              JRA    ?WHILE_0003
+009F         ?NXT_0062:
+              ; SOURCE LINE # 339 
+009F 1E03       F                      LDW    X,(003H,SP)   ; [ DownCounter ]
+00A1 2706                              JREQ   ?ELSE_0055
+              ; SOURCE LINE # 341 
+00A3 5F                                CLRW   X
+00A4 5C                                INCW   X
+00A5 1F05       F                      LDW    (005H,SP),X   ; [ Swif ]
+00A7 201C                              JRA    ?NXT_0060
+00A9         ?ELSE_0055:
+              ; SOURCE LINE # 345 
+00A9 5F                                CLRW   X
+00AA 1F05       F                      LDW    (005H,SP),X   ; [ Swif ]
+00AC 2017                              JRA    ?NXT_0060
+00AE         ?ELSE_0053:
+              ; SOURCE LINE # 353 
+00AE 1E0D       F                      LDW    X,(00DH,SP)   ; [ ITState ]
+00B0 2706                              JREQ   ?ELSE_0056
+              ; SOURCE LINE # 355 
+00B2 721450C5                          BSET   050C5H,#002H
+00B6 2004                              JRA    ?NXT_0064
+00B8         ?ELSE_0056:
+              ; SOURCE LINE # 359 
+00B8 721550C5                          BRES   050C5H,#002H
+00BC         ?NXT_0064:
+              ; SOURCE LINE # 363 
+00BC 7B0C       F                      LD     A,(00CH,SP)   ; [ CLK_NewClock + 01H ]
+00BE C750C4                            LD     050C4H,A
+              ; SOURCE LINE # 367 
+00C1 5F                                CLRW   X
+00C2 5C                                INCW   X
+00C3 1F05       F                      LDW    (005H,SP),X   ; [ Swif ]
+00C5         ?NXT_0060:
+              ; SOURCE LINE # 372 
+00C5 1E0F       F                      LDW    X,(00FH,SP)   ; [ CLK_CurrentClockState ]
+00C7 260D                              JRNE   ?ELSE_0057
+00C9 AE00E1                            LDW    X,#000E1H
+00CC 1301       F                      CPW    X,(001H,SP)   ; [ clock_master ]
+00CE 2606                              JRNE   ?ELSE_0057
+              ; SOURCE LINE # 374 
+00D0 721150C0                          BRES   050C0H,#000H
+00D4 2020                              JRA    ?NXT_0065
+00D6         ?ELSE_0057:
+              ; SOURCE LINE # 376 
+00D6 1E0F       F                      LDW    X,(00FH,SP)   ; [ CLK_CurrentClockState ]
+00D8 260D                              JRNE   ?ELSE_0058
+00DA AE00D2                            LDW    X,#000D2H
+00DD 1301       F                      CPW    X,(001H,SP)   ; [ clock_master ]
+00DF 2606                              JRNE   ?ELSE_0058
+              ; SOURCE LINE # 378 
+00E1 721750C0                          BRES   050C0H,#003H
+00E5 200F                              JRA    ?NXT_0065
+00E7         ?ELSE_0058:
+              ; SOURCE LINE # 380 
+00E7 1E0F       F                      LDW    X,(00FH,SP)   ; [ CLK_CurrentClockState ]
+00E9 260B                              JRNE   ?NXT_0065
+00EB AE00B4                            LDW    X,#000B4H
+00EE 1301       F                      CPW    X,(001H,SP)   ; [ clock_master ]
+00F0 2604                              JRNE   ?NXT_0065
+              ; SOURCE LINE # 382 
+00F2 721150C1                          BRES   050C1H,#000H
+00F6         ?NXT_0065:
+              ; SOURCE LINE # 385 
+00F6 1E05       F                      LDW    X,(005H,SP)   ; [ Swif ]
+              ; SOURCE LINE # 387 
+00F8 5B08                              ADD    SP,#008H
+00FA 81                                RET    
+              ; CLK_SwitchMode (size=2).  parameter in AUTO
+              ; CLK_NewClock (size=2).  parameter in AUTO
+              ; ITState      (size=2).  parameter in AUTO
+              ; CLK_CurrentClockState (size=2).  parameter in AUTO
+              ; clock_master (size=2). Automatic variable  in AUTO
+              ; DownCounter  unsigned short  (size=2-Alg). Automatic variable  in AUTO
+              ; Swif         (size=2). Automatic variable  in AUTO
+
+              ; FUNCTION ?CLK_ClockSwitchConfig (END)
+
+              ; FUNCTION ?CLK_HSIPrescalerConfig (BEGIN)
+              ; Register-parameter HSIPrescaler (XW) is relocated (auto)
+              ; SOURCE LINE # 395 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 399 
+0001 5D                                TNZW   X
+0002 2721                              JREQ   ?NXT_0069
+0004 A30008                            CPW    X,#00008H
+0007 271C                              JREQ   ?NXT_0069
+0009 AE0010                            LDW    X,#00010H
+000C 1301       F                      CPW    X,(001H,SP)   ; [ HSIPrescaler ]
+000E 2715                              JREQ   ?NXT_0069
+0010 AE0018                            LDW    X,#00018H
+0013 1301       F                      CPW    X,(001H,SP)   ; [ HSIPrescaler ]
+0015 270E                              JREQ   ?NXT_0069
+0017 AE018F                            LDW    X,#0018FH
+001A 89                                PUSHW  X
+001B 5F                                CLRW   X
+001C 89                                PUSHW  X
+001D AE0000     F                      LDW    X,#HIGH(?STR?STM8S_CLK?BASE)
+0020 CD0000     F                      CALL   ?assert_failed
+0023 5B04                              ADD    SP,#004H
+0025         ?NXT_0069:
+              ; SOURCE LINE # 402 
+0025 A6E7                              LD     A,#0E7H
+0027 C450C6                            AND    A,050C6H
+002A C750C6                            LD     050C6H,A
+              ; SOURCE LINE # 405 
+002D C650C6                            LD     A,050C6H
+0030 1A02       F                      OR     A,(002H,SP)   ; [ HSIPrescaler + 01H ]
+0032 C750C6                            LD     050C6H,A
+              ; SOURCE LINE # 407 
+0035 85                                POPW   X
+0036 81                                RET    
+              ; HSIPrescaler (size=2).  parameter in AUTO
+
+              ; FUNCTION ?CLK_HSIPrescalerConfig (END)
+
+              ; FUNCTION ?CLK_CCOConfig (BEGIN)
+              ; Register-parameter CLK_CCO (XW) is relocated (auto)
+              ; SOURCE LINE # 418 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 422 
+0001 5D                                TNZW   X
+0002 2760                              JREQ   ?NXT_0071
+0004 A30004                            CPW    X,#00004H
+0007 275B                              JREQ   ?NXT_0071
+0009 AE0002                            LDW    X,#00002H
+000C 1301       F                      CPW    X,(001H,SP)   ; [ CLK_CCO ]
+000E 2754                              JREQ   ?NXT_0071
+0010 AE0008                            LDW    X,#00008H
+0013 1301       F                      CPW    X,(001H,SP)   ; [ CLK_CCO ]
+0015 274D                              JREQ   ?NXT_0071
+0017 AE000A                            LDW    X,#0000AH
+001A 1301       F                      CPW    X,(001H,SP)   ; [ CLK_CCO ]
+001C 2746                              JREQ   ?NXT_0071
+001E AE000C                            LDW    X,#0000CH
+0021 1301       F                      CPW    X,(001H,SP)   ; [ CLK_CCO ]
+0023 273F                              JREQ   ?NXT_0071
+0025 AE000E                            LDW    X,#0000EH
+0028 1301       F                      CPW    X,(001H,SP)   ; [ CLK_CCO ]
+002A 2738                              JREQ   ?NXT_0071
+002C AE0010                            LDW    X,#00010H
+002F 1301       F                      CPW    X,(001H,SP)   ; [ CLK_CCO ]
+0031 2731                              JREQ   ?NXT_0071
+0033 AE0012                            LDW    X,#00012H
+0036 1301       F                      CPW    X,(001H,SP)   ; [ CLK_CCO ]
+0038 272A                              JREQ   ?NXT_0071
+003A AE0014                            LDW    X,#00014H
+003D 1301       F                      CPW    X,(001H,SP)   ; [ CLK_CCO ]
+003F 2723                              JREQ   ?NXT_0071
+0041 AE0016                            LDW    X,#00016H
+0044 1301       F                      CPW    X,(001H,SP)   ; [ CLK_CCO ]
+0046 271C                              JREQ   ?NXT_0071
+0048 AE0018                            LDW    X,#00018H
+004B 1301       F                      CPW    X,(001H,SP)   ; [ CLK_CCO ]
+004D 2715                              JREQ   ?NXT_0071
+004F AE001A                            LDW    X,#0001AH
+0052 1301       F                      CPW    X,(001H,SP)   ; [ CLK_CCO ]
+0054 270E                              JREQ   ?NXT_0071
+0056 AE01A6                            LDW    X,#001A6H
+0059 89                                PUSHW  X
+005A 5F                                CLRW   X
+005B 89                                PUSHW  X
+005C AE0000     F                      LDW    X,#HIGH(?STR?STM8S_CLK?BASE)
+005F CD0000     F                      CALL   ?assert_failed
+0062 5B04                              ADD    SP,#004H
+0064         ?NXT_0071:
+              ; SOURCE LINE # 425 
+0064 A6E1                              LD     A,#0E1H
+0066 C450C9                            AND    A,050C9H
+0069 C750C9                            LD     050C9H,A
+              ; SOURCE LINE # 428 
+006C C650C9                            LD     A,050C9H
+006F 1A02       F                      OR     A,(002H,SP)   ; [ CLK_CCO + 01H ]
+0071 C750C9                            LD     050C9H,A
+              ; SOURCE LINE # 431 
+0074 721050C9                          BSET   050C9H,#000H
+              ; SOURCE LINE # 433 
+0078 85                                POPW   X
+0079 81                                RET    
+              ; CLK_CCO      (size=2).  parameter in AUTO
+
+              ; FUNCTION ?CLK_CCOConfig (END)
+
+              ; FUNCTION ?CLK_ITConfig (BEGIN)
+              ; Register-parameter CLK_IT (XW) is relocated (auto)
+              ; SOURCE LINE # 443 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 447 
+0001 1E05       F                      LDW    X,(005H,SP)   ; [ NewState ]
+0003 2711                              JREQ   ?NXT_0077
+0005 5A                                DECW   X
+0006 270E                              JREQ   ?NXT_0077
+0008 AE01BF                            LDW    X,#001BFH
+000B 89                                PUSHW  X
+000C 5F                                CLRW   X
+000D 89                                PUSHW  X
+000E AE0000     F                      LDW    X,#HIGH(?STR?STM8S_CLK?BASE)
+0011 CD0000     F                      CALL   ?assert_failed
+0014 5B04                              ADD    SP,#004H
+0016         ?NXT_0077:
+              ; SOURCE LINE # 448 
+0016 AE000C                            LDW    X,#0000CH
+0019 1301       F                      CPW    X,(001H,SP)   ; [ CLK_IT ]
+001B 2715                              JREQ   ?NXT_0078
+001D AE001C                            LDW    X,#0001CH
+0020 1301       F                      CPW    X,(001H,SP)   ; [ CLK_IT ]
+0022 270E                              JREQ   ?NXT_0078
+0024 AE01C0                            LDW    X,#001C0H
+0027 89                                PUSHW  X
+0028 5F                                CLRW   X
+0029 89                                PUSHW  X
+002A AE0000     F                      LDW    X,#HIGH(?STR?STM8S_CLK?BASE)
+002D CD0000     F                      CALL   ?assert_failed
+0030 5B04                              ADD    SP,#004H
+0032         ?NXT_0078:
+              ; SOURCE LINE # 450 
+0032 1E05       F                      LDW    X,(005H,SP)   ; [ NewState ]
+0034 2718                              JREQ   ?ELSE_0069
+              ; SOURCE LINE # 452 
+0036 1E01       F                      LDW    X,(001H,SP)   ; [ CLK_IT ]
+0038 A3000C                            CPW    X,#0000CH
+003B 270B                              JREQ   ?CASE_0004
+003D A3001C                            CPW    X,#0001CH
+0040 2622                              JRNE   ?EPILOG_0012
+              ; SOURCE LINE # 455 
+0042 721450C5                          BSET   050C5H,#002H
+              ; SOURCE LINE # 456 
+0046 201C                              JRA    ?EPILOG_0012
+0048         ?CASE_0004:
+              ; SOURCE LINE # 458 
+0048 721450C8                          BSET   050C8H,#002H
+              ; SOURCE LINE # 459 
+004C 2016                              JRA    ?EPILOG_0012
+004E         ?ELSE_0069:
+              ; SOURCE LINE # 466 
+004E 1E01       F                      LDW    X,(001H,SP)   ; [ CLK_IT ]
+0050 A3000C                            CPW    X,#0000CH
+0053 270B                              JREQ   ?CASE_0006
+0055 A3001C                            CPW    X,#0001CH
+0058 260A                              JRNE   ?EPILOG_0012
+              ; SOURCE LINE # 469 
+005A 721550C5                          BRES   050C5H,#002H
+              ; SOURCE LINE # 470 
+005E 2004                              JRA    ?EPILOG_0012
+0060         ?CASE_0006:
+              ; SOURCE LINE # 472 
+0060 721550C8                          BRES   050C8H,#002H
+0064         ?EPILOG_0012:
+              ; SOURCE LINE # 479 
+0064 85                                POPW   X
+0065 81                                RET    
+              ; CLK_IT       (size=2).  parameter in AUTO
+              ; NewState     (size=2).  parameter in AUTO
+
+              ; FUNCTION ?CLK_ITConfig (END)
+
+              ; FUNCTION ?CLK_SYSCLKConfig (BEGIN)
+              ; Register-parameter CLK_Prescaler (XW) is relocated (auto)
+              ; SOURCE LINE # 486 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 490 
+0001 5D                                TNZW   X
+0002 274B                              JREQ   ?NXT_0086
+0004 A30008                            CPW    X,#00008H
+0007 2746                              JREQ   ?NXT_0086
+0009 AE0010                            LDW    X,#00010H
+000C 1301       F                      CPW    X,(001H,SP)   ; [ CLK_Prescaler ]
+000E 273F                              JREQ   ?NXT_0086
+0010 AE0018                            LDW    X,#00018H
+0013 1301       F                      CPW    X,(001H,SP)   ; [ CLK_Prescaler ]
+0015 2738                              JREQ   ?NXT_0086
+0017 AE0080                            LDW    X,#00080H
+001A 1301       F                      CPW    X,(001H,SP)   ; [ CLK_Prescaler ]
+001C 2731                              JREQ   ?NXT_0086
+001E 5C                                INCW   X
+001F 1301       F                      CPW    X,(001H,SP)   ; [ CLK_Prescaler ]
+0021 272C                              JREQ   ?NXT_0086
+0023 5C                                INCW   X
+0024 1301       F                      CPW    X,(001H,SP)   ; [ CLK_Prescaler ]
+0026 2727                              JREQ   ?NXT_0086
+0028 5C                                INCW   X
+0029 1301       F                      CPW    X,(001H,SP)   ; [ CLK_Prescaler ]
+002B 2722                              JREQ   ?NXT_0086
+002D 5C                                INCW   X
+002E 1301       F                      CPW    X,(001H,SP)   ; [ CLK_Prescaler ]
+0030 271D                              JREQ   ?NXT_0086
+0032 5C                                INCW   X
+0033 1301       F                      CPW    X,(001H,SP)   ; [ CLK_Prescaler ]
+0035 2718                              JREQ   ?NXT_0086
+0037 5C                                INCW   X
+0038 1301       F                      CPW    X,(001H,SP)   ; [ CLK_Prescaler ]
+003A 2713                              JREQ   ?NXT_0086
+003C 5C                                INCW   X
+003D 1301       F                      CPW    X,(001H,SP)   ; [ CLK_Prescaler ]
+003F 270E                              JREQ   ?NXT_0086
+0041 AE01EA                            LDW    X,#001EAH
+0044 89                                PUSHW  X
+0045 5F                                CLRW   X
+0046 89                                PUSHW  X
+0047 AE0000     F                      LDW    X,#HIGH(?STR?STM8S_CLK?BASE)
+004A CD0000     F                      CALL   ?assert_failed
+004D 5B04                              ADD    SP,#004H
+004F         ?NXT_0086:
+              ; SOURCE LINE # 492 
+004F 7B02       F                      LD     A,(002H,SP)   ; [ CLK_Prescaler + 01H ]
+0051 A580                              BCP    A,#080H
+0053 260E                              JRNE   ?ELSE_0073
+              ; SOURCE LINE # 494 
+0055 A6E7                              LD     A,#0E7H
+0057 C450C6                            AND    A,050C6H
+005A C750C6                            LD     050C6H,A
+              ; SOURCE LINE # 495 
+005D 7B02       F                      LD     A,(002H,SP)   ; [ CLK_Prescaler + 01H ]
+005F A418                              AND    A,#018H
+0061 200C                              JRA    ?EPILOG_0013
+0063         ?ELSE_0073:
+              ; SOURCE LINE # 499 
+0063 A6F8                              LD     A,#0F8H
+0065 C450C6                            AND    A,050C6H
+0068 C750C6                            LD     050C6H,A
+              ; SOURCE LINE # 500 
+006B 7B02       F                      LD     A,(002H,SP)   ; [ CLK_Prescaler + 01H ]
+006D A407                              AND    A,#007H
+006F         ?EPILOG_0013:
+006F CA50C6                            OR     A,050C6H
+0072 C750C6                            LD     050C6H,A
+              ; SOURCE LINE # 503 
+0075 85                                POPW   X
+0076 81                                RET    
+              ; CLK_Prescaler (size=2).  parameter in AUTO
+
+              ; FUNCTION ?CLK_SYSCLKConfig (END)
+
+              ; FUNCTION ?CLK_SWIMConfig (BEGIN)
+              ; Register-parameter CLK_SWIMDivider (XW) is relocated (auto)
+              ; SOURCE LINE # 510 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 514 
+0001 5D                                TNZW   X
+0002 2711                              JREQ   ?NXT_0092
+0004 5A                                DECW   X
+0005 270E                              JREQ   ?NXT_0092
+0007 AE0202                            LDW    X,#00202H
+000A 89                                PUSHW  X
+000B 5F                                CLRW   X
+000C 89                                PUSHW  X
+000D AE0000     F                      LDW    X,#HIGH(?STR?STM8S_CLK?BASE)
+0010 CD0000     F                      CALL   ?assert_failed
+0013 5B04                              ADD    SP,#004H
+0015         ?NXT_0092:
+              ; SOURCE LINE # 516 
+0015 1E01       F                      LDW    X,(001H,SP)   ; [ CLK_SWIMDivider ]
+0017 2706                              JREQ   ?ELSE_0077
+              ; SOURCE LINE # 519 
+0019 721050CD                          BSET   050CDH,#000H
+001D 2004                              JRA    ?EPILOG_0014
+001F         ?ELSE_0077:
+              ; SOURCE LINE # 524 
+001F 721150CD                          BRES   050CDH,#000H
+0023         ?EPILOG_0014:
+              ; SOURCE LINE # 527 
+0023 85                                POPW   X
+0024 81                                RET    
+              ; CLK_SWIMDivider (size=2).  parameter in AUTO
+
+              ; FUNCTION ?CLK_SWIMConfig (END)
+
+              ; FUNCTION ?CLK_ClockSecuritySystemEnable (BEGIN)
+              ; SOURCE LINE # 539 
+0000 721050C8                          BSET   050C8H,#000H
+              ; SOURCE LINE # 540 
+0004 81                                RET    
+
+              ; FUNCTION ?CLK_ClockSecuritySystemEnable (END)
+
+              ; FUNCTION ?CLK_GetSYSCLKSource (BEGIN)
+              ; SOURCE LINE # 550 
+0000 C650C3                            LD     A,050C3H
+0003 5F                                CLRW   X
+0004 97                                LD     XL,A
+              ; SOURCE LINE # 551 
+0005 81                                RET    
+
+              ; FUNCTION ?CLK_GetSYSCLKSource (END)
+
+              ; FUNCTION ?CLK_GetClockFreq (BEGIN)
+              ; SOURCE LINE # 558 
+0000 5208                              SUB    SP,#008H
+              ; SOURCE LINE # 561 
+0002 5F                                CLRW   X
+0003 1F01       F                      LDW    (001H,SP),X   ; [ clockfrequency ]
+0005 1F03       F                      LDW    (003H,SP),X   ; [ clockfrequency + 02H ]
+              ; SOURCE LINE # 563 
+0007 1F07       F                      LDW    (007H,SP),X   ; [ tmp ]
+              ; SOURCE LINE # 566 
+0009 C650C3                            LD     A,050C3H
+000C 97                                LD     XL,A
+000D 1F05       F                      LDW    (005H,SP),X   ; [ clocksource ]
+              ; SOURCE LINE # 568 
+000F A1E1                              CP     A,#0E1H
+0011 2624                              JRNE   ?ELSE_0080
+              ; SOURCE LINE # 570 
+0013 C650C6                            LD     A,050C6H
+0016 A418                              AND    A,#018H
+              ; SOURCE LINE # 571 
+0018 44                                SRL    A
+0019 44                                SRL    A
+001A 44                                SRL    A
+001B 6B07       F                      LD     (007H,SP),A   ; [ tmp ]
+              ; SOURCE LINE # 572 
+001D 97                                LD     XL,A
+001E D60000     F                      LD     A,(HSIDivFactor + 00H,X)
+              ; SOURCE LINE # 573 
+0021 CD0000     F                      CALL   ?C?uchartol
+0024 CD0000     F DNF                  CALL   ?C?mv4_bc2sk
+0027 CD0000     F DNF            M(07)  CALL  ?C?mv4_pg2bc
+002A         ?DATASTART_0017:
+002A 00                             M  DB     000H
+002B F4                             M  DB     0F4H
+002C 24                             M  DB     024H
+002D 00                             M  DB     000H
+002E         ?DATAEND_0017:
+002E CD0000     F DNF                  CALL   ?C?divu3232
+0031 4F                                CLR    A
+0032 CD0000     F                      CALL   ?C?mv4_bc2isa
+0035 201C                              JRA    ?NXT_0096
+0037         ?ELSE_0080:
+              ; SOURCE LINE # 575 
+0037 AE00D2                            LDW    X,#000D2H
+003A 1305       F                      CPW    X,(005H,SP)   ; [ clocksource ]
+003C 260B                              JRNE   ?ELSE_0081
+              ; SOURCE LINE # 577 
+003E 5F                                CLRW   X
+003F 5C                                INCW   X
+0040 1F01       F                      LDW    (001H,SP),X   ; [ clockfrequency ]
+0042 AEF400                            LDW    X,#0F400H
+0045 1F03       F                      LDW    (003H,SP),X   ; [ clockfrequency + 02H ]
+0047 200A                              JRA    ?NXT_0096
+0049         ?ELSE_0081:
+              ; SOURCE LINE # 581 
+0049 AE016E                            LDW    X,#0016EH
+004C 1F01       F                      LDW    (001H,SP),X   ; [ clockfrequency ]
+004E AE3600                            LDW    X,#03600H
+0051 1F03       F                      LDW    (003H,SP),X   ; [ clockfrequency + 02H ]
+0053         ?NXT_0096:
+              ; SOURCE LINE # 584 
+0053 4F                                CLR    A
+0054 CD0000     F DNF                  CALL   ?C?mv4_isa2bc
+              ; SOURCE LINE # 586 
+0057 5B08                              ADD    SP,#008H
+0059 81                                RET    
+              ; clockfrequency unsigned long  (size=4-Alg). Automatic variable  in AUTO
+              ; clocksource  (size=2). Automatic variable  in AUTO
+              ; tmp          unsigned char  (size=1). Automatic variable  in AUTO
+              ; presc        unsigned char  (size=1). Automatic variable  in AUTO
+
+              ; FUNCTION ?CLK_GetClockFreq (END)
+
+              ; FUNCTION ?CLK_AdjustHSICalibrationValue (BEGIN)
+              ; Register-parameter CLK_HSICalibrationValue (XW) is relocated (auto)
+              ; SOURCE LINE # 595 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 599 
+0001 5D                                TNZW   X
+0002 2731                              JREQ   ?NXT_0099
+0004 5A                                DECW   X
+0005 272E                              JREQ   ?NXT_0099
+0007 AE0002                            LDW    X,#00002H
+000A 1301       F                      CPW    X,(001H,SP)   ; [ CLK_HSICalibrationValue ]
+000C 2727                              JREQ   ?NXT_0099
+000E 5C                                INCW   X
+000F 1301       F                      CPW    X,(001H,SP)   ; [ CLK_HSICalibrationValue ]
+0011 2722                              JREQ   ?NXT_0099
+0013 5C                                INCW   X
+0014 1301       F                      CPW    X,(001H,SP)   ; [ CLK_HSICalibrationValue ]
+0016 271D                              JREQ   ?NXT_0099
+0018 5C                                INCW   X
+0019 1301       F                      CPW    X,(001H,SP)   ; [ CLK_HSICalibrationValue ]
+001B 2718                              JREQ   ?NXT_0099
+001D 5C                                INCW   X
+001E 1301       F                      CPW    X,(001H,SP)   ; [ CLK_HSICalibrationValue ]
+0020 2713                              JREQ   ?NXT_0099
+0022 5C                                INCW   X
+0023 1301       F                      CPW    X,(001H,SP)   ; [ CLK_HSICalibrationValue ]
+0025 270E                              JREQ   ?NXT_0099
+0027 AE0257                            LDW    X,#00257H
+002A 89                                PUSHW  X
+002B 5F                                CLRW   X
+002C 89                                PUSHW  X
+002D AE0000     F                      LDW    X,#HIGH(?STR?STM8S_CLK?BASE)
+0030 CD0000     F                      CALL   ?assert_failed
+0033 5B04                              ADD    SP,#004H
+0035         ?NXT_0099:
+              ; SOURCE LINE # 602 
+0035 C650CC                            LD     A,050CCH
+0038 A4F8                              AND    A,#0F8H
+003A 1A02       F                      OR     A,(002H,SP)   ; [ CLK_HSICalibrationValue + 01H ]
+003C C750CC                            LD     050CCH,A
+              ; SOURCE LINE # 604 
+003F 85                                POPW   X
+0040 81                                RET    
+              ; CLK_HSICalibrationValue (size=2).  parameter in AUTO
+
+              ; FUNCTION ?CLK_AdjustHSICalibrationValue (END)
+
+              ; FUNCTION ?CLK_SYSCLKEmergencyClear (BEGIN)
+              ; SOURCE LINE # 617 
+0000 721150C5                          BRES   050C5H,#000H
+              ; SOURCE LINE # 618 
+0004 81                                RET    
+
+              ; FUNCTION ?CLK_SYSCLKEmergencyClear (END)
+
+              ; FUNCTION ?CLK_GetFlagStatus (BEGIN)
+              ; Register-parameter CLK_FLAG (XW) is relocated (auto)
+              ; SOURCE LINE # 627 
+0000 89                                PUSHW  X
+0001 5205                              SUB    SP,#005H
+              ; SOURCE LINE # 631 
+0003 0F03       F                      CLR    (003H,SP)   ; [ tmpreg ]
+              ; SOURCE LINE # 632 
+0005 5F                                CLRW   X
+0006 1F04       F                      LDW    (004H,SP),X   ; [ bitstatus ]
+              ; SOURCE LINE # 635 
+0008 AE0110                            LDW    X,#00110H
+000B 1306       F                      CPW    X,(006H,SP)   ; [ CLK_FLAG ]
+000D 2746                              JREQ   ?NXT_0107
+000F AE0102                            LDW    X,#00102H
+0012 1306       F                      CPW    X,(006H,SP)   ; [ CLK_FLAG ]
+0014 273F                              JREQ   ?NXT_0107
+0016 AE0202                            LDW    X,#00202H
+0019 1306       F                      CPW    X,(006H,SP)   ; [ CLK_FLAG ]
+001B 2738                              JREQ   ?NXT_0107
+001D AE0308                            LDW    X,#00308H
+0020 1306       F                      CPW    X,(006H,SP)   ; [ CLK_FLAG ]
+0022 2731                              JREQ   ?NXT_0107
+0024 AE0301                            LDW    X,#00301H
+0027 1306       F                      CPW    X,(006H,SP)   ; [ CLK_FLAG ]
+0029 272A                              JREQ   ?NXT_0107
+002B AE0408                            LDW    X,#00408H
+002E 1306       F                      CPW    X,(006H,SP)   ; [ CLK_FLAG ]
+0030 2723                              JREQ   ?NXT_0107
+0032 AE0402                            LDW    X,#00402H
+0035 1306       F                      CPW    X,(006H,SP)   ; [ CLK_FLAG ]
+0037 271C                              JREQ   ?NXT_0107
+0039 AE0504                            LDW    X,#00504H
+003C 1306       F                      CPW    X,(006H,SP)   ; [ CLK_FLAG ]
+003E 2715                              JREQ   ?NXT_0107
+0040 AE0502                            LDW    X,#00502H
+0043 1306       F                      CPW    X,(006H,SP)   ; [ CLK_FLAG ]
+0045 270E                              JREQ   ?NXT_0107
+0047 AE027B                            LDW    X,#0027BH
+004A 89                                PUSHW  X
+004B 5F                                CLRW   X
+004C 89                                PUSHW  X
+004D AE0000     F                      LDW    X,#HIGH(?STR?STM8S_CLK?BASE)
+0050 CD0000     F                      CALL   ?assert_failed
+0053 5B04                              ADD    SP,#004H
+0055         ?NXT_0107:
+              ; SOURCE LINE # 638 
+0055 7B06       F                      LD     A,(006H,SP)   ; [ CLK_FLAG ]
+0057 B703       F                      LD     ?BH,A
+0059 3F04       F                      CLR    ?BL
+005B BE02       F                      LDW    X,?BH.w
+005D 1F01       F                      LDW    (001H,SP),X   ; [ statusreg ]
+              ; SOURCE LINE # 641 
+005F A30100                            CPW    X,#00100H
+0062 2607                              JRNE   ?ELSE_0091
+              ; SOURCE LINE # 643 
+0064 C650C0                            LD     A,050C0H
+0067 6B03       F                      LD     (003H,SP),A   ; [ tmpreg ]
+0069 202F                              JRA    ?NXT_0108
+006B         ?ELSE_0091:
+              ; SOURCE LINE # 645 
+006B AE0200                            LDW    X,#00200H
+006E 1301       F                      CPW    X,(001H,SP)   ; [ statusreg ]
+0070 2607                              JRNE   ?ELSE_0092
+              ; SOURCE LINE # 647 
+0072 C650C1                            LD     A,050C1H
+0075 6B03       F                      LD     (003H,SP),A   ; [ tmpreg ]
+0077 2021                              JRA    ?NXT_0108
+0079         ?ELSE_0092:
+              ; SOURCE LINE # 649 
+0079 AE0300                            LDW    X,#00300H
+007C 1301       F                      CPW    X,(001H,SP)   ; [ statusreg ]
+007E 2607                              JRNE   ?ELSE_0093
+              ; SOURCE LINE # 651 
+0080 C650C5                            LD     A,050C5H
+0083 6B03       F                      LD     (003H,SP),A   ; [ tmpreg ]
+0085 2013                              JRA    ?NXT_0108
+0087         ?ELSE_0093:
+              ; SOURCE LINE # 653 
+0087 AE0400                            LDW    X,#00400H
+008A 1301       F                      CPW    X,(001H,SP)   ; [ statusreg ]
+008C 2607                              JRNE   ?ELSE_0094
+              ; SOURCE LINE # 655 
+008E C650C8                            LD     A,050C8H
+0091 6B03       F                      LD     (003H,SP),A   ; [ tmpreg ]
+0093 2005                              JRA    ?NXT_0108
+0095         ?ELSE_0094:
+              ; SOURCE LINE # 659 
+0095 C650C9                            LD     A,050C9H
+0098 6B03       F                      LD     (003H,SP),A   ; [ tmpreg ]
+009A         ?NXT_0108:
+              ; SOURCE LINE # 662 
+009A 7B07       F                      LD     A,(007H,SP)   ; [ CLK_FLAG + 01H ]
+009C 5F                                CLRW   X
+009D 1503       F                      BCP    A,(003H,SP)   ; [ tmpreg ]
+009F 2701                              JREQ   ?ELSE_0095
+              ; SOURCE LINE # 664 
+00A1 5C                                INCW   X
+00A2         ?ELSE_0095:
+              ; SOURCE LINE # 674 
+00A2 5B07                              ADD    SP,#007H
+00A4 81                                RET    
+              ; CLK_FLAG     (size=2).  parameter in AUTO
+              ; statusreg    unsigned short  (size=2-Alg). Automatic variable  in AUTO
+              ; tmpreg       unsigned char  (size=1). Automatic variable  in AUTO
+              ; bitstatus    (size=2). Automatic variable  in AUTO
+
+              ; FUNCTION ?CLK_GetFlagStatus (END)
+
+              ; FUNCTION ?CLK_GetITStatus (BEGIN)
+              ; Register-parameter CLK_IT (XW) is relocated (auto)
+              ; SOURCE LINE # 682 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 685 
+0001 5F                                CLRW   X
+0002 89                                PUSHW  X
+              ; SOURCE LINE # 688 
+0003 AE000C                            LDW    X,#0000CH
+0006 1303       F                      CPW    X,(003H,SP)   ; [ CLK_IT ]
+0008 2715                              JREQ   ?NXT_0118
+000A AE001C                            LDW    X,#0001CH
+000D 1303       F                      CPW    X,(003H,SP)   ; [ CLK_IT ]
+000F 270E                              JREQ   ?NXT_0118
+0011 AE02B0                            LDW    X,#002B0H
+0014 89                                PUSHW  X
+0015 5F                                CLRW   X
+0016 89                                PUSHW  X
+0017 AE0000     F                      LDW    X,#HIGH(?STR?STM8S_CLK?BASE)
+001A CD0000     F                      CALL   ?assert_failed
+001D 5B04                              ADD    SP,#004H
+001F         ?NXT_0118:
+              ; SOURCE LINE # 690 
+001F AE001C                            LDW    X,#0001CH
+0022 7B04       F                      LD     A,(004H,SP)   ; [ CLK_IT + 01H ]
+0024 1303       F                      CPW    X,(003H,SP)   ; [ CLK_IT ]
+0026 2611                              JRNE   ?ELSE_0101
+              ; SOURCE LINE # 693 
+0028 C450C5                            AND    A,050C5H
+002B 5F                                CLRW   X
+002C A10C                              CP     A,#00CH
+002E 2605                              JRNE   ?ELSE_0102
+              ; SOURCE LINE # 695 
+0030 5C                                INCW   X
+0031 1F01       F                      LDW    (001H,SP),X   ; [ bitstatus ]
+0033 2013                              JRA    ?NXT_0119
+0035         ?ELSE_0102:
+              ; SOURCE LINE # 699 
+0035 1F01       F                      LDW    (001H,SP),X   ; [ bitstatus ]
+0037 200F                              JRA    ?NXT_0119
+0039         ?ELSE_0101:
+              ; SOURCE LINE # 705 
+0039 C450C8                            AND    A,050C8H
+003C 5F                                CLRW   X
+003D A10C                              CP     A,#00CH
+003F 2605                              JRNE   ?ELSE_0103
+              ; SOURCE LINE # 707 
+0041 5C                                INCW   X
+0042 1F01       F                      LDW    (001H,SP),X   ; [ bitstatus ]
+0044 2002                              JRA    ?NXT_0119
+0046         ?ELSE_0103:
+              ; SOURCE LINE # 711 
+0046 1F01       F                      LDW    (001H,SP),X   ; [ bitstatus ]
+0048         ?NXT_0119:
+              ; SOURCE LINE # 716 
+0048 1E01       F                      LDW    X,(001H,SP)   ; [ bitstatus ]
+              ; SOURCE LINE # 718 
+004A 5B04                              ADD    SP,#004H
+004C 81                                RET    
+              ; CLK_IT       (size=2).  parameter in AUTO
+              ; bitstatus    (size=2). Automatic variable  in AUTO
+
+              ; FUNCTION ?CLK_GetITStatus (END)
+
+              ; FUNCTION ?CLK_ClearITPendingBit (BEGIN)
+              ; Register-parameter CLK_IT (XW) is relocated (auto)
+              ; SOURCE LINE # 726 
+0000 89                                PUSHW  X
+              ; SOURCE LINE # 730 
+0001 A3000C                            CPW    X,#0000CH
+0004 2715                              JREQ   ?NXT_0124
+0006 AE001C                            LDW    X,#0001CH
+0009 1301       F                      CPW    X,(001H,SP)   ; [ CLK_IT ]
+000B 270E                              JREQ   ?NXT_0124
+000D AE02DA                            LDW    X,#002DAH
+0010 89                                PUSHW  X
+0011 5F                                CLRW   X
+0012 89                                PUSHW  X
+0013 AE0000     F                      LDW    X,#HIGH(?STR?STM8S_CLK?BASE)
+0016 CD0000     F                      CALL   ?assert_failed
+0019 5B04                              ADD    SP,#004H
+001B         ?NXT_0124:
+              ; SOURCE LINE # 732 
+001B AE000C                            LDW    X,#0000CH
+001E A6F7                              LD     A,#0F7H
+0020 1301       F                      CPW    X,(001H,SP)   ; [ CLK_IT ]
+0022 2606                              JRNE   ?ELSE_0107
+              ; SOURCE LINE # 735 
+0024 721750C8                          BRES   050C8H,#003H
+0028 2006                              JRA    ?EPILOG_0022
+002A         ?ELSE_0107:
+              ; SOURCE LINE # 740 
+002A C450C5                            AND    A,050C5H
+002D C750C5                            LD     050C5H,A
+0030         ?EPILOG_0022:
+              ; SOURCE LINE # 743 
+0030 85                                POPW   X
+0031 81                                RET    
+              ; CLK_IT       (size=2).  parameter in AUTO
+
+              ; FUNCTION ?CLK_ClearITPendingBit (END)
+
+RCSTM8 COMPILER V2.42.12.083
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1645    ----
+   CONSTANT SIZE    =     82    ----
+   DATA SIZE        =   ----    ----
+   PAGE0 SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+RCSTM8 COMPILATION COMPLETE.  0 WARNING,  0 ERROR

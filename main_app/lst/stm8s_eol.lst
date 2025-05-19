@@ -1,0 +1,974 @@
+RCSTM8 COMPILER V2.42.12.083,  STM8S_EOL          05/19/25  15:34:39
+
+QCW(0x00963FA0)
+
+RCSTM8 COMPILER V2.42.12.083, COMPILATION OF MODULE STM8S_EOL 
+OBJECT MODULE PLACED IN C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\bin\stm8s_eol.obj
+COMPILER INVOKED BY: QUIET GENERATEDEPFILE CODE DB OJ(C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\bin\stm8s_eol.obj) PR(C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\lst\stm8s_eol.lst) PIN(C:\Raisonance\Ride\Inc;C:\Raisonance\Ride\Inc\ST7;C:\Raisonance\Ride\Inc\STM8;C:\Users\sravi\Downloads\E1M2_0036\E1M2_0036\main_app\inc) STM8(SMALL) O(3,SIZE) NOINITSTATICVAR SMALLOBJECT ET(INT) 
+
+stmt level    source
+   1          /* Includes ------------------------------------------------------------------*/
+   2          #include "stm8s_eol.h"
+   3          #include "stm8s_can.h"
+   4          #include "stm8s_Kline.h"
+   5          #include "stm8s_flash.h"
+   6          
+   7          /* Macro Definitions ********************************************************/
+   8          #define KLINE_RX_BUF_SIZE 10
+   9          /* Macro Definitions ********************************************************/
+  10          
+  11          
+  12          //Source code Implementation Steps
+  13          
+  14          //variable and prototype declaration
+  15          at 0x8240 code const unsigned char date[8]    = {'0','4','0','5','2','0','2','4'};  //MM/DD/YYYY  Apr/05/2024
+  16          at 0x8248 code const unsigned char version[8] = "#V-0.50#";     //The string is limited to 8 characters  //0.x version represents the baseline version, not for release  
+  17          at 0x8250 code const unsigned char sku_1[8]   = "#FOR01#";      //The string is limited to 8 characters
+  18          at 0x8258 code const unsigned char sku_2[8]   = "#123456#";     //The string is limited to 8 characters
+  19          at 0x8260 code const unsigned char sku_3[8]   = "#ABCDEF#";     //The string is limited to 8 characters
+  20          at 0x8268 code const unsigned char sku_4[8]   = "#abcdef#";     //The string is limited to 8 characters
+  21          at 0x8270 code const unsigned char sku_5[8]   = "#FORD#";       //The string is limited to 8 characters
+  22          at 0x8278 code const unsigned char sku_6[8]   = "#KEYFOB#";     //The string is limited to 8 characters
+  23          at 0x8280 code const unsigned char sku_7[8]   = "#IMMKEY#";     //The string is limited to 8 characters
+  24          
+  25          uint8_t Tester_Present          = RESET;
+  26          uint8_t Timeout_EOL_Flag        = RESET;
+  27          uint8_t buf[8]                  = {0};
+  28          uint8_t kline_buf[8]            = {0};
+  29          uint8_t uart_master_data[12]    = {0};
+  30          
+  31          EOL_State gEOL_State = EOL_ENTRY;
+  32          
+  33          //Implement the below interface in the can application side
+  34          void EOL_tester_function(void)
+  35          {
+  36   1          buf[0] = 0xAA; buf[1] = 0xAA; buf[2] = 0xAA; buf[3] = 0xAA;
+  37   1          buf[4] = 0xAA; buf[5] = 0xAA; buf[6] = 0xAA; buf[7] = 0xAA;
+  38   1      
+  39   1           if(l_can_receive_flag == 1)
+  40   1          {
+  41   2              l_can_receive_flag = 0;
+  42   2          
+  43   2              if( (_Data[0] == 0x02) && (_Data[1] == 0x10) )
+  44   2              {
+  45   3                  if(_Data[2] == 0x01)
+  46   3                  {
+  47   4                      buf[0] = 0x02; buf[1] = 0x50; buf[2] = 0x01; buf[3] = 0x00;
+  48   4                      buf[4] = 0x00; buf[5] = 0x00; buf[6] = 0x00; buf[7] = 0x00;
+  49   4                      CAN_Transmit(0x7E7,0,0,8,&buf);
+  50   4                  }
+  51   3                  else if(_Data[2] == 0x00)
+  52   3                  {
+  53   4                      gEOL_State=EOL_EXIT;
+  54   4                      buf[0] = 0x02; buf[1] = 0x50; buf[2] = 0x00; buf[3] = 0x00;
+  55   4                      buf[4] = 0x00; buf[5] = 0x00; buf[6] = 0x00; buf[7] = 0x00;
+  56   4                      CAN_Transmit(0x7E7,0,0,8,&buf);
+  57   4                  }
+  58   3              }
+  59   2      
+  60   2              if( (_Data[0] == 0x02) && (_Data[1] == 0x2F) )
+  61   2              {
+  62   3                  if((_Data[2] >> EOL_CTRL_BUZZER_POS) & 0x1) //Check for buzzer On/Off cmd
+  63   3                      {
+  64   4                          GPIOC->ODR |= 1 << 1;
+  65   4                      }
+  66   3                  else
+  67   3                      {
+  68   4                         GPIOC->ODR &= ~(1 << 1);  
+  69   4                      }
+  70   3                  
+  71   3                  if((_Data[2] >> EOL_CTRL_G_LED_POS) & 0x1) //Check for green led On/Off cmd
+  72   3                      {
+  73   4                          GPIOC->ODR |= 1 << 2;  
+  74   4                      }
+  75   3                  else
+  76   3                      {
+  77   4                          GPIOC->ODR &=~(1 << 2);
+  78   4                      }
+  79   3                  
+  80   3                  
+  81   3                  if((_Data[2] >> EOL_CTRL_R_LED_POS) & 0x1) //Check for red_led On/Off cmd
+  82   3                      {
+  83   4                          GPIOC->ODR |= 1 << 3; 
+  84   4                      }
+  85   3                  else
+  86   3                      {
+  87   4                          GPIOC->ODR &=~(1 << 3);
+  88   4                      } 
+  89   3                  
+  90   3                  buf[0] = 0x02; buf[1] = 0x6F; buf[2] = (_Data[2] & 0x07);
+  91   3                  CAN_Transmit(0x7E7,0,0,8,&buf);          
+  92   3              }
+  93   2              else if( (_Data[0] == 0x02) && (_Data[1] == 0x22) )
+  94   2              {
+  95   3                  if(_Data[2] == 0x08)
+  96   3                  {
+  97   4                      buf[0] = 0x03; buf[1] = 0x62; buf[2] = 0x08;
+  98   4                      if((GPIOB->IDR & 0x01) == 0x01)  
+  99   4                      {
+ 100   5                          buf[3] = 0x00;   //Switch Position A or KEYFOB LEARN POSITION
+ 101   5                      }
+ 102   4                      else
+ 103   4                      {
+ 104   5                          buf[3] = 0x01;   //Switch Position B or KEY IMM LEARN POSITION
+ 105   5                      }        
+ 106   4                      CAN_Transmit(0x7E7,0,0,8,&buf);
+ 107   4                  }
+ 108   3                  else if(_Data[2] == 0x10)
+ 109   3                  {
+ 110   4                      #if 1
+ 111   4                          buf[0] = 0x07; buf[1] = 0x62; buf[2] = 0x10;    //partnumber check
+ 112   4                          buf[3] = sku_1[1]; buf[4] = sku_1[2]; buf[5] = sku_1[3]; buf[6] = sku_1[4]; buf[7] = sku_1[5];
+ 113   4                          CAN_Transmit(0x7E7,0,0,8,&buf);
+ 114   4                      #else  //Multiple Part numbers
+       4                          buf[0] = 0x10; buf[1] = 0x37; buf[2] = 0x62; buf[3] = 0x10;   //partnumber check
+       4                          buf[4] = 'F'; buf[5] = 'L'; buf[6] = 'O'; buf[7] = 'W';
+       4                          CAN_Transmit(0x7E7,0,0,8,&buf);
+       4                          wait_time(2);
+       4                  
+       4                          buf[0] = 0x21; buf[1] = 0x01; 
+       4                          buf[2] = sku_1[1]; buf[3] = sku_1[2]; buf[4] = sku_1[3];  //partnumber check
+       4                          buf[5] = sku_1[4]; buf[6] = sku_1[5]; buf[7] = sku_1[6];
+       4                          CAN_Transmit(0x7E7,0,0,8,&buf);  
+       4                          wait_time(2); 
+       4                  
+       4                          buf[0] = 0x22; buf[1] = 0x02; 
+       4                          buf[2] = sku_2[1]; buf[3] = sku_2[2]; buf[4] = sku_2[3];  //partnumber check
+       4                          buf[5] = sku_2[4]; buf[6] = sku_2[5]; buf[7] = sku_2[6];
+       4                          CAN_Transmit(0x7E7,0,0,8,&buf);  
+       4                          wait_time(2);  
+       4                  
+       4                          buf[0] = 0x23; buf[1] = 0x03; 
+       4                          buf[2] = sku_3[1]; buf[3] = sku_3[2]; buf[4] = sku_3[3];  //partnumber check
+       4                          buf[5] = sku_3[4]; buf[6] = sku_3[5]; buf[7] = sku_3[6];
+       4                          CAN_Transmit(0x7E7,0,0,8,&buf);  
+       4                          wait_time(2);
+       4                  
+       4                          buf[0] = 0x24; buf[1] = 0x04; 
+       4                          buf[2] = sku_4[1]; buf[3] = sku_4[2]; buf[4] = sku_4[3];  //partnumber check
+       4                          buf[5] = sku_4[4]; buf[6] = sku_4[5]; buf[7] = sku_4[6];
+       4                          CAN_Transmit(0x7E7,0,0,8,&buf);  
+       4                          wait_time(2);
+       4                  
+       4                          buf[0] = 0x25; buf[1] = 0x05; 
+       4                          buf[2] = sku_5[1]; buf[3] = sku_5[2]; buf[4] = sku_5[3];  //partnumber check
+       4                          buf[5] = sku_5[4]; buf[6] = sku_5[5]; buf[7] = sku_5[6];
+       4                          CAN_Transmit(0x7E7,0,0,8,&buf);  
+       4                          wait_time(2);
+       4                  
+       4                          buf[0] = 0x26; buf[1] = 0x06; 
+       4                          buf[2] = sku_6[1]; buf[3] = sku_6[2]; buf[4] = sku_6[3];  //partnumber check
+       4                          buf[5] = sku_6[4]; buf[6] = sku_6[5]; buf[7] = sku_6[6];
+       4                          CAN_Transmit(0x7E7,0,0,8,&buf);  
+       4                          wait_time(2);
+       4                  
+       4                          buf[0] = 0x27; buf[1] = 0x07; 
+       4                          buf[2] = sku_7[1]; buf[3] = sku_7[2]; buf[4] = sku_7[3];  //partnumber check
+       4                          buf[5] = sku_7[4]; buf[6] = sku_7[5]; buf[7] = sku_7[6];
+       4                          CAN_Transmit(0x7E7,0,0,8,&buf);  
+       4                          wait_time(2);
+       4                      #endif
+ 162   4                  }
+ 163   3                  else if(_Data[2] == 0x20)
+ 164   3                  {
+ 165   4                      buf[0] = 0x07; buf[1] = 0x62; buf[2] = 0x20;    //Software Version
+ 166   4                      buf[3] = version[1];
+ 167   4                      buf[4] = version[2];
+ 168   4                      buf[5] = version[3];
+ 169   4                      buf[6] = version[4];
+ 170   4                      buf[7] = version[5];
+ 171   4                      CAN_Transmit(0x7E7,0,0,8,&buf);
+ 172   4                  }
+ 173   3                  else
+ 174   3                  {
+ 175   4                  }
+ 176   3              }
+ 177   2              else if( (_Data[0] == 0x03) && (_Data[1] == 0x22) && (_Data[2] == 0x40))
+ 178   2              {
+ 179   3                  if(_Data[3] == 0x00)
+ 180   3                  {
+ 181   4                      FLASH_EraseByte(0x4100);
+ 182   4                      FLASH_EraseByte(0x4101);
+ 183   4                      buf[0] = 0x05; buf[1] = 0x62; buf[2] = 0x40; buf[3] = 0x00;  //Clearing the Dongle used count
+ 184   4                      buf[4] = FLASH_ReadByte(0x4101);  //Reading the keys programmed count from the flash location 0x4101
+ 185   4                      buf[5] = FLASH_ReadByte(0x4100);  //Reading the fobs programmed count from the flash location 0x4100
+ 186   4                      if((buf[3] == 0) && (buf[4] == 0))
+ 187   4                      {
+ 188   5                          GPIOC->ODR &=~(1 << 3);
+ 189   5                          GPIOC->ODR |= 1 << 2;
+ 190   5                      }
+ 191   4                      CAN_Transmit(0x7E7,0,0,8,&buf);
+ 192   4                  }
+ 193   3                  if(_Data[3] == 0x01)
+ 194   3                  {
+ 195   4                      buf[0] = 0x05; buf[1] = 0x62; buf[2] = 0x40; buf[3] = 0x01;   //Dongle Used Count
+ 196   4                      buf[4] = FLASH_ReadByte(0x4101);  //Reading the keys programmed count from the flash location 0x4101
+ 197   4                      buf[5] = FLASH_ReadByte(0x4100);  //Reading the fobs programmed count from the flash location 0x4100
+ 198   4                      CAN_Transmit(0x7E7,0,0,8,&buf);
+ 199   4                  }
+ 200   3              }
+ 201   2              else
+ 202   2              {
+ 203   3              }
+ 204   2          }
+ 205   1      }
+ 206          
+ 207          
+ 208          
+ 209          /*******************************************************************/
+ 210          /*                                                                 */
+ 211          /*   FUNCTION NAME  :   uart_process_data_2                        */
+ 212          /*                                                                 */
+ 213          /*   FUNCTION BRIEF :   End of line tester kline process           */
+ 214          /*                                                                 */
+ 215          /*                                                                 */
+ 216          /*   PARAMETERS     :   None                                       */
+ 217          /*                                                                 */
+ 218          /*   RETURN VALUES  :   None                                       */
+ 219          /*                                                                 */
+ 220          /*******************************************************************/
+ 221          void uart_process_data_2(u8* BuffPointer,u8 rec_length)
+ 222          {
+ 223   1          u8 l_data[10];
+ 224   1          u8 l_lenght = 0;
+ 225   1          u8 iLoop=0;
+ 226   1          for(iLoop = 0;iLoop < rec_length;iLoop++)
+ 227   1          {
+ 228   2              uart_master_data[iLoop] = BuffPointer[iLoop];
+ 229   2          }
+ 230   1          uart_master_data[9] = rec_length;
+ 231   1      
+ 232   1          if( (uart_master_data[0] == 0x82) && (uart_master_data[1] == 0xC1) && (uart_master_data[2] == 0xF0) )
+ 233   1          {
+ 234   2              if( (uart_master_data[3] == 0x21) && (uart_master_data[4] == 0x01))
+ 235   2              {
+ 236   3                  l_data[0] = 0x83;
+ 237   3                  l_data[1] = 0xF0;
+ 238   3                  l_data[2] = 0xC1;
+ 239   3                  l_data[3] = 0x61;
+ 240   3                  l_data[4] = 0x01;
+ 241   3                  if((GPIOB->IDR & 0x01) == 0x01)  
+ 242   3                  {
+ 243   4                      l_data[5] = 0x00;   //Switch Position A or KEYFOB LEARN POSITION //This is OFF 
+ 244   4                  }
+ 245   3                  else
+ 246   3                  {
+ 247   4                      l_data[5] = 0x01;  //Switch Position B or KEY IMM LEARN POSITION //This is ON
+ 248   4                  }   
+ 249   3                  
+ 250   3              
+ 251   3                  //l_data[6] = 0x0B; //Automatically transmits this checksum    
+ 252   3                  l_lenght  = 6;
+ 253   3                  kline_transmit(l_data, l_lenght);
+ 254   3              }
+ 255   2          }
+ 256   1      }
+ 257          
+ 258          
+ 259          /*******************************************************************/
+ 260          /*                                                                 */
+ 261          /*   FUNCTION NAME  :   kline_receive_validate_message2            */
+ 262          /*                                                                 */
+ 263          /*   FUNCTION BRIEF :   received data will processed into kline    */
+ 264          /*                      frame                                      */
+ 265          /*                                                                 */
+ 266          /*   PARAMETERS     :   Received Byte                              */
+ 267          /*                                                                 */
+ 268          /*   RETURN VALUES  :   None                                       */
+ 269          /*                                                                 */
+ 270          /*******************************************************************/
+ 271          
+ 272          void kline_receive_validate_message2(uint8_t rx_data)
+ 273          {
+ 274   1          uint8_t rx_cs = 0;
+ 275   1      
+ 276   1          if (rx_count == (uint8_t)0x00)
+ 277   1          {
+ 278   2              if (((rx_data & 0xF0) == 0x80))
+ 279   2              {
+ 280   3                  // Load received data into variable
+ 281   3                  rcv_data[rx_count] = rx_data;
+ 282   3      
+ 283   3                  // The length of the k-line message is the first 6 bits of the first byte, plus 3 bytes of address (and 1 CRC byte)
+ 284   3                  receive_len = (0x3F & rcv_data[0]) + 3;
+ 285   3      
+ 286   3                  // Increment received data array index
+ 287   3      
+ 288   3                  rx_count++;
+ 289   3              }
+ 290   2              else
+ 291   2              {
+ 292   3                  // Else reset received data array index
+ 293   3                  rx_count = 0;
+ 294   3                  receive_len = 0;
+ 295   3              }
+ 296   2          }
+ 297   1      
+ 298   1          else if (rx_count == 1)
+ 299   1          {
+ 300   2              // Check if second byte is to the tester
+ 301   2              if ((rx_data == 0xC1))
+ 302   2              {
+ 303   3                  // Load received data into variable
+ 304   3                  rcv_data[rx_count] = rx_data;
+ 305   3      
+ 306   3                  // Increment received data array index
+ 307   3                  rx_count++;
+ 308   3              }
+ 309   2              else
+ 310   2              {
+ 311   3                  // Else reset received data array index
+ 312   3                  rx_count = 0;
+ 313   3                  receive_len = 0;
+ 314   3              }
+ 315   2          }
+ 316   1      
+ 317   1          else if (rx_count == 2)
+ 318   1          {
+ 319   2              // Check if second byte is from the immobilizer
+ 320   2              if (rx_data == 0xF0)
+ 321   2              {
+ 322   3                  // Load received data into variable
+ 323   3                  rcv_data[rx_count] = rx_data;
+ 324   3      
+ 325   3                  // Increment received data array index
+ 326   3                  rx_count++;
+ 327   3              }
+ 328   2              else
+ 329   2              {
+ 330   3                  // Else reset received data array index
+ 331   3                  rx_count = 0;
+ 332   3                  receive_len = 0;
+ 333   3              }
+ 334   2          }
+ 335   1      
+ 336   1          else
+ 337   1          {
+ 338   2              if (rx_count <= receive_len)
+ 339   2              {
+ 340   3                  rcv_data[rx_count] = rx_data;
+ 341   3      
+ 342   3                  if (rx_count == receive_len)
+ 343   3                  {
+ 344   4                      rx_cs = kline_checksum(rcv_data, receive_len);
+ 345   4      
+ 346   4                      if (rx_cs == rcv_data[rx_count])
+ 347   4                      {
+ 348   5                          uart_process_data_2(rcv_data, receive_len);
+ 349   5                          kline_total_rcv_cnt++;
+ 350   5                      }
+ 351   4                      rx_count = 0; //reset the receive count, after last byte is received
+ 352   4                      receive_len = 0;
+ 353   4                  }
+ 354   3                  else
+ 355   3                  {
+ 356   4                      rx_count++;
+ 357   4                  }
+ 358   3              }
+ 359   2              else
+ 360   2              {
+ 361   3                  rx_count = 0;
+ 362   3                  receive_len = 0;
+ 363   3              }
+ 364   2          }
+ 365   1      }
+ 366          
+ 367          /*****************************************************************************
+ 368           *
+ 369           *	End of file EOL.c
+ 370           *
+ 371           *****************************************************************************/
+RCSTM8 COMPILER V2.42.12.083
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+              ; FUNCTION ?EOL_tester_function (BEGIN)
+              ; SOURCE LINE # 36 
+0000 35AA0000   F                      MOV    buf,#0AAH
+0004 35AA0000   F                      MOV    buf + 01H,#0AAH
+0008 35AA0000   F                      MOV    buf + 02H,#0AAH
+000C 35AA0000   F                      MOV    buf + 03H,#0AAH
+              ; SOURCE LINE # 37 
+0010 35AA0000   F                      MOV    buf + 04H,#0AAH
+0014 35AA0000   F                      MOV    buf + 05H,#0AAH
+0018 35AA0000   F                      MOV    buf + 06H,#0AAH
+001C 35AA0000   F                      MOV    buf + 07H,#0AAH
+              ; SOURCE LINE # 39 
+0020 B600       F                      LD     A,l_can_receive_flag
+0022 4A                                DEC    A
+0023 2703                              JREQ   ?LAB_0012
+0025 CC0000     F                      JP     ?EPILOG_0000
+0028         ?LAB_0012:
+              ; SOURCE LINE # 41 
+0028 3F00       F                      CLR    l_can_receive_flag
+              ; SOURCE LINE # 43 
+002A A602                              LD     A,#002H
+002C B100       F                      CP     A,_Data
+002E 2668                              JRNE   ?NXT_0018
+0030 A610                              LD     A,#010H
+0032 B100       F                      CP     A,_Data + 01H
+0034 2662                              JRNE   ?NXT_0018
+              ; SOURCE LINE # 45 
+0036 B600       F                      LD     A,_Data + 02H
+0038 4A                                DEC    A
+0039 262C                              JRNE   ?ELSE_0019
+              ; SOURCE LINE # 47 
+003B 35020000   F                      MOV    buf,#002H
+003F 35500000   F                      MOV    buf + 01H,#050H
+0043 35010000   F                      MOV    buf + 02H,#001H
+0047 3F00       F                      CLR    buf + 03H
+              ; SOURCE LINE # 48 
+0049 3F00       F                      CLR    buf + 04H
+004B 3F00       F                      CLR    buf + 05H
+004D 3F00       F                      CLR    buf + 06H
+004F 3F00       F                      CLR    buf + 07H
+              ; SOURCE LINE # 49 
+0051 AE0000     F                      LDW    X,#buf
+0054 89                                PUSHW  X
+0055 4B08                              PUSH   #008H
+0057 5F                                CLRW   X
+0058 89                                PUSHW  X
+0059 89                                PUSHW  X
+005A AE07E7                            LDW    X,#007E7H
+005D 89                                PUSHW  X
+005E 5F                                CLRW   X
+005F 89                                PUSHW  X
+0060 CD0000     F                      CALL   ?CAN_Transmit
+0063 5B0B                              ADD    SP,#00BH
+0065 2031                              JRA    ?NXT_0018
+0067         ?ELSE_0019:
+              ; SOURCE LINE # 51 
+0067 3D00       F                      TNZ    _Data + 02H
+0069 262D                              JRNE   ?NXT_0018
+              ; SOURCE LINE # 53 
+006B AE0002                            LDW    X,#00002H
+006E BF00       F                      LDW    gEOL_State,X
+              ; SOURCE LINE # 54 
+0070 35020000   F                      MOV    buf,#002H
+0074 35500000   F                      MOV    buf + 01H,#050H
+0078 3F00       F                      CLR    buf + 02H
+007A 3F00       F                      CLR    buf + 03H
+              ; SOURCE LINE # 55 
+007C 3F00       F                      CLR    buf + 04H
+007E 3F00       F                      CLR    buf + 05H
+0080 3F00       F                      CLR    buf + 06H
+0082 3F00       F                      CLR    buf + 07H
+              ; SOURCE LINE # 56 
+0084 AE0000     F                      LDW    X,#buf
+0087 89                                PUSHW  X
+0088 4B08                              PUSH   #008H
+008A 5F                                CLRW   X
+008B 89                                PUSHW  X
+008C 89                                PUSHW  X
+008D AE07E7                            LDW    X,#007E7H
+0090 89                                PUSHW  X
+0091 5F                                CLRW   X
+0092 89                                PUSHW  X
+0093 CD0000     F                      CALL   ?CAN_Transmit
+0096 5B0B                              ADD    SP,#00BH
+0098         ?NXT_0018:
+              ; SOURCE LINE # 60 
+0098 A602                              LD     A,#002H
+009A B100       F                      CP     A,_Data
+009C 265B                              JRNE   ?ELSE_0021
+009E A62F                              LD     A,#02FH
+00A0 B100       F                      CP     A,_Data + 01H
+00A2 2655                              JRNE   ?ELSE_0021
+              ; SOURCE LINE # 62 
+00A4 7201000006 F                      BTJF   _Data + 02H,#000H,?ELSE_0022
+              ; SOURCE LINE # 64 
+00A9 7212500A                          BSET   0500AH,#001H
+00AD 2004                              JRA    ?NXT_0022
+00AF         ?ELSE_0022:
+              ; SOURCE LINE # 68 
+00AF 7213500A                          BRES   0500AH,#001H
+00B3         ?NXT_0022:
+              ; SOURCE LINE # 71 
+00B3 B600       F                      LD     A,_Data + 02H
+00B5 44                                SRL    A
+00B6 A501                              BCP    A,#001H
+00B8 2706                              JREQ   ?ELSE_0023
+              ; SOURCE LINE # 73 
+00BA 7214500A                          BSET   0500AH,#002H
+00BE 2004                              JRA    ?NXT_0023
+00C0         ?ELSE_0023:
+              ; SOURCE LINE # 77 
+00C0 7215500A                          BRES   0500AH,#002H
+00C4         ?NXT_0023:
+              ; SOURCE LINE # 81 
+00C4 B600       F                      LD     A,_Data + 02H
+00C6 44                                SRL    A
+00C7 44                                SRL    A
+00C8 A501                              BCP    A,#001H
+00CA 2706                              JREQ   ?ELSE_0024
+              ; SOURCE LINE # 83 
+00CC 7216500A                          BSET   0500AH,#003H
+00D0 2004                              JRA    ?NXT_0024
+00D2         ?ELSE_0024:
+              ; SOURCE LINE # 87 
+00D2 7217500A                          BRES   0500AH,#003H
+00D6         ?NXT_0024:
+              ; SOURCE LINE # 90 
+00D6 35020000   F                      MOV    buf,#002H
+00DA 356F0000   F                      MOV    buf + 01H,#06FH
+00DE A607                              LD     A,#007H
+00E0 B400       F                      AND    A,_Data + 02H
+00E2 B700       F                      LD     buf + 02H,A
+00E4         ?OPTI_0001:
+              ; SOURCE LINE # 91 
+00E4 AE0000     F                      LDW    X,#buf
+00E7 89                                PUSHW  X
+00E8 4B08                              PUSH   #008H
+00EA 5F                                CLRW   X
+00EB 89                                PUSHW  X
+00EC 89                                PUSHW  X
+00ED AE07E7                            LDW    X,#007E7H
+00F0 89                                PUSHW  X
+00F1 5F                                CLRW   X
+00F2 89                                PUSHW  X
+00F3 CD0000     F                      CALL   ?CAN_Transmit
+00F6 5B0B                              ADD    SP,#00BH
+00F8 81                                RET    
+00F9         ?ELSE_0021:
+              ; SOURCE LINE # 93 
+00F9 A602                              LD     A,#002H
+00FB B100       F                      CP     A,_Data
+00FD 2703                              JREQ   ?LAB_0013
+00FF CC0000     F                      JP     ?ELSE_0025
+0102         ?LAB_0013:
+0102 A622                              LD     A,#022H
+0104 B100       F                      CP     A,_Data + 01H
+0106 2703                              JREQ   ?LAB_0014
+0108 CC0000     F                      JP     ?ELSE_0025
+010B         ?LAB_0014:
+              ; SOURCE LINE # 95 
+010B A608                              LD     A,#008H
+010D B100       F                      CP     A,_Data + 02H
+010F 261B                              JRNE   ?ELSE_0026
+              ; SOURCE LINE # 97 
+0111 35030000   F                      MOV    buf,#003H
+0115 35620000   F                      MOV    buf + 01H,#062H
+0119 35080000   F                      MOV    buf + 02H,#008H
+              ; SOURCE LINE # 98 
+011D 7201500604                        BTJF   05006H,#000H,?ELSE_0027
+              ; SOURCE LINE # 100 
+0122 3F00       F                      CLR    buf + 03H
+0124 20BE                              JRA    ?OPTI_0001
+0126         ?ELSE_0027:
+              ; SOURCE LINE # 104 
+0126 35010000   F                      MOV    buf + 03H,#001H
+              ; SOURCE LINE # 106 
+012A 20B8                              JRA    ?OPTI_0001
+012C         ?ELSE_0026:
+              ; SOURCE LINE # 108 
+012C A610                              LD     A,#010H
+012E B100       F                      CP     A,_Data + 02H
+0130 2627                              JRNE   ?ELSE_0028
+              ; SOURCE LINE # 111 
+0132 35070000   F                      MOV    buf,#007H
+0136 35620000   F                      MOV    buf + 01H,#062H
+013A 35100000   F                      MOV    buf + 02H,#010H
+              ; SOURCE LINE # 112 
+013E 5582510000 F                      MOV    buf + 03H,sku_1 + 01H
+0143 5582520000 F                      MOV    buf + 04H,sku_1 + 02H
+0148 5582530000 F                      MOV    buf + 05H,sku_1 + 03H
+014D 5582540000 F                      MOV    buf + 06H,sku_1 + 04H
+0152 5582550000 F                      MOV    buf + 07H,sku_1 + 05H
+              ; SOURCE LINE # 113 
+0157 208B                              JRA    ?OPTI_0001
+0159         ?ELSE_0028:
+              ; SOURCE LINE # 163 
+0159 A620                              LD     A,#020H
+015B B100       F                      CP     A,_Data + 02H
+015D 2703                              JREQ   ?LAB_0015
+015F CC0000     F                      JP     ?EPILOG_0000
+0162         ?LAB_0015:
+              ; SOURCE LINE # 165 
+0162 35070000   F                      MOV    buf,#007H
+0166 35620000   F                      MOV    buf + 01H,#062H
+016A 35200000   F                      MOV    buf + 02H,#020H
+              ; SOURCE LINE # 166 
+016E 5582490000 F                      MOV    buf + 03H,version + 01H
+              ; SOURCE LINE # 167 
+0173 55824A0000 F                      MOV    buf + 04H,version + 02H
+              ; SOURCE LINE # 168 
+0178 55824B0000 F                      MOV    buf + 05H,version + 03H
+              ; SOURCE LINE # 169 
+017D 55824C0000 F                      MOV    buf + 06H,version + 04H
+              ; SOURCE LINE # 170 
+0182 55824D0000 F                      MOV    buf + 07H,version + 05H
+              ; SOURCE LINE # 171 
+0187 AE0000     F                      LDW    X,#buf
+018A 89                                PUSHW  X
+018B 4B08                              PUSH   #008H
+018D 5F                                CLRW   X
+018E 89                                PUSHW  X
+018F 89                                PUSHW  X
+0190 AE07E7                            LDW    X,#007E7H
+0193 89                                PUSHW  X
+0194 5F                                CLRW   X
+0195 89                                PUSHW  X
+0196 CD0000     F                      CALL   ?CAN_Transmit
+0199 5B0B                              ADD    SP,#00BH
+              ; SOURCE LINE # 174 
+019B 81                                RET    
+019C         ?ELSE_0025:
+              ; SOURCE LINE # 177 
+019C A603                              LD     A,#003H
+019E B100       F                      CP     A,_Data
+01A0 2703                              JREQ   ?LAB_0016
+01A2 CC0000     F                      JP     ?EPILOG_0000
+01A5         ?LAB_0016:
+01A5 A622                              LD     A,#022H
+01A7 B100       F                      CP     A,_Data + 01H
+01A9 2703                              JREQ   ?LAB_0017
+01AB CC0000     F                      JP     ?EPILOG_0000
+01AE         ?LAB_0017:
+01AE A640                              LD     A,#040H
+01B0 B100       F                      CP     A,_Data + 02H
+01B2 2703                              JREQ   ?LAB_0018
+01B4 CC0000     F                      JP     ?EPILOG_0000
+01B7         ?LAB_0018:
+              ; SOURCE LINE # 179 
+01B7 3D00       F                      TNZ    _Data + 03H
+01B9 2662                              JRNE   ?NXT_0031
+              ; SOURCE LINE # 181 
+01BB AE4100                            LDW    X,#04100H
+01BE 89                                PUSHW  X
+01BF 5F                                CLRW   X
+01C0 89                                PUSHW  X
+01C1 CD0000     F                      CALL   ?FLASH_EraseByte
+01C4 5B04                              ADD    SP,#004H
+              ; SOURCE LINE # 182 
+01C6 AE4101                            LDW    X,#04101H
+01C9 89                                PUSHW  X
+01CA 5F                                CLRW   X
+01CB 89                                PUSHW  X
+01CC CD0000     F                      CALL   ?FLASH_EraseByte
+01CF 5B04                              ADD    SP,#004H
+              ; SOURCE LINE # 183 
+01D1 35050000   F                      MOV    buf,#005H
+01D5 35620000   F                      MOV    buf + 01H,#062H
+01D9 35400000   F                      MOV    buf + 02H,#040H
+01DD 3F00       F                      CLR    buf + 03H
+              ; SOURCE LINE # 184 
+01DF AE4101                            LDW    X,#04101H
+01E2 89                                PUSHW  X
+01E3 5F                                CLRW   X
+01E4 89                                PUSHW  X
+01E5 CD0000     F                      CALL   ?FLASH_ReadByte
+01E8 5B04                              ADD    SP,#004H
+01EA B700       F                      LD     buf + 04H,A
+              ; SOURCE LINE # 185 
+01EC AE4100                            LDW    X,#04100H
+01EF 89                                PUSHW  X
+01F0 5F                                CLRW   X
+01F1 89                                PUSHW  X
+01F2 CD0000     F                      CALL   ?FLASH_ReadByte
+01F5 5B04                              ADD    SP,#004H
+01F7 B700       F                      LD     buf + 05H,A
+              ; SOURCE LINE # 186 
+01F9 3D00       F                      TNZ    buf + 03H
+01FB 260C                              JRNE   ?NXT_0032
+01FD 3D00       F                      TNZ    buf + 04H
+01FF 2608                              JRNE   ?NXT_0032
+              ; SOURCE LINE # 188 
+0201 7217500A                          BRES   0500AH,#003H
+              ; SOURCE LINE # 189 
+0205 7214500A                          BSET   0500AH,#002H
+0209         ?NXT_0032:
+              ; SOURCE LINE # 191 
+0209 AE0000     F                      LDW    X,#buf
+020C 89                                PUSHW  X
+020D 4B08                              PUSH   #008H
+020F 5F                                CLRW   X
+0210 89                                PUSHW  X
+0211 89                                PUSHW  X
+0212 AE07E7                            LDW    X,#007E7H
+0215 89                                PUSHW  X
+0216 5F                                CLRW   X
+0217 89                                PUSHW  X
+0218 CD0000     F                      CALL   ?CAN_Transmit
+021B 5B0B                              ADD    SP,#00BH
+021D         ?NXT_0031:
+              ; SOURCE LINE # 193 
+021D B600       F                      LD     A,_Data + 03H
+021F 4A                                DEC    A
+0220 263E                              JRNE   ?EPILOG_0000
+              ; SOURCE LINE # 195 
+0222 35050000   F                      MOV    buf,#005H
+0226 35620000   F                      MOV    buf + 01H,#062H
+022A 35400000   F                      MOV    buf + 02H,#040H
+022E 35010000   F                      MOV    buf + 03H,#001H
+              ; SOURCE LINE # 196 
+0232 AE4101                            LDW    X,#04101H
+0235 89                                PUSHW  X
+0236 5F                                CLRW   X
+0237 89                                PUSHW  X
+0238 CD0000     F                      CALL   ?FLASH_ReadByte
+023B 5B04                              ADD    SP,#004H
+023D B700       F                      LD     buf + 04H,A
+              ; SOURCE LINE # 197 
+023F AE4100                            LDW    X,#04100H
+0242 89                                PUSHW  X
+0243 5F                                CLRW   X
+0244 89                                PUSHW  X
+0245 CD0000     F                      CALL   ?FLASH_ReadByte
+0248 5B04                              ADD    SP,#004H
+024A B700       F                      LD     buf + 05H,A
+              ; SOURCE LINE # 198 
+024C AE0000     F                      LDW    X,#buf
+024F 89                                PUSHW  X
+0250 4B08                              PUSH   #008H
+0252 5F                                CLRW   X
+0253 89                                PUSHW  X
+0254 89                                PUSHW  X
+0255 AE07E7                            LDW    X,#007E7H
+0258 89                                PUSHW  X
+0259 5F                                CLRW   X
+025A 89                                PUSHW  X
+025B CD0000     F                      CALL   ?CAN_Transmit
+025E 5B0B                              ADD    SP,#00BH
+0260         ?EPILOG_0000:
+              ; SOURCE LINE # 205 
+0260 81                                RET    
+
+              ; FUNCTION ?EOL_tester_function (END)
+
+              ; FUNCTION ?uart_process_data_2 (BEGIN)
+              ; Register-parameter rec_length (A) is relocated (auto)
+              ; Register XW is assigned to parameter BuffPointer
+              ; SOURCE LINE # 221 
+0000 88                                PUSH   A
+0001 520C                              SUB    SP,#00CH
+              ; SOURCE LINE # 224 
+0003 905F                              CLRW   Y
+0005 170B       F                      LDW    (00BH,SP),Y   ; [ l_lenght ]
+              ; SOURCE LINE # 226 
+0007 0F0C       F                      CLR    (00CH,SP)   ; [ iLoop ]
+0009         ?FOR_0001:
+0009 7B0C       F                      LD     A,(00CH,SP)   ; [ iLoop ]
+000B 110D       F                      CP     A,(00DH,SP)   ; [ rec_length ]
+000D 2416                              JRUGE  ?NXT_0039
+              ; SOURCE LINE # 228 
+000F BF02       F                      LDW    ?BH.w,X
+0011 905F                              CLRW   Y
+0013 9097                              LD     YL,A
+0015 91D600     F                      LD     A,([?BH.w],Y)
+0018 88                                PUSH   A
+0019 7B0D       F                      LD     A,(00DH,SP)   ; [ iLoop ]
+001B 9097                              LD     YL,A
+001D 84                                POP    A
+001E 90E712     F                      LD     (uart_master_data + 00H,Y),A
+              ; SOURCE LINE # 226 
+0021 0C0C       F                      INC    (00CH,SP)   ; [ iLoop ]
+0023 20E4                              JRA    ?FOR_0001
+0025         ?NXT_0039:
+              ; SOURCE LINE # 230 
+0025 7B0D       F                      LD     A,(00DH,SP)   ; [ rec_length ]
+0027 B700       F                      LD     uart_master_data + 09H,A
+              ; SOURCE LINE # 232 
+0029 B600       F                      LD     A,uart_master_data
+002B A182                              CP     A,#082H
+002D 263B                              JRNE   ?EPILOG_0001
+002F B600       F                      LD     A,uart_master_data + 01H
+0031 A1C1                              CP     A,#0C1H
+0033 2635                              JRNE   ?EPILOG_0001
+0035 B600       F                      LD     A,uart_master_data + 02H
+0037 A1F0                              CP     A,#0F0H
+0039 262F                              JRNE   ?EPILOG_0001
+              ; SOURCE LINE # 234 
+003B A621                              LD     A,#021H
+003D B100       F                      CP     A,uart_master_data + 03H
+003F 2629                              JRNE   ?EPILOG_0001
+0041 B600       F                      LD     A,uart_master_data + 04H
+0043 4A                                DEC    A
+0044 2624                              JRNE   ?EPILOG_0001
+              ; SOURCE LINE # 236 
+0046 AE83F0                            LDW    X,#083F0H
+0049 1F01       F                      LDW    (001H,SP),X   ; [ l_data ]
+              ; SOURCE LINE # 238 
+004B AEC161                            LDW    X,#0C161H
+004E 1F03       F                      LDW    (003H,SP),X   ; [ l_data + 02H ]
+              ; SOURCE LINE # 240 
+0050 A601                              LD     A,#001H
+0052 6B05       F                      LD     (005H,SP),A   ; [ l_data + 04H ]
+              ; SOURCE LINE # 241 
+0054 7201500604                        BTJF   05006H,#000H,?ELSE_0039
+              ; SOURCE LINE # 243 
+0059 0F06       F                      CLR    (006H,SP)   ; [ l_data + 05H ]
+005B 2004                              JRA    ?NXT_0043
+005D         ?ELSE_0039:
+              ; SOURCE LINE # 247 
+005D A601                              LD     A,#001H
+005F 6B06       F                      LD     (006H,SP),A   ; [ l_data + 05H ]
+0061         ?NXT_0043:
+              ; SOURCE LINE # 252 
+0061 A606                              LD     A,#006H
+0063 6B0B       F                      LD     (00BH,SP),A   ; [ l_lenght ]
+              ; SOURCE LINE # 253 
+0065 96           DNF                  LDW    X,SP
+0066 5C           DNF                  INCW   X
+0067 CD0000     F                      CALL   ?kline_transmit
+006A         ?EPILOG_0001:
+              ; SOURCE LINE # 256 
+006A 5B0D                              ADD    SP,#00DH
+006C 81                                RET    
+              ; BuffPointer  pointer to (unsigned char   in )(size=2). Register parameter(XW) in PAGE0
+              ; rec_length   unsigned char  (size=1).  parameter in AUTO
+              ; l_data       array of unsigned char  (size=10). Automatic variable  in AUTO
+              ; l_lenght     unsigned char  (size=1). Automatic variable  in AUTO
+              ; iLoop        unsigned char  (size=1). Automatic variable  in AUTO
+
+              ; FUNCTION ?uart_process_data_2 (END)
+
+              ; FUNCTION ?kline_receive_validate_message2 (BEGIN)
+              ; Register-parameter rx_data (A) is relocated (auto)
+              ; SOURCE LINE # 272 
+0000 88                                PUSH   A
+0001 88                                PUSH   A
+              ; SOURCE LINE # 276 
+0002 3D00       F                      TNZ    rx_count
+0004 2621                              JRNE   ?ELSE_0049
+              ; SOURCE LINE # 278 
+0006 A4F0                              AND    A,#0F0H
+0008 A180                              CP     A,#080H
+000A 2615                              JRNE   ?ELSE_0050
+              ; SOURCE LINE # 281 
+000C B600       F                      LD     A,rx_count
+000E 5F                                CLRW   X
+000F 97                                LD     XL,A
+0010 7B02       F                      LD     A,(002H,SP)   ; [ rx_data ]
+0012 E700       F                      LD     (rcv_data + 00H,X),A
+              ; SOURCE LINE # 284 
+0014 A63F                              LD     A,#03FH
+0016 B400       F                      AND    A,rcv_data
+0018 AB03                              ADD    A,#003H
+001A B700       F                      LD     receive_len,A
+              ; SOURCE LINE # 288 
+001C 3C00       F                      INC    rx_count
+001E CC0000     F                      JP     ?EPILOG_0002
+0021         ?ELSE_0050:
+              ; SOURCE LINE # 293 
+0021 3F00       F                      CLR    rx_count
+              ; SOURCE LINE # 294 
+0023 3F00       F                      CLR    receive_len
+0025 207E                              JRA    ?EPILOG_0002
+0027         ?ELSE_0049:
+              ; SOURCE LINE # 298 
+0027 B600       F                      LD     A,rx_count
+0029 4A                                DEC    A
+002A 2618                              JRNE   ?ELSE_0051
+              ; SOURCE LINE # 301 
+002C 7B02       F                      LD     A,(002H,SP)   ; [ rx_data ]
+002E A1C1                              CP     A,#0C1H
+0030 260C                              JRNE   ?ELSE_0052
+              ; SOURCE LINE # 304 
+0032 B600       F                      LD     A,rx_count
+0034 5F                                CLRW   X
+0035 97                                LD     XL,A
+0036 7B02       F                      LD     A,(002H,SP)   ; [ rx_data ]
+0038 E700       F                      LD     (rcv_data + 00H,X),A
+              ; SOURCE LINE # 307 
+003A 3C00       F                      INC    rx_count
+003C 2067                              JRA    ?EPILOG_0002
+003E         ?ELSE_0052:
+              ; SOURCE LINE # 312 
+003E 3F00       F                      CLR    rx_count
+              ; SOURCE LINE # 313 
+0040 3F00       F                      CLR    receive_len
+0042 2061                              JRA    ?EPILOG_0002
+0044         ?ELSE_0051:
+              ; SOURCE LINE # 317 
+0044 A602                              LD     A,#002H
+0046 B100       F                      CP     A,rx_count
+0048 2618                              JRNE   ?ELSE_0053
+              ; SOURCE LINE # 320 
+004A 7B02       F                      LD     A,(002H,SP)   ; [ rx_data ]
+004C A1F0                              CP     A,#0F0H
+004E 260C                              JRNE   ?ELSE_0054
+              ; SOURCE LINE # 323 
+0050 B600       F                      LD     A,rx_count
+0052 5F                                CLRW   X
+0053 97                                LD     XL,A
+0054 7B02       F                      LD     A,(002H,SP)   ; [ rx_data ]
+0056 E700       F                      LD     (rcv_data + 00H,X),A
+              ; SOURCE LINE # 326 
+0058 3C00       F                      INC    rx_count
+005A 2049                              JRA    ?EPILOG_0002
+005C         ?ELSE_0054:
+              ; SOURCE LINE # 331 
+005C 3F00       F                      CLR    rx_count
+              ; SOURCE LINE # 332 
+005E 3F00       F                      CLR    receive_len
+0060 2043                              JRA    ?EPILOG_0002
+0062         ?ELSE_0053:
+              ; SOURCE LINE # 338 
+0062 B600       F                      LD     A,receive_len
+0064 B100       F                      CP     A,rx_count
+0066 2539                              JRULT  ?ELSE_0055
+              ; SOURCE LINE # 340 
+0068 B600       F                      LD     A,rx_count
+006A 5F                                CLRW   X
+006B 97                                LD     XL,A
+006C 7B02       F                      LD     A,(002H,SP)   ; [ rx_data ]
+006E E700       F                      LD     (rcv_data + 00H,X),A
+              ; SOURCE LINE # 342 
+0070 B600       F                      LD     A,rx_count
+0072 B100       F                      CP     A,receive_len
+0074 2627                              JRNE   ?ELSE_0056
+              ; SOURCE LINE # 344 
+0076 B600       F                      LD     A,receive_len
+0078 AE0000     F                      LDW    X,#rcv_data
+007B CD0000     F                      CALL   ?kline_checksum
+007E 6B01       F                      LD     (001H,SP),A   ; [ rx_cs ]
+              ; SOURCE LINE # 346 
+0080 B600       F                      LD     A,rx_count
+0082 5F                                CLRW   X
+0083 97                                LD     XL,A
+0084 7B01       F                      LD     A,(001H,SP)   ; [ rx_cs ]
+0086 E100       F                      CP     A,(rcv_data + 00H,X)
+0088 260D                              JRNE   ?NXT_0061
+              ; SOURCE LINE # 348 
+008A B600       F                      LD     A,receive_len
+008C AE0000     F                      LDW    X,#rcv_data
+008F CD0000     F                      CALL   ?uart_process_data_2
+              ; SOURCE LINE # 349 
+0092 BE00       F                      LDW    X,kline_total_rcv_cnt
+0094 5C                                INCW   X
+0095 BF00       F                      LDW    kline_total_rcv_cnt,X
+0097         ?NXT_0061:
+              ; SOURCE LINE # 351 
+0097 3F00       F                      CLR    rx_count
+              ; SOURCE LINE # 352 
+0099 3F00       F                      CLR    receive_len
+009B 2008                              JRA    ?EPILOG_0002
+009D         ?ELSE_0056:
+              ; SOURCE LINE # 356 
+009D 3C00       F                      INC    rx_count
+009F 2004                              JRA    ?EPILOG_0002
+00A1         ?ELSE_0055:
+              ; SOURCE LINE # 361 
+00A1 3F00       F                      CLR    rx_count
+              ; SOURCE LINE # 362 
+00A3 3F00       F                      CLR    receive_len
+00A5         ?EPILOG_0002:
+              ; SOURCE LINE # 365 
+00A5 85                                POPW   X
+00A6 81                                RET    
+              ; rx_data      unsigned char  (size=1).  parameter in AUTO
+              ; rx_cs        unsigned char  (size=1). Automatic variable  in AUTO
+
+              ; FUNCTION ?kline_receive_validate_message2 (END)
+
+RCSTM8 COMPILER V2.42.12.083
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    885    ----
+   CONSTANT SIZE    =     74    ----
+   DATA SIZE        =   ----    ----
+   PAGE0 SIZE       =     32    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+RCSTM8 COMPILATION COMPLETE.  0 WARNING,  0 ERROR
